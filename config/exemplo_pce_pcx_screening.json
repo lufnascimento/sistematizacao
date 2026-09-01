@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "analysis_id": "pce-pcx-public-example-v1",
+  "created_at": "2026-09-01T14:30:00-03:00",
+  "requested_release": "PCE0_PCX0_NUMERIC_SCREENING_ONLY",
+  "project_request_ref": {
+    "id": "e0-exemplo-publico-v1",
+    "path": "config/exemplo_pedido_e0_dataset_atual.json",
+    "sha256": "7fde570dcca9e60a905303dc009a70db76e1800b498ff8e49454a2876030ee30"
+  },
+  "pce0": {
+    "factors": {
+      "rainfall_erosivity_r": 1000.0,
+      "soil_erodibility_k": 0.02,
+      "slope_length_steepness_ls": 1.5,
+      "cover_management_c": 0.1,
+      "support_practice_p": 0.5,
+      "soil_loss_tolerance_t_ha_year": 2.0
+    },
+    "factor_sources": {
+      "rainfall_erosivity_r": {"source_id": "synthetic-r", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+      "soil_erodibility_k": {"source_id": "synthetic-k", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+      "slope_length_steepness_ls": {"source_id": "synthetic-ls", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+      "cover_management_c": {"source_id": "synthetic-c", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+      "support_practice_p": {"source_id": "synthetic-p", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+      "soil_loss_tolerance_t_ha_year": {"source_id": "synthetic-t", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"}
+    }
+  },
+  "pcx0": {
+    "catchment_area_ha": 1.0,
+    "rainfall_excess_method_ref": {"source_id": "synthetic-excess-series", "evidence_state": "SYNTHETIC_TEST_ONLY", "captured_at": "2026-09-01T14:30:00-03:00"},
+    "relative_residual_tolerance": 0.000001,
+    "intervals": [
+      {"duration_s": 600.0, "rainfall_excess_mm": 10.0, "external_inflow_m3": 0.0, "controlled_outflow_m3": 40.0, "storage_start_m3": 0.0, "storage_end_m3": 60.0},
+      {"duration_s": 600.0, "rainfall_excess_mm": 0.0, "external_inflow_m3": 20.0, "controlled_outflow_m3": 50.0, "storage_start_m3": 60.0, "storage_end_m3": 30.0}
+    ]
+  },
+  "authorization_claims": {
+    "project_executive": false,
+    "hydraulic_capacity": false,
+    "receiver_approved": false,
+    "guidance_authorized": false
+  }
+}

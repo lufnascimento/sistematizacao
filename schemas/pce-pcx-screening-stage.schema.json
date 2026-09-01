@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/pce-pcx-screening-stage.schema.json",
+  "title": "TerraFlux PCE0/PCX0 screening result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_type", "release", "analysis_id", "generated_at", "screening_request_ref", "project_request_ref", "component_releases", "pce0", "pcx0", "stage_status", "blocker_codes", "authorization_claims", "release_limitations"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "manifest_type": {"const": "PCE0_PCX0_SCREENING_RESULT"},
+    "release": {"const": "PCE0_PCX0_SCREENING_NOT_DESIGN"},
+    "analysis_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "screening_request_ref": {"$ref": "#/$defs/hashRef"},
+    "project_request_ref": {"$ref": "#/$defs/projectRef"},
+    "component_releases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pce0", "pcx0"],
+      "properties": {
+        "pce0": {"const": "PCE0_RUSLE_SCREENING_ONLY"},
+        "pcx0": {"const": "PCX0_EVENT_MASS_BALANCE_ONLY"}
+      }
+    },
+    "pce0": {"type": "object", "required": ["release", "screening_status", "estimated_soil_loss_t_ha_year", "hydraulic_capacity_evaluated", "guidance_authorized", "limitations"]},
+    "pcx0": {"type": "object", "required": ["release", "numeric_continuity_status", "mass_balance_residual_m3", "hydraulic_capacity_evaluated", "receiver_approved", "guidance_authorized", "limitations"]},
+    "stage_status": {"const": "SCREENING_WITH_EXPLICIT_BLOCKERS"},
+    "blocker_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "authorization_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_executive", "hydraulic_capacity", "receiver_approved", "guidance_authorized"],
+      "properties": {
+        "project_executive": {"const": false},
+        "hydraulic_capacity": {"const": false},
+        "receiver_approved": {"const": false},
+        "guidance_authorized": {"const": false}
+      }
+    },
+    "release_limitations": {
+      "type": "array",
+      "allOf": [
+        {"contains": {"const": "NOT_PROJECT_EXECUTIVE"}},
+        {"contains": {"const": "NOT_HYDRAULIC_CAPACITY"}},
+        {"contains": {"const": "NOT_SECTION_DIMENSIONING"}},
+        {"contains": {"const": "NOT_RECEIVER_APPROVAL"}},
+        {"contains": {"const": "NOT_GUIDANCE_AUTHORIZED"}}
+      ]
+    }
+  },
+  "$defs": {
+    "hashRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "projectRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

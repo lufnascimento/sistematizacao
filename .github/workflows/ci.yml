@@ -47,3 +47,6 @@ jobs:
 
       - name: Run public preset lineage tests
         run: python -m unittest -v tests.test_compile_project_request_from_presets
+
+      - name: Run PCE0 and PCX0 contract tests
+        run: python -m unittest -v tests.test_pce_pcx tests.test_run_pce_pcx_screening

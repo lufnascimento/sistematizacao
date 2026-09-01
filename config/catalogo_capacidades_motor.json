@@ -25,12 +25,34 @@
       "next_implementation": "Consumir evidencias de frota e PCX sem remover o rotulo nao hidraulico do CF0 isolado."
     },
     {
+      "id": "PCE0_SCREENING_KERNEL",
+      "title": "Nucleo PCE0 de triagem RUSLE por fatores declarados",
+      "domain": "CONSERVATION",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["SOIL_PROFILE_HYDRAULIC", "SOIL_OPERATION_STATE", "CONSERVATION_RULE_PACK"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["PCE0_RUSLE_SCREENING"],
+      "blocker_code": "PCE_LOCAL_CALIBRATION_AND_PROFESSIONAL_REVIEW_REQUIRED",
+      "next_implementation": "Calibrar fatores e tolerancia por projeto, avaliar incerteza e converter a triagem em motor PCE sem alegacao hidraulica."
+    },
+    {
+      "id": "PCX0_MASS_BALANCE_KERNEL",
+      "title": "Nucleo PCX0 de balanco numerico de volume por evento",
+      "domain": "HYDROLOGY",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["RAINFALL_DESIGN", "FULL_CATCHMENT", "DRAINAGE_NETWORK"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["PCX0_EVENT_MASS_BALANCE"],
+      "blocker_code": "PCX_HYDRAULIC_CAPACITY_NOT_EVALUATED",
+      "next_implementation": "Adicionar metodo de chuva-excesso aprovado, hidrograma, roteamento, secoes, receptores, excedencia e incerteza."
+    },
+    {
       "id": "PCE_ENGINE",
       "title": "Motor de controle de erosao PCE",
       "domain": "CONSERVATION",
       "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
       "required_evidence_packages": ["SOIL_PROFILE_HYDRAULIC", "SOIL_OPERATION_STATE", "CONSERVATION_RULE_PACK"],
-      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "PCE0_SCREENING_KERNEL"],
       "outputs": ["PCE_RISK", "PCE_PRACTICES"],
       "blocker_code": "PCE_SOLVER_NOT_IMPLEMENTED",
       "next_implementation": "Implementar suscetibilidade e praticas com calibracao local, sem usar RUSLE como PCX."
@@ -52,7 +74,7 @@
       "domain": "HYDROLOGY",
       "declared_status": "NOT_IMPLEMENTED",
       "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
-      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL"],
       "outputs": ["PCX_MASS_BALANCE", "HYDROGRAPH", "HYDRAULIC_GATES"],
       "blocker_code": "PCX_SOLVER_NOT_IMPLEMENTED",
       "next_implementation": "Implementar eventos, chuva-excesso, Tc, roteamento, secoes, receptores, excedencia e incerteza."

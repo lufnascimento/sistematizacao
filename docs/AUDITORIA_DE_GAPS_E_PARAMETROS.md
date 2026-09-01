@@ -18,8 +18,9 @@ Os gaps de prioridade zero remanescentes sao:
    estatico isolado; falta simulacao integrada.
 3. Os scripts E0 ainda usam constantes locais e nao consomem um manifesto
    resolvido. Eles sao experimentos reproduziveis, nao o motor de producao.
-4. PCE, PCX e os solvers C1, C2 e C3 continuam especificados, mas nao
-   implementados.
+4. PCE0 e PCX0 possuem nucleos limitados de triagem RUSLE e balanco de massa,
+   respectivamente. PCE/PCX completos e os solvers C1, C2 e C3 continuam
+   bloqueados por dados, calibracao e implementacao hidrologica/hidraulica.
 
 O caminho recomendado e construir primeiro o resolvedor de parametros e o
 catalogo de restricoes; em seguida, gerar familias completas e quebras por

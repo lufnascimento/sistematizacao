@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/pce-pcx-screening-request.schema.json",
+  "title": "TerraFlux PCE0/PCX0 screening request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "analysis_id", "created_at", "requested_release", "project_request_ref", "pce0", "pcx0", "authorization_claims"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "analysis_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "requested_release": {"const": "PCE0_PCX0_NUMERIC_SCREENING_ONLY"},
+    "project_request_ref": {"$ref": "#/$defs/fileRef"},
+    "pce0": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factors", "factor_sources"],
+      "properties": {
+        "factors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rainfall_erosivity_r", "soil_erodibility_k", "slope_length_steepness_ls", "cover_management_c", "support_practice_p", "soil_loss_tolerance_t_ha_year"],
+          "properties": {
+            "rainfall_erosivity_r": {"type": "number", "exclusiveMinimum": 0},
+            "soil_erodibility_k": {"type": "number", "exclusiveMinimum": 0},
+            "slope_length_steepness_ls": {"type": "number", "exclusiveMinimum": 0},
+            "cover_management_c": {"type": "number", "minimum": 0, "maximum": 1},
+            "support_practice_p": {"type": "number", "minimum": 0, "maximum": 1},
+            "soil_loss_tolerance_t_ha_year": {"type": ["number", "null"], "exclusiveMinimum": 0}
+          }
+        },
+        "factor_sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rainfall_erosivity_r", "soil_erodibility_k", "slope_length_steepness_ls", "cover_management_c", "support_practice_p", "soil_loss_tolerance_t_ha_year"],
+          "properties": {
+            "rainfall_erosivity_r": {"$ref": "#/$defs/source"},
+            "soil_erodibility_k": {"$ref": "#/$defs/source"},
+            "slope_length_steepness_ls": {"$ref": "#/$defs/source"},
+            "cover_management_c": {"$ref": "#/$defs/source"},
+            "support_practice_p": {"$ref": "#/$defs/source"},
+            "soil_loss_tolerance_t_ha_year": {"$ref": "#/$defs/source"}
+          }
+        }
+      }
+    },
+    "pcx0": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["catchment_area_ha", "rainfall_excess_method_ref", "relative_residual_tolerance", "intervals"],
+      "properties": {
+        "catchment_area_ha": {"type": "number", "exclusiveMinimum": 0},
+        "rainfall_excess_method_ref": {"$ref": "#/$defs/source"},
+        "relative_residual_tolerance": {"type": "number", "minimum": 0, "maximum": 0.05},
+        "intervals": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["duration_s", "rainfall_excess_mm", "external_inflow_m3", "controlled_outflow_m3", "storage_start_m3", "storage_end_m3"],
+            "properties": {
+              "duration_s": {"type": "number", "exclusiveMinimum": 0},
+              "rainfall_excess_mm": {"type": "number", "minimum": 0},
+              "external_inflow_m3": {"type": "number", "minimum": 0},
+              "controlled_outflow_m3": {"type": "number", "minimum": 0},
+              "storage_start_m3": {"type": "number", "minimum": 0},
+              "storage_end_m3": {"type": "number", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "authorization_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_executive", "hydraulic_capacity", "receiver_approved", "guidance_authorized"],
+      "properties": {
+        "project_executive": {"const": false},
+        "hydraulic_capacity": {"const": false},
+        "receiver_approved": {"const": false},
+        "guidance_authorized": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "fileRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "evidence_state", "captured_at"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "evidence_state": {"enum": ["PROJECT_EVIDENCE", "E0_ASSUMPTION", "SYNTHETIC_TEST_ONLY"]},
+        "captured_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}
