@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "screening_id": "c1-e0-exemplo-publico-v1",
+  "project_request_ref": "dataset/derived/pedido_compilado_presets_e0_dataset_atual.json",
+  "cf0_manifest_ref": "dataset/derived/continuous_family_manifest.json",
+  "requested_release": "C1_E0_CONCEPT_ALIGNMENT_NOT_DIMENSIONED",
+  "assumption_contract": {
+    "parameter_class": "E0_ASSUMPTION",
+    "selection_meaning": "GEOMETRIC_SENSITIVITY_GRID_ONLY",
+    "selection_rule": "DATASET_RELIEF_LEGIBILITY_GRID_V1",
+    "interval_role": "ELEVATION_ISOLINE_SAMPLING_NOT_PCE_SPACING",
+    "vertical_accuracy_status": "NOT_VALIDATED",
+    "agronomic_default": false,
+    "pce_spacing_claim": false,
+    "pcx_dimensioning_claim": false,
+    "ti_approval_claim": false,
+    "td_approval_claim": false,
+    "guidance_claim": false,
+    "notes": "A grade 2/4/6 m e apenas uma sensibilidade geometrica publica para comparar resolucoes densa, media e esparsa. Os valores sao intervalos de amostragem de isolinhas, nao recomendacao, espacamento PCE, secao PCX ou projeto TI/TD. A acuracia vertical independente do DTM deve ser validada em cada projeto."
+  },
+  "screening_parameters": {
+    "vertical_interval_candidates_m": [2.0, 4.0, 6.0],
+    "offset_fractions": [0.0, 0.25, 0.5, 0.75],
+    "topology_gap_half_width_m": 0.25,
+    "minimum_axis_length_m": 15.0,
+    "minimum_strip_area_m2": 50.0,
+    "minimum_diagnostic_row_segment_m": 8.0,
+    "profile_sample_step_m": 2.0,
+    "map_offset_fraction": 0.0
+  },
+  "variant_policy": {
+    "EMBUTIDA_TI": "GENERATE_ISOLINE_SENSITIVITY_NOT_DIMENSIONED",
+    "EMBUTIDA_TD": "NOT_GENERATED_WITHOUT_VERIFIED_RECEIVER_AND_GRADE_RULE",
+    "receiver_dataset_ref": null,
+    "td_longitudinal_grade_rule_ref": null
+  },
+  "row_source_policy": {
+    "source_candidate_id": "CF0C_OPERACAO",
+    "method": "CLIP_EXISTING_CF0C_ROWS_BY_TOPOLOGY_ONLY_INTERTERRACE_STRIPS",
+    "status": "DIAGNOSTIC_ONLY_NOT_RESOLVED_PER_STRIP",
+    "limitation_code": "ROW_CANDIDATES_DERIVED_FROM_CF0C_NOT_RESOLVED_PER_STRIP"
+  },
+  "provenance": {
+    "origin": "E0_ASSUMPTION",
+    "source_ref": "config/exemplo_pedido_c1_screening_dataset_atual.json",
+    "captured_at": "2026-01-15T12:00:00-03:00",
+    "responsible": {
+      "name": "terraflux-screening-engine",
+      "organization": "TerraFlux project",
+      "role": "geometric-screening"
+    },
+    "confidence": "LOW",
+    "revision": "c1-e0-screening-1.0.0",
+    "applicability": "SCENARIO"
+  }
+}

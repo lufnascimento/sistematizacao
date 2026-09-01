@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: platform/requirements.txt
+
+      - name: Install runtime dependencies
+        run: python -m pip install -r platform/requirements.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q platform scripts tests
+
+      - name: Validate JSON documents
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          for root in (Path("config"), Path("schemas")):
+              for path in root.glob("*.json"):
+                  with path.open(encoding="utf-8") as stream:
+                      json.load(stream)
+
+      - name: Run platform unit tests
+        run: python -m unittest discover -s platform/tests -p "test_*.py" -v
+
+      - name: Run dossier unit tests
+        run: python -m unittest discover -s tests -p "test_generate_platform_run_dossier.py" -v
+
+      - name: Run public preset lineage tests
+        run: python -m unittest -v tests.test_compile_project_request_from_presets

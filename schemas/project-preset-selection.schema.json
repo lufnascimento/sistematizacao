@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/project-preset-selection.schema.json",
+  "title": "TerraFlux project preset selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "selection_id",
+    "project_id",
+    "created_at",
+    "project_context",
+    "requested_delivery_level",
+    "use_system_defaults_for_unselected_packages",
+    "package_selections",
+    "standalone_parameter_selections",
+    "custom_parameter_values"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "selection_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "project_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["country", "state", "crop"],
+      "properties": {
+        "country": {"type": "string", "minLength": 2},
+        "state": {"type": "string", "minLength": 2},
+        "crop": {"const": "SUGARCANE"}
+      }
+    },
+    "requested_delivery_level": {
+      "enum": ["E0_TRIAGEM", "E1_OPERACIONAL", "E2_CONSERVACIONISTA", "E3_EXECUTIVO"]
+    },
+    "use_system_defaults_for_unselected_packages": {"type": "boolean"},
+    "package_selections": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/package_selection"}
+    },
+    "standalone_parameter_selections": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/standalone_selection"}
+    },
+    "custom_parameter_values": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/custom_parameter_value"}
+    }
+  },
+  "$defs": {
+    "package_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_id", "mode", "model_ids", "applicability_justification"],
+      "properties": {
+        "package_id": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["SYSTEM_DEFAULT", "SYSTEM_MODELS", "CUSTOM", "HYBRID"]},
+        "model_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "applicability_justification": {"type": ["string", "null"]}
+      }
+    },
+    "standalone_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter_id", "mode", "model_id"],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["SYSTEM_DEFAULT", "SYSTEM_MODEL", "CUSTOM"]},
+        "model_id": {"type": ["string", "null"]}
+      }
+    },
+    "custom_parameter_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter_id", "value", "unit", "provenance"],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "value": {},
+        "unit": {"type": ["string", "null"]},
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["origin", "source_ref", "captured_at", "responsible", "revision"],
+          "properties": {
+            "origin": {
+              "enum": [
+                "DECLARED",
+                "UPLOADED",
+                "MEASURED",
+                "IMPORTED",
+                "RULE_PACK",
+                "PROFESSIONAL_CALIBRATION",
+                "OPTIMIZER",
+                "E0_ASSUMPTION"
+              ]
+            },
+            "source_ref": {"type": "string", "minLength": 1},
+            "captured_at": {"type": "string", "format": "date-time"},
+            "responsible": {"type": "string", "minLength": 1},
+            "revision": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  }
+}

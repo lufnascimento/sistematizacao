@@ -1,0 +1,158 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class ProjectCreate(StrictModel):
+    name: str = Field(min_length=2, max_length=120)
+    farm_name: str | None = Field(default=None, max_length=120)
+    client_name: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    crs: str | None = Field(default=None, pattern=r"^EPSG:\d{4,6}$")
+
+
+class ProjectUpdate(StrictModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    farm_name: str | None = Field(default=None, max_length=120)
+    client_name: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    crs: str | None = Field(default=None, pattern=r"^EPSG:\d{4,6}$")
+
+
+class SulcationConfiguration(StrictModel):
+    row_spacing_m: float = Field(default=1.5, ge=0.8, le=3.0)
+    headland_width_m: float = Field(default=18.0, ge=5.0, le=100.0)
+    min_turn_radius_m: float = Field(default=12.0, ge=2.0, le=100.0)
+    min_shot_length_m: float = Field(default=50.0, ge=5.0, le=5000.0)
+    nominal_speed_kmh: float = Field(default=5.0, gt=0.0, le=20.0)
+    maneuver_time_s: float = Field(default=38.5, ge=0.0, le=600.0)
+    max_cross_slope_pct: float = Field(default=12.0, ge=0.0, le=100.0)
+    terrain_smoothing_radius_m: float = Field(default=5.0, ge=0.0, le=100.0)
+    allow_cross_field: bool = False
+    allow_cross_property: bool = False
+
+
+class TopographyConfiguration(StrictModel):
+    resolution_m: float = Field(default=1.0, ge=0.2, le=20.0)
+    contour_interval_m: float = Field(default=1.0, ge=0.1, le=20.0)
+    field_id_column: str | None = Field(default=None, max_length=80, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    boundary_layer: str | None = Field(default=None, max_length=120)
+    elevation_source_preference: Literal["DTM_DEM", "POINT_CLOUD"] = "DTM_DEM"
+
+
+class ConservationConfiguration(StrictModel):
+    scenario_families: list[Literal["E0", "CF0", "C1_TI", "C1_TD", "C2", "C3_ESD"]] = Field(
+        default_factory=lambda: ["E0", "CF0", "C1_TI"]
+    )
+    rainfall_return_period_years: int | None = Field(default=None, ge=2, le=500)
+    pce_m: float | None = Field(default=None, gt=0.0, le=100.0)
+    pcx_m: float | None = Field(default=None, gt=0.0, le=2000.0)
+    hydraulic_receiver_id: str | None = Field(default=None, max_length=100)
+
+
+class ObjectiveConfiguration(StrictModel):
+    soil_conservation_weight: float = Field(default=45.0, ge=0.0, le=100.0)
+    harvestability_weight: float = Field(default=35.0, ge=0.0, le=100.0)
+    performance_weight: float = Field(default=20.0, ge=0.0, le=100.0)
+
+    @field_validator("performance_weight")
+    @classmethod
+    def weights_total_one_hundred(cls, value: float, info) -> float:
+        values = info.data
+        total = float(values.get("soil_conservation_weight", 0)) + float(values.get("harvestability_weight", 0)) + value
+        if abs(total - 100.0) > 1e-6:
+            raise ValueError("objective weights must total 100")
+        return value
+
+
+class ConstraintConfiguration(StrictModel):
+    power_network_state: Literal["UNKNOWN", "DECLARED_NONE", "UPLOADED"] = "UNKNOWN"
+    power_line_buffer_m: float = Field(default=15.0, ge=0.0, le=200.0)
+    general_review_status: Literal["NOT_REVIEWED", "PARTIAL", "REVIEWED"] = "NOT_REVIEWED"
+
+
+class LogisticsConfiguration(StrictModel):
+    harvester_model: str | None = Field(default=None, max_length=120)
+    transshipment_capacity_t: float | None = Field(default=None, gt=0.0, le=100.0)
+    yield_t_ha: float | None = Field(default=None, gt=0.0, le=300.0)
+    poa_enabled: bool = False
+
+
+class ProjectConfiguration(StrictModel):
+    system_preset_id: str = Field(default="cana_sp_equilibrio_e0", min_length=1, max_length=100)
+    topography: TopographyConfiguration = Field(default_factory=TopographyConfiguration)
+    sulcation: SulcationConfiguration = Field(default_factory=SulcationConfiguration)
+    conservation: ConservationConfiguration = Field(default_factory=ConservationConfiguration)
+    objectives: ObjectiveConfiguration = Field(default_factory=ObjectiveConfiguration)
+    constraints: ConstraintConfiguration = Field(default_factory=ConstraintConfiguration)
+    logistics: LogisticsConfiguration = Field(default_factory=LogisticsConfiguration)
+    selected_product_ids: list[str] = Field(
+        default_factory=lambda: ["TOPOGRAPHY_E0"]
+    )
+
+    @field_validator("selected_product_ids")
+    @classmethod
+    def unique_products(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("select at least one product")
+        if len(value) != len(set(value)):
+            raise ValueError("product ids must be unique")
+        return value
+
+
+class PresetSelectionCreate(StrictModel):
+    requested_delivery_level: Literal["E0_TRIAGEM", "E1_ANTEPROJETO", "E2_EXECUTIVO", "E3_IMPLANTACAO"] = "E0_TRIAGEM"
+    use_system_defaults_for_unselected_packages: bool = True
+    package_selections: list[dict[str, Any]] = Field(default_factory=list, max_length=100)
+    standalone_parameter_selections: list[dict[str, Any]] = Field(default_factory=list, max_length=300)
+    custom_parameter_values: list[dict[str, Any]] = Field(default_factory=list, max_length=500)
+
+
+class GenerationRequestCreate(StrictModel):
+    name: str = Field(default="Rodada de cenarios", min_length=2, max_length=120)
+    product_ids: list[str] = Field(min_length=1, max_length=20)
+    delivery_level: Literal["E0_TRIAGEM", "E1_ANTEPROJETO", "E2_EXECUTIVO", "E3_IMPLANTACAO"] = "E0_TRIAGEM"
+    preset_selection_id: str | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("product_ids")
+    @classmethod
+    def unique_products(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("product ids must be unique")
+        return value
+
+
+class RunCreate(StrictModel):
+    engine_id: Literal[
+        "validate_uploads", "project_topography", "project_pipeline_e0", "demo_current_dataset"
+    ] = "validate_uploads"
+    request_id: str | None = None
+    product_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("product_ids")
+    @classmethod
+    def unique_products(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("product ids must be unique")
+        return value
+
+
+class ArtifactReviewCreate(StrictModel):
+    decision: Literal["ACCEPTED_FOR_COMPARISON", "CHANGES_REQUESTED", "REJECTED"]
+    domain: Literal["AGRONOMY", "HYDRAULICS", "OPERATIONS", "SURVEY"]
+    comment: str = Field(min_length=3, max_length=4000)
+
+
+class ScenarioSelectionCreate(StrictModel):
+    selected_for_review: bool = True
+    selection_scope: Literal["E0_REPRESENTATIVE_FOR_TECHNICAL_REVIEW"] = (
+        "E0_REPRESENTATIVE_FOR_TECHNICAL_REVIEW"
+    )
+    reviewer_note: str | None = Field(default=None, max_length=2000)

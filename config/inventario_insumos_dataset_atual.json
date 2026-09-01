@@ -1,0 +1,263 @@
+{
+  "schema_version": "1.0.0",
+  "inventory_id": "inventario-exemplo-publico-v1",
+  "project_id": "projeto-demonstracao",
+  "assessed_at": "2026-08-24T18:00:00-03:00",
+  "catalog_revision": "terraflux-input-acquisition-catalog-1.0.0",
+  "entries": [
+    {
+      "package_id": "SCOPE_BOUNDARY_PERMISSION",
+      "status": "PARTIAL",
+      "gap_class": "LEGAL_APPROVAL_MISSING",
+      "evidence_refs": ["dataset/Contorno.shp", "config/exemplo_pedido_e0_dataset_atual.json"],
+      "resolved_parameter_ids": ["scope.target_field_ids", "scope.allow_cross_field_work", "scope.allow_cross_property_work", "scope.cross_property_permission_status"],
+      "notes": "Os talhoes demonstrativos estao identificados, mas o property_id e ilustrativo e nao ha evidencia cadastral ou permissao para continuidade entre propriedades.",
+      "next_actions": ["Confirmar imovel e titularidade/arrendamento.", "Reconciliar limite operacional com SIGEF/SICAR e documento do cliente.", "Registrar permissoes por divisa, portal, geometria e acao."]
+    },
+    {
+      "package_id": "SURVEY_VERTICAL",
+      "status": "PARTIAL",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": ["dataset/TERRENO_LIMPO.LAZ", "dataset/derived/audit_metrics.json"],
+      "resolved_parameter_ids": ["terrain.horizontal_crs"],
+      "notes": "O exemplo pressupoe CRS horizontal projetado, mas nao informa datum vertical nem possui checkpoints independentes. Diferenca entre superficies derivadas da mesma fonte nao constitui acuracia absoluta.",
+      "next_actions": ["Obter manifesto do voo/levantamento e transformacao vertical.", "Levantar checkpoints independentes ligados ao SGB.", "Calcular residuos e superficie de incerteza e comparar com a menor queda decisoria."]
+    },
+    {
+      "package_id": "TERRAIN_SURFACE_CONTEXT",
+      "status": "AVAILABLE_SCREENING",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": ["dataset/TERRENO_LIMPO.LAZ", "dataset/derived/dtm_1m.tif", "dataset/derived/slope_percent_1m.tif", "dataset/derived/contours_1m.gpkg", "dataset/derived/audit_metrics.json"],
+      "resolved_parameter_ids": ["terrain.dtm_dataset_ref"],
+      "notes": "O exemplo pressupoe MDT com cobertura interna completa para E0 e pontos classificados como solo; a fonte demonstrativa nao prova feicoes nao solo nem breaklines revisadas.",
+      "next_actions": ["Obter classificacao original ou ortomosaico para revisar feicoes.", "Levantar estradas, cristas, fundos, valas, bueiros e canais em 3D.", "Expandir o envelope onde houver contribuicao externa."]
+    },
+    {
+      "package_id": "AGRONOMIC_CONFIGURATION",
+      "status": "PARTIAL",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": ["config/exemplo_pedido_e0_dataset_atual.json"],
+      "resolved_parameter_ids": ["agronomy.row_spacing_m"],
+      "notes": "Espacamento de 1,5 m e uma hipotese E0 de baixa confianca; nao ha variedade, ciclo, arranjo por zona ou faixas de trafego confirmadas.",
+      "next_actions": ["Confirmar espacamento e arranjo por zona e periodo.", "Informar variedade, corte e calendario.", "Mapear faixas de trafego existentes ou declarar que serao geradas."]
+    },
+    {
+      "package_id": "YIELD_LOAD_EVENTS",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao existe produtividade historica, superficie P10/P50/P90, fluxo de massa calibrado ou reconciliacao com balanca.",
+      "next_actions": ["Solicitar mapas e historico por talhao, variedade e corte.", "Planejar calibracao de monitor/celula contra balanca.", "Criar identidade de carga e balanco por talhao e turno."]
+    },
+    {
+      "package_id": "SOIL_PROFILE_HYDRAULIC",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha zonas de solo, perfis/horizontes, textura, densidade, Ksat, infiltracao, erodibilidade, manejo ou inventario de erosoes.",
+      "next_actions": ["Estratificar campanha com relevo, manejo e mapas publicos.", "Executar perfis e laboratorio por horizonte.", "Medir infiltracao/Ksat com repeticoes e estado inicial de umidade.", "Inventariar erosoes e concentracoes em campo."]
+    },
+    {
+      "package_id": "SOIL_OPERATION_STATE",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha umidade correlacionada, resistencia a penetracao, precompressao, suporte ou regra de abertura/limite de carga por estado.",
+      "next_actions": ["Executar piloto de penetracao com umidade simultanea.", "Medir suporte/precompressao por zona e profundidade.", "Definir estados DRY/WET/DEGRADED e politica OPEN/LOAD_LIMITED/CLOSED."]
+    },
+    {
+      "package_id": "RAINFALL_DESIGN",
+      "status": "MISSING",
+      "gap_class": "CALIBRATION_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha IDF selecionada, periodo de serie, dominio, periodo de retorno, duracao, hietograma, evento antecedente ou aprovacao profissional.",
+      "next_actions": ["Inventariar estacoes SGB/HydroWeb/INMET proximas e representativas.", "Selecionar e versionar a IDF aplicavel.", "Aprovar eventos nominais, adversos e consecutivos por componente."]
+    },
+    {
+      "package_id": "FULL_CATCHMENT",
+      "status": "PARTIAL",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": ["dataset/derived/contributing_area_ha.tif", "dataset/derived/flow_direction.tif", "dataset/derived/flow_basins.tif", "dataset/derived/audit_metrics.json"],
+      "resolved_parameter_ids": [],
+      "notes": "Existe triagem de fluxo nao condicionado, mas o limite operacional pode receber fluxo externo. A bacia completa, entradas de borda e caminho ate receptor nao estao cobertos.",
+      "next_actions": ["Usar BHO/DEM publico para descobrir montante e jusante.", "Complementar topografia ate fechar a bacia e o receptor.", "Vistoriar sete travessias/convergencias candidatas e classificar entradas de borda."]
+    },
+    {
+      "package_id": "DRAINAGE_NETWORK",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao existe censo de carreadores, valas, canais, terracos, bueiros, CEV, secoes, receptores, obstrucao, manutencao ou caminho de falha.",
+      "next_actions": ["Executar inventario censitario com fotos datadas.", "Levantar inlet/outlet e secao de cada bueiro e ativo.", "Verificar receptores, tailwater e excedencia."]
+    },
+    {
+      "package_id": "CONSERVATION_RULE_PACK",
+      "status": "PARTIAL",
+      "gap_class": "CALIBRATION_MISSING",
+      "evidence_refs": ["config/cenarios_conservacionistas.json", "docs/METODOS_CONSERVACIONISTAS_REGIONAIS.md", "docs/LOGICA_ESD_E_CANAL_ESCOADOURO.md"],
+      "resolved_parameter_ids": [],
+      "notes": "Ha taxonomia e regras conceituais, mas o exemplo nao inclui rule-pack regional executavel/aprovado para PCE, PCX, C1, C2 e C3.",
+      "next_actions": ["Confirmar jurisdicao e metodo regional.", "Criar pack versionado com fonte, edicao, pagina, formula/tabela, dominio e validade.", "Calibrar PCE/PCX em dados locais e aprovar por responsavel tecnico."]
+    },
+    {
+      "package_id": "SUBSURFACE_HYDROLOGY",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha piezometria sazonal, lencol, surgencias, Ksat por horizonte, qualidade da agua, descarga ou especialista responsavel.",
+      "next_actions": ["Manter apenas mapa de suspeita quando houver sinal superficial.", "Executar diagnostico sazonal especializado se drenagem subsuperficial entrar no escopo."]
+    },
+    {
+      "package_id": "FLEET_IDENTITY_GEOMETRY",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": ["fleet.operations_in_scope"],
+      "notes": "O pedido declara somente FURROW com baixa confianca. Nao ha registro real de plantadora, colhedora, transbordo, caminhao, implementos, dimensoes ou composicao.",
+      "next_actions": ["Inventariar frota por fabricante, modelo, serie, opcionais e configuracao.", "Coletar manual/desenho OEM.", "Medir geometria 3D e articulacoes do conjunto completo."]
+    },
+    {
+      "package_id": "FLEET_LOAD_STABILITY",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha massa/carga por eixo, pneus/pressao, CG, suporte, frenagem, estabilidade ou limites aprovados por estado e superficie.",
+      "next_actions": ["Pesar composicoes vazia, parcial e carregada.", "Registrar pneus/esteiras e pressoes reais.", "Definir e validar envelope de greide, estabilidade e frenagem por estado."]
+    },
+    {
+      "package_id": "FLEET_WORK_TURN",
+      "status": "MISSING",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao existem ensaios de raio WORK, raio TURN, offtracking, tail swing, envelope varrido, cabecira ou perfil vertical do conjunto real.",
+      "next_actions": ["Desenhar protocolo seguro por movimento e estado.", "Executar ensaio GNSS do conjunto completo.", "Persistir trajetoria de cada unidade/eixo e envelope P95/maximo."]
+    },
+    {
+      "package_id": "CONTROLLER_GUIDANCE",
+      "status": "MISSING",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha modelo/display/firmware, formato, limites, comandos, round trip, simulador ou ensaio de seguimento na maquina.",
+      "next_actions": ["Identificar controlador e obter contrato OEM exato.", "Executar round trip e teste em simulador.", "Medir seguimento real, latencia, heading e dropout."]
+    },
+    {
+      "package_id": "PERFORMANCE_RELIABILITY",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha telemetria, distribuicoes de velocidade/ciclo/capacidade, combustivel, falhas, disponibilidade, manutencao ou custos.",
+      "next_actions": ["Integrar CAN/telemetria, geofences, OS, horimetro, abastecimento e ERP.", "Calibrar estados e validar distribuicoes em periodo independente."]
+    },
+    {
+      "package_id": "CONSTRAINTS_GENERAL",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": ["config/exemplo_pedido_e0_dataset_atual.json"],
+      "resolved_parameter_ids": ["constraints.inventory_review_status"],
+      "notes": "O inventario esta explicitamente NOT_REVIEWED. Nao ha carreadores, superficies operacionais, utilidades, irrigacao, estruturas, obstaculos, solo mole, inundacao ou erosao cadastrados.",
+      "next_actions": ["Executar inventario censitario multidisciplinar.", "Classificar efeito por operacao e areas nao revisadas.", "Criar superficies WORK/LIFT/CROSS/TURN aprovadas."]
+    },
+    {
+      "package_id": "POWER_CONSTRAINT",
+      "status": "NOT_APPLICABLE",
+      "gap_class": "NONE",
+      "evidence_refs": ["config/exemplo_pedido_e0_dataset_atual.json"],
+      "resolved_parameter_ids": ["constraints.overhead_power_line_inventory_status"],
+      "notes": "Exemplo ficticio em que o declarante informa ausencia de rede eletrica aerea; nenhum eixo ou buffer e aplicavel a esta revisao demonstrativa.",
+      "next_actions": ["Revalidar a declaracao se o limite do projeto mudar ou se uma nova interferencia eletrica for identificada."]
+    },
+    {
+      "package_id": "ENVIRONMENT_LEGAL",
+      "status": "MISSING",
+      "gap_class": "LEGAL_APPROVAL_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha hidrografia reconciliada, CAR/APP, feicao de campo, licenca, outorga, autorizacao ou responsabilidade tecnica espacializada.",
+      "next_actions": ["Importar SICAR/hidrografia para screening.", "Vistoriar cursos, nascentes, areas umidas e vegetacao.", "Registrar permissoes por geometria, acao, autoridade e vigencia."]
+    },
+    {
+      "package_id": "CONNECTIONS_PORTALS",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": ["dataset/derived/multifield_connection_screening.json"],
+      "resolved_parameter_ids": [],
+      "notes": "Ha oportunidades geometricas UNCONFIRMED, mas nao ha carreador, portal, piso, drenagem, largura, greide, envelope ou permissao. Pular talhao/fazenda permanece bloqueado.",
+      "next_actions": ["Vistoriar portais e gaps candidatos.", "Simular a frota completa nos acessos.", "Registrar permissoes e barreiras, especialmente energia."]
+    },
+    {
+      "package_id": "POA_SITE_LAYOUT",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao existem POAs fisicos, candidatos autorizados, geotecnia, drenagem, layout, giro, fila, capacidade ou medicoes de servico.",
+      "next_actions": ["Levantar POAs existentes e areas candidatas/proibidas.", "Medir solo, drenagem, acessos e interferencias.", "Projetar layout com envelope da frota e demanda simulada."]
+    },
+    {
+      "package_id": "LOGISTICS_ROAD",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha grafo roteavel, estado dos arcos, pontes/bueiros, cargas admissiveis, velocidades locais ou AET/permissoes por composicao.",
+      "next_actions": ["Levantar rede e gargalos.", "Inspecionar pontes/bueiros e obter limites documentais.", "Registrar veiculos e permissoes legais por rota."]
+    },
+    {
+      "package_id": "LOGISTICS_CYCLE",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha frota CTT, turnos, ciclos, eventos, despacho, filas, falhas, capacidade de recebimento ou meta de usina calibrados.",
+      "next_actions": ["Integrar eventos de operacao e usina em relogio comum.", "Calibrar capacidade, chegadas, servico e falhas.", "Definir politica de despacho e validar baseline/P95."]
+    },
+    {
+      "package_id": "CUT_TO_MILL",
+      "status": "MISSING",
+      "gap_class": "PROJECT_INPUT_MISSING",
+      "evidence_refs": [],
+      "resolved_parameter_ids": [],
+      "notes": "Nao ha timestamps rastreaveis do corte a moagem, laboratorio coerente, SLA local ou modelo de qualidade validado.",
+      "next_actions": ["Definir identidade de lote e sincronizar sistemas.", "Fechar massa e tempo entre corte, POA, balanca, descarga e moagem.", "Aprovar SLA local e planejar validacao de qualidade."]
+    },
+    {
+      "package_id": "QA_APPROVAL_LIFECYCLE",
+      "status": "PARTIAL",
+      "gap_class": "FIELD_VALIDATION_MISSING",
+      "evidence_refs": ["config/exemplo_pedido_e0_dataset_atual.json", "docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md", "docs/ROADMAP_FECHAMENTO_ADERENCIA_AGRONOMICA.md"],
+      "resolved_parameter_ids": ["qa.rule_pack_revision", "qa.constraint_revision", "qa.release_block_on_unreviewed_constraints"],
+      "notes": "A politica fail-closed e revisoes E0 existem, mas nao ha aprovacoes por dominio, piloto, aceite de campo, as built, plano de manutencao ou ciclo de vida.",
+      "next_actions": ["Definir fluxo de aprovacao e responsabilidade por dominio.", "Planejar piloto, ensaio de campo e criterios de aceite.", "Criar contratos de as built, degradacao, inspecao, reparo e custo por safra."]
+    }
+  ],
+  "capability_assessments": [
+    {"capability_id": "TOPO_E0_PRODUCTS", "status": "IMPLEMENTED_VERIFIED", "evidence_refs": ["scripts/audit_dataset.py", "scripts/generate_source_products.py", "dataset/derived/audit_metrics.json", "dataset/derived/source_product_metrics.json"], "notes": "Produtos topograficos E0 foram gerados diretamente das fontes e possuem metricas persistidas."},
+    {"capability_id": "CF0_GEOMETRY", "status": "IMPLEMENTED_VERIFIED", "evidence_refs": ["scripts/continuous_family.py", "scripts/generate_continuous_family.py", "scripts/verify_continuous_family.py", "tests/test_continuous_family.py", "tests/test_generate_continuous_family.py", "dataset/derived/cf0_smoke_12a/continuous_family_manifest.json"], "notes": "Motor geometrico CF0 1.2 existe e permanece HYDRAULIC_UNCONFIRMED; nao e guia ou C1/C2/C3."},
+    {"capability_id": "C1_ALIGNMENT_SCREENING", "status": "IMPLEMENTED_LIMITED", "evidence_refs": ["scripts/embedded_terrace_screening.py", "scripts/generate_embedded_terrace_screening.py", "scripts/verify_embedded_terrace_screening.py", "schemas/embedded-terrace-screening-stage.schema.json", "dataset/derived/embedded_terrace_screening_manifest.json"], "notes": "Gera sensibilidades TI de alinhamentos, faixas e recortes CF0C apenas como precursor geometrico; PCE, PCX, secao, superficie proposta, TD, hidraulica e guiamento permanecem bloqueados."},
+    {"capability_id": "PCE_ENGINE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md", "docs/METODOS_CONSERVACIONISTAS_REGIONAIS.md"], "notes": "Regras e limites de dominio estao documentados, mas nao ha solver calibrado."},
+    {"capability_id": "PCX_ENGINE", "status": "NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "Nao calcula chuva-excesso, hidrograma, armazenamento, secao, receptor ou falha."},
+    {"capability_id": "C1_CURVA_EMBUTIDA", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/PRODUTO_ANALITICO_DE_SULCACAO.md", "docs/METODOS_CONSERVACIONISTAS_REGIONAIS.md"], "notes": "Contrato de produto existe; solucionador e superficie proposta nao existem."},
+    {"capability_id": "C2_BASE_LARGA_PASSANTE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/PRODUTO_ANALITICO_DE_SULCACAO.md", "docs/METODOS_CONSERVACIONISTAS_REGIONAIS.md"], "notes": "Contrato existe; passabilidade, secao degradada e travessias nao sao calculadas."},
+    {"capability_id": "C3_ESD", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/LOGICA_ESD_E_CANAL_ESCOADOURO.md", "docs/METODOS_CONSERVACIONISTAS_REGIONAIS.md"], "notes": "ESD esta corretamente definido como sistema; nao ha solver de rede hidraulica dos sulcos."},
+    {"capability_id": "OPERATIONAL_PATH_STATE_ENGINE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/MOTOR_DE_CENARIOS_E_SULCACAO.md", "schemas/operational-surface-layer.schema.json"], "notes": "Estados guidance/work/movement estao especificados, mas nao sao emitidos por gerador integrado."},
+    {"capability_id": "FULL_FLEET_3D_SIMULATOR", "status": "NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "CF0 mede raio/greide estaticos; nao existe simulacao articulada 3D da frota completa."},
+    {"capability_id": "CONTROLLED_TRAFFIC_ENGINE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "Regras existem, mas nao ha plano persistente de faixas nem reconciliacao de bitolas."},
+    {"capability_id": "POA_STATIC", "status": "IMPLEMENTED_LIMITED", "evidence_refs": ["scripts/optimize_static_poa.py", "schemas/poa-static-stage-manifest.schema.json", "tests/test_optimize_static_poa.py"], "notes": "Otimizador estatico isolado existe; nao prova local de campo nem integra sulcacao, filas ou usina."},
+    {"capability_id": "POA_LOGISTICS", "status": "NOT_IMPLEMENTED", "evidence_refs": ["docs/POA_E_LOGISTICA_DE_COLHEITA.md"], "notes": "Nao ha simulacao integrada de eventos, despacho, filas, falhas e massa."},
+    {"capability_id": "GUIDANCE_EXPORT", "status": "NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "Nao ha exportador homologado por OEM/modelo/firmware ou ensaio de round trip."},
+    {"capability_id": "DTM_UNCERTAINTY_ENGINE", "status": "BLOCKED_BY_EVIDENCE", "evidence_refs": [], "notes": "Sem datum/checkpoints nao e possivel calibrar e propagar incerteza absoluta aos gates."},
+    {"capability_id": "SUBSURFACE_DRAINAGE_ENGINE", "status": "BLOCKED_BY_EVIDENCE", "evidence_refs": [], "notes": "Sem diagnostico hidrogeologico, o produto maximo e mapa de suspeita."},
+    {"capability_id": "LIFECYCLE_ENGINE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "Ciclo, estado degradado e O&M estao especificados, mas nao simulados."},
+    {"capability_id": "CUT_TO_MILL_ENGINE", "status": "SPECIFIED_NOT_IMPLEMENTED", "evidence_refs": ["docs/MATRIZ_AGRONOMICA_CONSERVACAO_COLHEITABILIDADE.md"], "notes": "Saidas e gates estao especificados, mas nao ha integracao temporal/massa/qualidade."}
+  ]
+}

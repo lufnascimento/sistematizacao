@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="TerraFlux: sistematizacao agricola rastreavel para cana-de-acucar."
+    />
+    <title>TerraFlux | Sistematizacao agricola</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232f6047'/%3E%3Cpath d='M15 17h34v9H37v25H27V26H15z' fill='white'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Navegacao principal">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <i data-lucide="land-plot"></i>
+          </span>
+          <span>
+            <strong>TerraFlux</strong>
+            <small>Sistematizacao agricola</small>
+          </span>
+        </div>
+
+        <nav class="primary-nav" id="primary-nav">
+          <button class="nav-item is-active" data-route="projects" type="button">
+            <i data-lucide="folder-kanban"></i>
+            <span>Projetos</span>
+          </button>
+          <button class="nav-item" data-route="runs" type="button">
+            <i data-lucide="activity"></i>
+            <span>Execucoes</span>
+          </button>
+          <button class="nav-item" data-route="library" type="button">
+            <i data-lucide="library-big"></i>
+            <span>Biblioteca</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-foot">
+          <div class="environment-status" id="environment-status" role="status">
+            <span class="status-dot is-checking"></span>
+            <span>
+              <strong>Verificando API</strong>
+              <small>Aguarde um instante</small>
+            </span>
+          </div>
+          <button class="nav-item" data-route="settings" type="button">
+            <i data-lucide="settings"></i>
+            <span>Configuracoes</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="workspace-shell">
+        <header class="topbar">
+          <div class="topbar-start">
+            <button
+              class="icon-button mobile-menu"
+              id="menu-toggle"
+              type="button"
+              title="Abrir menu"
+              aria-label="Abrir menu"
+              aria-expanded="false"
+            >
+              <i data-lucide="menu"></i>
+            </button>
+            <div class="breadcrumb" id="breadcrumb" aria-label="Caminho atual">
+              <span>Projetos</span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <div class="connection-banner" id="connection-banner" hidden>
+              <i data-lucide="flask-conical"></i>
+              <span>Dados demonstrativos</span>
+            </div>
+            <button
+              class="icon-button"
+              id="refresh-button"
+              type="button"
+              title="Atualizar dados"
+              aria-label="Atualizar dados"
+            >
+              <i data-lucide="refresh-cw"></i>
+            </button>
+            <button
+              class="icon-button notification-button"
+              type="button"
+              title="Notificacoes"
+              aria-label="Notificacoes"
+            >
+              <i data-lucide="bell"></i>
+              <span class="notification-count" id="notification-count">2</span>
+            </button>
+            <div class="user-menu" aria-label="Usuario atual">
+              <span class="avatar">LN</span>
+              <span class="user-copy">
+                <strong>Lucas Nascimento</strong>
+                <small>Administrador</small>
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <main id="main-content" class="main-content" tabindex="-1" aria-live="polite">
+          <div class="page-loading">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Preparando a area de trabalho...</p>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <dialog id="app-dialog" class="dialog">
+      <div class="dialog-frame">
+        <div class="dialog-header">
+          <div>
+            <span class="eyebrow" id="dialog-eyebrow">TerraFlux</span>
+            <h2 id="dialog-title">Janela</h2>
+          </div>
+          <button
+            class="icon-button"
+            id="dialog-close"
+            type="button"
+            title="Fechar"
+            aria-label="Fechar"
+          >
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="dialog-body" id="dialog-body"></div>
+      </div>
+    </dialog>
+
+    <template id="empty-state-template">
+      <div class="empty-state">
+        <span class="empty-icon"><i data-lucide="inbox"></i></span>
+        <h3>Nenhum item por aqui</h3>
+        <p>Crie o primeiro registro para iniciar.</p>
+      </div>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

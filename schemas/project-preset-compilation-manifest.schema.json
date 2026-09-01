@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/project-preset-compilation-manifest.schema.json",
+  "title": "TerraFlux project preset compilation manifest",
+  "description": "Manifesto de linhagem entre presets e o pedido efetivo consumido pelos motores E0/CF0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_type",
+    "compiler_revision",
+    "status",
+    "generated_at",
+    "package_id",
+    "project_id",
+    "compilation_package",
+    "sources",
+    "policy",
+    "summary",
+    "materialized_parameter_ids",
+    "withheld_parameter_ids",
+    "base_preset_conflict_ids",
+    "provenance_breakdown",
+    "parameter_decisions",
+    "request_validation",
+    "release_boundary",
+    "output_request",
+    "engine_lineage_join",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "manifest_type": {"const": "PROJECT_REQUEST_PRESET_COMPILATION"},
+    "compiler_revision": {"const": "1.0.0"},
+    "status": {"const": "COMPILED_E0_EVIDENCE_NEUTRAL"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "package_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "compilation_package": {"$ref": "#/$defs/file_record"},
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_request",
+        "preset_selection",
+        "preset_resolution",
+        "parameter_catalog",
+        "request_schema",
+        "acquisition_catalog",
+        "reference_model_catalog",
+        "preset_catalog"
+      ],
+      "properties": {
+        "base_request": {"$ref": "#/$defs/file_record"},
+        "preset_selection": {"$ref": "#/$defs/file_record"},
+        "preset_resolution": {"$ref": "#/$defs/file_record"},
+        "parameter_catalog": {"$ref": "#/$defs/file_record"},
+        "request_schema": {"$ref": "#/$defs/file_record"},
+        "acquisition_catalog": {"$ref": "#/$defs/file_record"},
+        "reference_model_catalog": {"$ref": "#/$defs/file_record"},
+        "preset_catalog": {"$ref": "#/$defs/file_record"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_merge",
+        "system_e0_materialization",
+        "custom_value_materialization",
+        "reference_materialization",
+        "unresolved_evidence_materialization",
+        "conflict_policy"
+      ],
+      "properties": {
+        "parameter_merge": {"const": "BASE_REQUEST_AUTHORITATIVE"},
+        "system_e0_materialization": {"const": "E0_ASSUMPTION_AND_OPTIMIZER_ONLY"},
+        "custom_value_materialization": {"const": "BASE_REQUEST_WITH_FULL_PROVENANCE_ONLY"},
+        "reference_materialization": {"const": "NEVER"},
+        "unresolved_evidence_materialization": {"const": "NEVER"},
+        "conflict_policy": {"const": "KEEP_BASE_AND_REPORT"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "base_parameter_count",
+        "compiled_parameter_count",
+        "preserved_base_parameter_count",
+        "materialized_e0_parameter_count",
+        "withheld_parameter_count",
+        "base_preset_conflict_count",
+        "custom_selection_parameter_count",
+        "custom_selection_confirmed_by_base_count",
+        "auto_materialized_fail_closed_count",
+        "preserved_base_fail_closed_parameter_count",
+        "withheld_fail_closed_parameter_count",
+        "project_evidence_resolved_by_selection",
+        "project_evidence_resolved_by_compiler",
+        "requested_delivery_level",
+        "maximum_delivery_level_from_compilation"
+      ],
+      "properties": {
+        "base_parameter_count": {"type": "integer", "minimum": 1},
+        "compiled_parameter_count": {"type": "integer", "minimum": 1},
+        "preserved_base_parameter_count": {"type": "integer", "minimum": 1},
+        "materialized_e0_parameter_count": {"type": "integer", "minimum": 0},
+        "withheld_parameter_count": {"type": "integer", "minimum": 0},
+        "base_preset_conflict_count": {"type": "integer", "minimum": 0},
+        "custom_selection_parameter_count": {"type": "integer", "minimum": 0},
+        "custom_selection_confirmed_by_base_count": {"type": "integer", "minimum": 0},
+        "auto_materialized_fail_closed_count": {"const": 0},
+        "preserved_base_fail_closed_parameter_count": {"type": "integer", "minimum": 0},
+        "withheld_fail_closed_parameter_count": {"type": "integer", "minimum": 0},
+        "project_evidence_resolved_by_selection": {"const": 0},
+        "project_evidence_resolved_by_compiler": {"const": 0},
+        "requested_delivery_level": {"const": "E0_TRIAGEM"},
+        "maximum_delivery_level_from_compilation": {"const": "E0_TRIAGEM"}
+      },
+      "additionalProperties": false
+    },
+    "materialized_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "withheld_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "base_preset_conflict_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "provenance_breakdown": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preset_materialized_parameter_ids",
+        "custom_selection_confirmed_by_base_parameter_ids",
+        "fail_closed_materialized_parameter_ids",
+        "fail_closed_preserved_from_base_parameter_ids",
+        "fail_closed_withheld_parameter_ids"
+      ],
+      "properties": {
+        "preset_materialized_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "custom_selection_confirmed_by_base_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "fail_closed_materialized_parameter_ids": {"type": "array", "maxItems": 0},
+        "fail_closed_preserved_from_base_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "fail_closed_withheld_parameter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "parameter_decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/parameter_decision"}
+    },
+    "request_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "parameter_count",
+        "dataset_count",
+        "field_boundary_dataset_id",
+        "dtm_dataset_id",
+        "constraint_layer_count",
+        "power_inventory_status",
+        "poa_strategy_modes",
+        "poa_objective_profiles",
+        "release_blockers",
+        "warnings"
+      ],
+      "properties": {
+        "request_id": {"type": "string", "minLength": 1},
+        "parameter_count": {"type": "integer", "minimum": 1},
+        "dataset_count": {"type": "integer", "minimum": 1},
+        "field_boundary_dataset_id": {"type": "string", "minLength": 1},
+        "dtm_dataset_id": {"type": "string", "minLength": 1},
+        "constraint_layer_count": {"type": "integer", "minimum": 0},
+        "power_inventory_status": {"enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]},
+        "poa_strategy_modes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "poa_objective_profiles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "release_blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "release_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hydraulic_status", "guidance_authorized", "project_evidence_promoted", "release_blockers"],
+      "properties": {
+        "hydraulic_status": {"const": "HYDRAULIC_UNCONFIRMED"},
+        "guidance_authorized": {"const": false},
+        "project_evidence_promoted": {"const": false},
+        "release_blockers": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "output_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "role", "sha256", "canonical_sha256", "request_id"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "role": {"const": "COMPILED_PROJECT_GENERATION_REQUEST"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "canonical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "request_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "engine_lineage_join": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_sha256", "e0_manifest_pointer", "cf0_manifest_pointer", "rule"],
+      "properties": {
+        "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "e0_manifest_pointer": {"const": "generation_request.request_sha256"},
+        "cf0_manifest_pointer": {"const": "project_request_ref.sha256"},
+        "rule": {"type": "string", "minLength": 1}
+      }
+    },
+    "warnings": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "file_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "role", "size_bytes", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "parameter_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_id",
+        "decision",
+        "preset_status",
+        "parameter_class",
+        "relation",
+        "base_value",
+        "preset_proposed_value",
+        "project_evidence_resolved_by_compiler"
+      ],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "decision": {"enum": ["PRESERVE_BASE_REQUEST", "MATERIALIZE_E0_NON_EVIDENCE_VALUE", "WITHHOLD_PRESET_PROPOSAL"]},
+        "preset_status": {"type": "string", "minLength": 1},
+        "parameter_class": {"enum": ["USER_FACT", "CALCULATED", "RULE_PACK", "OPTIMIZER", "E0_ASSUMPTION"]},
+        "relation": {"enum": ["NO_PRESET_VALUE", "MATCHES_PRESET_PROPOSAL", "BASE_OVERRIDES_PRESET_PROPOSAL", "NOT_PRESENT_IN_BASE"]},
+        "base_value": {},
+        "preset_proposed_value": {},
+        "withhold_reason": {"type": "string", "minLength": 1},
+        "custom_provenance_matches_base": {"type": "boolean"},
+        "project_evidence_resolved_by_compiler": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"decision": {"const": "WITHHOLD_PRESET_PROPOSAL"}},
+            "required": ["decision"]
+          },
+          "then": {"required": ["withhold_reason"]}
+        }
+      ]
+    }
+  }
+}

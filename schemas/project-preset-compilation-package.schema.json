@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/project-preset-compilation-package.schema.json",
+  "title": "TerraFlux project preset compilation package",
+  "description": "Pacote versionado que liga pedido-base, selecao e resolucao de presets a um pedido E0 compilado, sem promover referencias a evidencia do projeto.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "package_id",
+    "project_id",
+    "created_at",
+    "compiler_revision",
+    "sources",
+    "policy",
+    "output"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "package_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "compiler_revision": {"const": "1.0.0"},
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_request",
+        "preset_selection",
+        "preset_resolution",
+        "parameter_catalog",
+        "request_schema",
+        "acquisition_catalog",
+        "reference_model_catalog",
+        "preset_catalog"
+      ],
+      "properties": {
+        "base_request": {"$ref": "#/$defs/file_ref"},
+        "preset_selection": {"$ref": "#/$defs/file_ref"},
+        "preset_resolution": {"$ref": "#/$defs/file_ref"},
+        "parameter_catalog": {"$ref": "#/$defs/file_ref"},
+        "request_schema": {"$ref": "#/$defs/file_ref"},
+        "acquisition_catalog": {"$ref": "#/$defs/file_ref"},
+        "reference_model_catalog": {"$ref": "#/$defs/file_ref"},
+        "preset_catalog": {"$ref": "#/$defs/file_ref"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_merge",
+        "system_e0_materialization",
+        "custom_value_materialization",
+        "reference_materialization",
+        "unresolved_evidence_materialization",
+        "conflict_policy"
+      ],
+      "properties": {
+        "parameter_merge": {"const": "BASE_REQUEST_AUTHORITATIVE"},
+        "system_e0_materialization": {"const": "E0_ASSUMPTION_AND_OPTIMIZER_ONLY"},
+        "custom_value_materialization": {"const": "BASE_REQUEST_WITH_FULL_PROVENANCE_ONLY"},
+        "reference_materialization": {"const": "NEVER"},
+        "unresolved_evidence_materialization": {"const": "NEVER"},
+        "conflict_policy": {"const": "KEEP_BASE_AND_REPORT"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_path", "manifest_path", "request_id", "created_at"],
+      "properties": {
+        "request_path": {"type": "string", "minLength": 1},
+        "manifest_path": {"type": "string", "minLength": 1},
+        "request_id": {"type": "string", "minLength": 1},
+        "created_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "$defs": {
+    "file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

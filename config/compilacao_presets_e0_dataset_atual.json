@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "package_id": "compile-presets-e0-exemplo-publico-v1",
+  "project_id": "projeto-demonstracao",
+  "created_at": "2026-08-24T13:30:00-03:00",
+  "compiler_revision": "1.0.0",
+  "sources": {
+    "base_request": {
+      "path": "config/exemplo_pedido_e0_dataset_atual.json",
+      "sha256": "7fde570dcca9e60a905303dc009a70db76e1800b498ff8e49454a2876030ee30"
+    },
+    "preset_selection": {
+      "path": "config/selecao_presets_e0_dataset_atual.json",
+      "sha256": "ce61b7fecec5c7205e3177cd86a1e1e8adfd915a1d74fce39490bc92689f406c"
+    },
+    "preset_resolution": {
+      "path": "config/exemplo_resolucao_presets_e0.json",
+      "sha256": "92796f57f31f4b1abfa41d64dbcf5f667ef53720bdedeeb9656280e56fde7c0c"
+    },
+    "parameter_catalog": {
+      "path": "config/catalogo_parametros_projeto.json",
+      "sha256": "a0557341348dc8dba0e1f503b8667bf18cf73568b919fa152a8f652facb0f012"
+    },
+    "request_schema": {
+      "path": "schemas/project-generation-request.schema.json",
+      "sha256": "1e2b1d15cfa5d4e2b5141bb1e586dcca100d908e9fabca0be15b5a02f2c6ac47"
+    },
+    "acquisition_catalog": {
+      "path": "config/catalogo_aquisicao_insumos.json",
+      "sha256": "c270024bcfdb4368132e39eb65370fda1ad4cb9ec47e34d4780d01c0f15363c0"
+    },
+    "reference_model_catalog": {
+      "path": "config/catalogo_modelos_reais_cana.json",
+      "sha256": "aaba55b022271dfd8c09a829979d8a0b96185be697735b9b93315f250a284fef"
+    },
+    "preset_catalog": {
+      "path": "config/catalogo_presets_sistema.json",
+      "sha256": "4ccfff3e46fa4f2cf5d556245a12a024065ad84e2504e5bdf2cfa8e44e933cb7"
+    }
+  },
+  "policy": {
+    "parameter_merge": "BASE_REQUEST_AUTHORITATIVE",
+    "system_e0_materialization": "E0_ASSUMPTION_AND_OPTIMIZER_ONLY",
+    "custom_value_materialization": "BASE_REQUEST_WITH_FULL_PROVENANCE_ONLY",
+    "reference_materialization": "NEVER",
+    "unresolved_evidence_materialization": "NEVER",
+    "conflict_policy": "KEEP_BASE_AND_REPORT"
+  },
+  "output": {
+    "request_path": "dataset/derived/pedido_compilado_presets_e0_dataset_atual.json",
+    "manifest_path": "dataset/derived/preset_request_compilation_manifest.json",
+    "request_id": "e0-exemplo-publico-presets-v1",
+    "created_at": "2026-08-24T13:30:00-03:00"
+  }
+}

@@ -1,0 +1,1121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/continuous-family-stage.schema.json",
+  "title": "TerraFlux CF0 continuous-family stage result",
+  "description": "Contrato independente do estagio CF0. O produto comprova somente viabilidade geometrica de familias continuas; nao aprova curva embutida, base larga/passante, ESD ou qualquer capacidade hidraulica.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_type",
+    "release",
+    "generated_at",
+    "project_request_ref",
+    "stage_status",
+    "crs",
+    "inputs",
+    "constraints",
+    "release_limitations",
+    "domain_assembly",
+    "solver_parameters",
+    "candidates",
+    "qa",
+    "layer_counts",
+    "outputs"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.2.0"},
+    "manifest_type": {"const": "CONTINUOUS_FAMILY_STAGE_RESULT"},
+    "release": {"const": "CF0_GEOMETRIC_SCREENING"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "project_request_ref": {
+      "type": "object",
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "stage_status": {
+      "enum": ["HYDRAULIC_UNCONFIRMED", "NO_FEASIBLE_FAMILY"],
+      "description": "CF0 nunca publica aprovacao hidraulica. Havendo ao menos uma familia GEOMETRIC_PASS, o estagio permanece HYDRAULIC_UNCONFIRMED; sem familia viavel, usa NO_FEASIBLE_FAMILY."
+    },
+    "crs": {"$ref": "#/$defs/crs"},
+    "inputs": {
+      "type": "object",
+      "required": ["work_area", "terrain_dtm", "project_request"],
+      "properties": {
+        "work_area": {"$ref": "#/$defs/inputDatasetRecord"},
+        "terrain_dtm": {"$ref": "#/$defs/inputDatasetRecord"},
+        "project_request": {"$ref": "#/$defs/fileRecord"},
+        "operational_surfaces": {"$ref": "#/$defs/inputDatasetRecord"},
+        "absolute_barriers": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/inputDatasetRecord"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "required": [
+        "power_inventory_status",
+        "power_barrier_application",
+        "operational_surfaces_status",
+        "absolute_barrier_count"
+      ],
+      "properties": {
+        "power_inventory_status": {"enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]},
+        "power_barrier_application": {
+          "enum": ["APPLIED", "NOT_APPLICABLE_DECLARED_NONE", "NOT_APPLIED_NOT_REVIEWED"]
+        },
+        "operational_surfaces_status": {"enum": ["PROVIDED", "PARTIAL", "NOT_REVIEWED"]},
+        "absolute_barrier_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Quantidade de datasets declarados em inputs.absolute_barriers; o verificador recompõe a contagem a partir da lista de entradas."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"power_inventory_status": {"const": "PROVIDED"}}},
+          "then": {"properties": {"power_barrier_application": {"const": "APPLIED"}}}
+        },
+        {
+          "if": {"properties": {"power_inventory_status": {"const": "DECLARED_NONE"}}},
+          "then": {"properties": {"power_barrier_application": {"const": "NOT_APPLICABLE_DECLARED_NONE"}}}
+        },
+        {
+          "if": {"properties": {"power_inventory_status": {"const": "NOT_REVIEWED"}}},
+          "then": {"properties": {"power_barrier_application": {"const": "NOT_APPLIED_NOT_REVIEWED"}}}
+        }
+      ]
+    },
+    "release_limitations": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "CF0_NOT_FOR_GUIDANCE",
+          "HYDRAULIC_UNCONFIRMED",
+          "RADIUS_REQUIREMENT_NOT_PROVIDED",
+          "POWER_INVENTORY_NOT_REVIEWED",
+          "OPERATIONAL_SURFACES_INCOMPLETE",
+          "ABSOLUTE_BARRIER_STAGE_REQUIRED",
+          "FIELD_VALIDATION_REQUIRED"
+        ]
+      },
+      "contains": {"const": "CF0_NOT_FOR_GUIDANCE"}
+    },
+    "domain_assembly": {
+      "type": "object",
+      "required": [
+        "status",
+        "cross_field_requested",
+        "cadastral_boundaries_used_as_work_edges",
+        "geometry_method",
+        "outer_headland_m",
+        "obstacle_clearance_m",
+        "work_block_filter",
+        "work_blocks",
+        "excluded_components",
+        "blocker_codes"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ONE_WORK_BLOCK_PER_FIELD",
+            "CONNECTED_COMPONENTS_PER_FIELD",
+            "CROSS_FIELD_DISSOLVED",
+            "BLOCKED_CROSS_FIELD_UNCONFIRMED"
+          ]
+        },
+        "cross_field_requested": {"type": "boolean"},
+        "cadastral_boundaries_used_as_work_edges": {"type": "boolean"},
+        "geometry_method": {"const": "BUFFERED_FIELD_BOUNDARY_V1"},
+        "outer_headland_m": {"type": "number", "minimum": 0},
+        "obstacle_clearance_m": {"type": "number", "minimum": 0},
+        "work_block_filter": {
+          "type": "object",
+          "required": [
+            "revision",
+            "grid_cell_estimate_method",
+            "minimum_grid_cell_count",
+            "effective_minimum_area_m2",
+            "width_method",
+            "minimum_width_row_spacing_factor",
+            "effective_minimum_width_m"
+          ],
+          "properties": {
+            "revision": {"const": "CF0_WORK_BLOCK_SUPPORT_V1"},
+            "grid_cell_estimate_method": {"const": "FLOOR_AREA_DIVIDED_BY_GRID_CELL_AREA"},
+            "minimum_grid_cell_count": {"type": "integer", "minimum": 1},
+            "effective_minimum_area_m2": {"type": "number", "exclusiveMinimum": 0},
+            "width_method": {"const": "MINIMUM_ROTATED_RECTANGLE_SHORT_SIDE"},
+            "minimum_width_row_spacing_factor": {"type": "number", "exclusiveMinimum": 0},
+            "effective_minimum_width_m": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "work_blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["work_block_id", "field_ids", "component_index", "usable_area_m2"],
+            "properties": {
+              "work_block_id": {"type": "string", "minLength": 1},
+              "field_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"type": "string", "minLength": 1}
+              },
+              "component_index": {"type": "integer", "minimum": 1},
+              "usable_area_m2": {"type": "number", "exclusiveMinimum": 0}
+            },
+            "additionalProperties": false
+          }
+        },
+        "excluded_components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field_id",
+              "component_index",
+              "area_m2",
+              "minimum_rotated_width_m",
+              "estimated_grid_cell_count",
+              "reason_codes"
+            ],
+            "properties": {
+              "field_id": {"type": "string", "minLength": 1},
+              "component_index": {"type": "integer", "minimum": 1},
+              "area_m2": {"type": "number", "exclusiveMinimum": 0},
+              "minimum_rotated_width_m": {"type": "number", "minimum": 0},
+              "estimated_grid_cell_count": {"type": "integer", "minimum": 0},
+              "reason_codes": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "AREA_BELOW_CF0_WORK_BLOCK_MINIMUM",
+                    "WIDTH_BELOW_CF0_WORK_BLOCK_MINIMUM"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "blocker_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "solver_parameters": {
+      "type": "object",
+      "required": [
+        "solver_revision",
+        "grid_resolution_m",
+        "row_spacing_m",
+        "minimum_work_path_radius_m",
+        "radius_requirement_status",
+        "orientation",
+        "phase",
+        "extraction",
+        "candidate_profiles"
+      ],
+      "properties": {
+        "solver_revision": {"const": "cf0-continuous-family-1.2.0"},
+        "grid_resolution_m": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Resolução quadrada do grid CF0 em metros. Todos os rasters devem usar pixel (r,-r), rotação zero e origem alinhada a múltiplos de r."
+        },
+        "row_spacing_m": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_work_path_radius_m": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0,
+          "description": "Nunca recebe default universal. Null significa requisito da frota ausente e obriga radius_requirement_status=NOT_PROVIDED."
+        },
+        "radius_requirement_status": {"enum": ["DECLARED", "NOT_PROVIDED"]},
+        "orientation": {
+          "type": "object",
+          "required": [
+            "representation",
+            "smoothing_radius_m",
+            "minimum_coherence",
+            "maximum_low_coherence_fraction",
+            "maximum_frustration_deg",
+            "maximum_abrupt_edge_fraction",
+            "maximum_cycle_conflict_fraction",
+            "minimum_terrain_gradient",
+            "gradient_floor"
+          ],
+          "properties": {
+            "representation": {"const": "AXIAL_DOUBLE_ANGLE"},
+            "smoothing_radius_m": {"type": "number", "minimum": 0},
+            "minimum_coherence": {"type": "number", "minimum": 0, "maximum": 1},
+            "maximum_low_coherence_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "maximum_frustration_deg": {"type": "number", "minimum": 0, "maximum": 90},
+            "maximum_abrupt_edge_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "maximum_cycle_conflict_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "minimum_terrain_gradient": {"type": "number", "minimum": 0},
+            "gradient_floor": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "phase": {
+          "type": "object",
+          "required": [
+            "method",
+            "gauge_method",
+            "gauge_anchor_value_m",
+            "eikonal_role",
+            "seed_method",
+            "target_gradient_norm",
+            "eikonal_residual_tolerance",
+            "integrability_residual_tolerance",
+            "maximum_iterations",
+            "convergence_tolerance",
+            "regularization_weight",
+            "boundary_weight",
+            "phase_scale_min",
+            "phase_scale_max",
+            "phase_scale_relaxation",
+            "lsqr_tolerance",
+            "lsqr_iteration_limit",
+            "maximum_integrability_residual_rms",
+            "maximum_integrability_angular_error_p95_deg",
+            "maximum_eikonal_residual_p95",
+            "maximum_critical_fraction",
+            "cut_locus_laplacian_threshold",
+            "maximum_cut_locus_fraction",
+            "solve_mask_required_component_count",
+            "solve_mask_component_connectivity"
+          ],
+          "properties": {
+            "method": {"const": "ALTERNATING_POSITIVE_SCALE_PROJECTION"},
+            "gauge_method": {"const": "ZERO_AT_LEXICOGRAPHIC_FIRST_VALID_CELL_PER_COMPONENT"},
+            "gauge_anchor_value_m": {"const": 0},
+            "eikonal_role": {"const": "RESIDUAL_GATE_ONLY"},
+            "seed_method": {"const": "POISSON_PROJECTION"},
+            "target_gradient_norm": {"const": 1},
+            "eikonal_residual_tolerance": {"type": "number", "minimum": 0},
+            "integrability_residual_tolerance": {"type": "number", "minimum": 0},
+            "maximum_iterations": {"type": "integer", "minimum": 1},
+            "convergence_tolerance": {"type": "number", "exclusiveMinimum": 0},
+            "regularization_weight": {"type": "number", "minimum": 0},
+            "boundary_weight": {"type": "number", "minimum": 0},
+            "phase_scale_min": {"type": "number", "exclusiveMinimum": 0},
+            "phase_scale_max": {"type": "number", "exclusiveMinimum": 0},
+            "phase_scale_relaxation": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "lsqr_tolerance": {"type": "number", "exclusiveMinimum": 0},
+            "lsqr_iteration_limit": {"type": "integer", "minimum": 1},
+            "maximum_integrability_residual_rms": {"type": "number", "minimum": 0},
+            "maximum_integrability_angular_error_p95_deg": {"type": "number", "minimum": 0, "maximum": 90},
+            "maximum_eikonal_residual_p95": {"type": "number", "minimum": 0},
+            "maximum_critical_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "cut_locus_laplacian_threshold": {"type": "number", "minimum": 0},
+            "maximum_cut_locus_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "solve_mask_required_component_count": {"type": "integer", "const": 1},
+            "solve_mask_component_connectivity": {"type": "integer", "const": 4}
+          },
+          "additionalProperties": false
+        },
+        "extraction": {
+          "type": "object",
+          "required": [
+            "level_interval_m",
+            "phase_level_equation",
+            "phase_level_index_scope",
+            "row_index_definition",
+            "phase_offset_search_revision",
+            "phase_offset_fractions",
+            "phase_offset_selection_rule",
+            "phase_offset_search_scope",
+            "minimum_row_length_m",
+            "endpoint_tolerance_m",
+            "spacing_tolerance_fraction",
+            "spacing_tolerance_m",
+            "maximum_spacing_outside_tolerance_fraction",
+            "coverage_proxy_minimum",
+            "coverage_proxy_maximum",
+            "curvature_sample_step_m",
+            "spline_method",
+            "spline_max_deviation_m",
+            "endpoint_snap_tolerance_m",
+            "endpoint_extension_limit_m",
+            "endpoint_extension_factor",
+            "solve_mask_rasterization",
+            "contour_extrapolation_method",
+            "contour_extrapolation_halo_cells",
+            "contour_gradient_lsq_max_radius_cells",
+            "contour_gradient_lsq_max_relative_residual",
+            "contour_gradient_lsq_max_condition_number",
+            "contour_gradient_lsq_minimum_neighbor_count",
+            "contour_gradient_lsq_required_rank",
+            "contour_gradient_component_connectivity",
+            "endpoint_extension_mode",
+            "spline_representation_method",
+            "spline_representation_tolerance_fraction"
+          ],
+          "properties": {
+            "level_interval_m": {"type": "number", "exclusiveMinimum": 0},
+            "phase_level_equation": {"const": "phase_level_m = phase_level_index * row_spacing_m + phase_offset_m"},
+            "phase_level_index_scope": {"const": "CANDIDATE_WORK_BLOCK_PHASE_LEVEL"},
+            "row_index_definition": {"const": "UNIQUE_NONNEGATIVE_OPERATIONAL_SEQUENCE_PER_CANDIDATE_WORK_BLOCK"},
+            "phase_offset_search_revision": {"const": "CF0_PHASE_OFFSET_QUARTER_SPACING_V1"},
+            "phase_offset_fractions": {
+              "type": "array",
+              "prefixItems": [
+                {"const": 0},
+                {"const": 0.25},
+                {"const": 0.5},
+                {"const": 0.75}
+              ],
+              "minItems": 4,
+              "maxItems": 4
+            },
+            "phase_offset_selection_rule": {"const": "PASS_ONLY_MAX_MIN_RADIUS_MIN_SPACING_OUTSIDE_MIN_SPACING_P95_MIN_COVERAGE_ERROR_MIN_OFFSET"},
+            "phase_offset_search_scope": {"const": "DISCRETE_CONFIGURED_OFFSETS_NOT_CONTINUOUS_GAUGE_INVARIANCE"},
+            "minimum_row_length_m": {"type": "number", "minimum": 0},
+            "endpoint_tolerance_m": {"type": "number", "exclusiveMinimum": 0},
+            "spacing_tolerance_fraction": {"type": "number", "minimum": 0},
+            "spacing_tolerance_m": {"type": "number", "minimum": 0},
+            "maximum_spacing_outside_tolerance_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+            "coverage_proxy_minimum": {"type": "number", "minimum": 0},
+            "coverage_proxy_maximum": {"type": "number", "minimum": 0},
+            "curvature_sample_step_m": {"type": "number", "exclusiveMinimum": 0},
+            "spline_method": {"const": "PARAMETRIC_BSPLINE_C2"},
+            "spline_max_deviation_m": {"type": "number", "exclusiveMinimum": 0},
+            "endpoint_snap_tolerance_m": {"type": "number", "exclusiveMinimum": 0},
+            "endpoint_extension_limit_m": {"type": "number", "exclusiveMinimum": 0},
+            "endpoint_extension_factor": {"type": "number", "exclusiveMinimum": 0},
+            "solve_mask_rasterization": {"const": "ALL_TOUCHED_SUPERCOVER"},
+            "contour_extrapolation_method": {"const": "FIRST_ORDER_LOCAL_LSQ_GRADIENT_FAIL_CLOSED"},
+            "contour_extrapolation_halo_cells": {"type": "integer", "const": 1},
+            "contour_gradient_lsq_max_radius_cells": {"type": "integer", "const": 2},
+            "contour_gradient_lsq_max_relative_residual": {"type": "number", "const": 0.30},
+            "contour_gradient_lsq_max_condition_number": {"type": "number", "const": 100.0},
+            "contour_gradient_lsq_minimum_neighbor_count": {"type": "integer", "const": 3},
+            "contour_gradient_lsq_required_rank": {"type": "integer", "const": 2},
+            "contour_gradient_component_connectivity": {"type": "integer", "const": 4},
+            "endpoint_extension_mode": {"const": "TANGENT_ONLY_FAIL_CLOSED"},
+            "spline_representation_method": {"const": "ADAPTIVE_CHORD_ERROR_PRESERVE_VERTICES"},
+            "spline_representation_tolerance_fraction": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "exclusiveMaximum": 1,
+              "const": 0.10
+            }
+          },
+          "additionalProperties": false
+        },
+        "candidate_profiles": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/candidateProfile"},
+          "contains": {
+            "type": "object",
+            "properties": {"candidate_id": {"const": "CF0A_CONSERVACAO"}},
+            "required": ["candidate_id"]
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"radius_requirement_status": {"const": "DECLARED"}}},
+          "then": {"properties": {"minimum_work_path_radius_m": {"type": "number", "exclusiveMinimum": 0}}}
+        },
+        {
+          "if": {"properties": {"radius_requirement_status": {"const": "NOT_PROVIDED"}}},
+          "then": {"properties": {"minimum_work_path_radius_m": {"const": null}}}
+        }
+      ]
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/candidateResult"}
+    },
+    "qa": {"$ref": "#/$defs/stageQa"},
+    "layer_counts": {
+      "type": "object",
+      "required": ["continuous_rows", "diagnostic_rows", "family_summary", "hydraulic_precheck"],
+      "properties": {
+        "continuous_rows": {"type": "integer", "minimum": 0},
+        "diagnostic_rows": {"type": "integer", "minimum": 0},
+        "family_summary": {"type": "integer", "minimum": 1},
+        "hydraulic_precheck": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["geopackage", "map", "rasters"],
+      "properties": {
+        "geopackage": {"$ref": "#/$defs/fileRecord"},
+        "map": {"$ref": "#/$defs/fileRecord"},
+        "rasters": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/rasterRecord"}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "fileRecord": {
+      "type": "object",
+      "required": ["path", "size_bytes", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "layer": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "inputDatasetRecord": {
+      "type": "object",
+      "required": [
+        "path",
+        "integrity_scope",
+        "source_bundle_sha256",
+        "source_files"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "integrity_scope": {"const": "SOURCE_BUNDLE"},
+        "source_bundle_sha256": {"$ref": "#/$defs/sha256"},
+        "source_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/fileRecord"}
+        },
+        "layer": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "id_field": {"type": "string", "minLength": 1},
+        "field_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "crs": {
+      "type": "object",
+      "required": ["authority", "code", "projected", "linear_unit", "wkt_sha256"],
+      "properties": {
+        "authority": {"const": "EPSG"},
+        "code": {"type": "integer", "minimum": 1},
+        "projected": {"const": true},
+        "linear_unit": {"enum": ["metre", "meter", "metre (international)"]},
+        "wkt_sha256": {
+          "$ref": "#/$defs/sha256",
+          "description": "SHA-256 do WKT exportado pela camada de area de trabalho resolvida. O verificador recompõe este valor a partir da fonte, além de comparar semanticamente o CRS dos demais artefatos."
+        }
+      },
+      "additionalProperties": false
+    },
+    "candidateProfile": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "label",
+        "orientation_weights"
+      ],
+      "properties": {
+        "candidate_id": {
+          "enum": ["CF0A_CONSERVACAO", "CF0B_EQUILIBRIO", "CF0C_OPERACAO"]
+        },
+        "label": {"type": "string", "minLength": 1},
+        "orientation_weights": {
+          "type": "object",
+          "required": ["contour", "long_axis", "boundary"],
+          "properties": {
+            "contour": {"type": "number", "minimum": 0},
+            "long_axis": {"type": "number", "minimum": 0},
+            "boundary": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "phaseOffsetTrial": {
+      "type": "object",
+      "required": [
+        "phase_offset_fraction",
+        "phase_offset_m",
+        "geometric_status",
+        "blocker_codes",
+        "extracted_row_count",
+        "extracted_total_length_m",
+        "minimum_radius_order_class",
+        "minimum_radius_m",
+        "radius_status",
+        "spacing_error_p95_m",
+        "final_spacing_outside_tolerance_fraction",
+        "coverage_proxy_ratio",
+        "spline_failure_count",
+        "internal_endpoint_count",
+        "intersection_count",
+        "self_intersection_count",
+        "loop_count"
+      ],
+      "properties": {
+        "phase_offset_fraction": {"enum": [0, 0.25, 0.5, 0.75]},
+        "phase_offset_m": {"type": "number", "minimum": 0},
+        "geometric_status": {"enum": ["GEOMETRIC_PASS", "NO_FEASIBLE_FAMILY"]},
+        "blocker_codes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "extracted_row_count": {"type": "integer", "minimum": 0},
+        "extracted_total_length_m": {"type": "number", "minimum": 0},
+        "minimum_radius_order_class": {"enum": ["FINITE", "UNBOUNDED_STRAIGHT", "UNAVAILABLE"]},
+        "minimum_radius_m": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "radius_status": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]},
+        "spacing_error_p95_m": {"type": ["number", "null"], "minimum": 0},
+        "final_spacing_outside_tolerance_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "coverage_proxy_ratio": {"type": ["number", "null"], "minimum": 0},
+        "spline_failure_count": {"type": "integer", "minimum": 0},
+        "internal_endpoint_count": {"type": "integer", "minimum": 0},
+        "intersection_count": {"type": "integer", "minimum": 0},
+        "self_intersection_count": {"type": "integer", "minimum": 0},
+        "loop_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"geometric_status": {"const": "GEOMETRIC_PASS"}}},
+          "then": {
+            "properties": {
+              "blocker_codes": {"maxItems": 0},
+              "extracted_row_count": {"minimum": 1},
+              "extracted_total_length_m": {"exclusiveMinimum": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"geometric_status": {"const": "NO_FEASIBLE_FAMILY"}}},
+          "then": {"properties": {"blocker_codes": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"minimum_radius_order_class": {"const": "FINITE"}}},
+          "then": {"properties": {"minimum_radius_m": {"type": "number", "exclusiveMinimum": 0}}}
+        },
+        {
+          "if": {"properties": {"minimum_radius_order_class": {"enum": ["UNBOUNDED_STRAIGHT", "UNAVAILABLE"]}}},
+          "then": {"properties": {"minimum_radius_m": {"const": null}}}
+        }
+      ]
+    },
+    "phaseGauge": {
+      "type": "object",
+      "required": ["method", "anchor_phase_value_m", "anchors"],
+      "properties": {
+        "method": {"enum": ["ZERO_AT_LEXICOGRAPHIC_FIRST_VALID_CELL_PER_COMPONENT", "NOT_APPLICABLE_WORK_BLOCK_BELOW_GRID_SUPPORT"]},
+        "anchor_phase_value_m": {"type": ["number", "null"]},
+        "anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["solver_row", "solver_column", "x_m", "y_m"],
+            "properties": {
+              "solver_row": {"type": "integer", "minimum": 0},
+              "solver_column": {"type": "integer", "minimum": 0},
+              "x_m": {"type": "number"},
+              "y_m": {"type": "number"}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"method": {"const": "ZERO_AT_LEXICOGRAPHIC_FIRST_VALID_CELL_PER_COMPONENT"}}},
+          "then": {
+            "properties": {
+              "anchor_phase_value_m": {"const": 0},
+              "anchors": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"method": {"const": "NOT_APPLICABLE_WORK_BLOCK_BELOW_GRID_SUPPORT"}}},
+          "then": {
+            "properties": {
+              "anchor_phase_value_m": {"const": null},
+              "anchors": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    },
+    "phaseOffsetSelection": {
+      "type": "object",
+      "required": [
+        "revision",
+        "selection_rule",
+        "search_scope",
+        "selection_status",
+        "selection_key_order",
+        "coverage_proxy_target_ratio",
+        "phase_offset_role",
+        "selected_phase_offset_fraction",
+        "selected_phase_offset_m",
+        "diagnostic_phase_offset_fraction",
+        "diagnostic_phase_offset_m",
+        "diagnostic_selection_rule",
+        "attempted_offsets",
+        "row_spacing_m",
+        "level_equation",
+        "phase_level_index_scope",
+        "row_index_definition",
+        "phase_gauge"
+      ],
+      "properties": {
+        "revision": {"const": "CF0_PHASE_OFFSET_QUARTER_SPACING_V1"},
+        "selection_rule": {"const": "PASS_ONLY_MAX_MIN_RADIUS_MIN_SPACING_OUTSIDE_MIN_SPACING_P95_MIN_COVERAGE_ERROR_MIN_OFFSET"},
+        "search_scope": {"const": "DISCRETE_CONFIGURED_OFFSETS_NOT_CONTINUOUS_GAUGE_INVARIANCE"},
+        "selection_status": {"enum": ["SELECTED_GEOMETRIC_PASS", "NO_FEASIBLE_PHASE_OFFSET", "NOT_EVALUATED_WORK_BLOCK_BELOW_GRID_SUPPORT"]},
+        "selection_key_order": {
+          "const": [
+            "MAXIMUM_MINIMUM_WORK_PATH_RADIUS_M",
+            "MINIMUM_FINAL_SPACING_OUTSIDE_TOLERANCE_FRACTION",
+            "MINIMUM_SPACING_ERROR_P95_M",
+            "MINIMUM_ABSOLUTE_COVERAGE_PROXY_ERROR_FROM_1",
+            "MINIMUM_PHASE_OFFSET_FRACTION"
+          ]
+        },
+        "coverage_proxy_target_ratio": {"const": 1},
+        "phase_offset_role": {"enum": ["SELECTED_PASS", "DIAGNOSTIC_ONLY", "NOT_EVALUATED"]},
+        "selected_phase_offset_fraction": {"enum": [0, 0.25, 0.5, 0.75, null]},
+        "selected_phase_offset_m": {"type": ["number", "null"], "minimum": 0},
+        "diagnostic_phase_offset_fraction": {"enum": [0, 0.25, 0.5, 0.75, null]},
+        "diagnostic_phase_offset_m": {"type": ["number", "null"], "minimum": 0},
+        "diagnostic_selection_rule": {"const": "LOWEST_CONFIGURED_PHASE_OFFSET_V1"},
+        "attempted_offsets": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/phaseOffsetTrial"}
+        },
+        "row_spacing_m": {"type": "number", "exclusiveMinimum": 0},
+        "level_equation": {"const": "phase_level_m = phase_level_index * row_spacing_m + phase_offset_m"},
+        "phase_level_index_scope": {"const": "CANDIDATE_WORK_BLOCK_PHASE_LEVEL"},
+        "row_index_definition": {"const": "UNIQUE_NONNEGATIVE_OPERATIONAL_SEQUENCE_PER_CANDIDATE_WORK_BLOCK"},
+        "phase_gauge": {"$ref": "#/$defs/phaseGauge"}
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"selection_status": {"const": "SELECTED_GEOMETRIC_PASS"}}},
+          "then": {
+            "properties": {
+              "phase_offset_role": {"const": "SELECTED_PASS"},
+              "selected_phase_offset_fraction": {"type": "number"},
+              "selected_phase_offset_m": {"type": "number"},
+              "diagnostic_phase_offset_fraction": {"const": null},
+              "diagnostic_phase_offset_m": {"const": null},
+              "attempted_offsets": {"minItems": 4, "maxItems": 4}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"selection_status": {"const": "NO_FEASIBLE_PHASE_OFFSET"}}},
+          "then": {
+            "properties": {
+              "phase_offset_role": {"const": "DIAGNOSTIC_ONLY"},
+              "selected_phase_offset_fraction": {"const": null},
+              "selected_phase_offset_m": {"const": null},
+              "diagnostic_phase_offset_fraction": {"type": "number"},
+              "diagnostic_phase_offset_m": {"type": "number"},
+              "attempted_offsets": {"minItems": 4, "maxItems": 4}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"selection_status": {"const": "NOT_EVALUATED_WORK_BLOCK_BELOW_GRID_SUPPORT"}}},
+          "then": {
+            "properties": {
+              "phase_offset_role": {"const": "NOT_EVALUATED"},
+              "selected_phase_offset_fraction": {"const": null},
+              "selected_phase_offset_m": {"const": null},
+              "diagnostic_phase_offset_fraction": {"const": null},
+              "diagnostic_phase_offset_m": {"const": null},
+              "attempted_offsets": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    },
+    "contourExtrapolationQa": {
+      "type": "object",
+      "required": [
+        "method",
+        "gradient_estimation_status",
+        "halo_cells",
+        "gradient_lsq_max_radius_cells",
+        "gradient_lsq_max_relative_residual",
+        "gradient_lsq_max_condition_number",
+        "gradient_lsq_minimum_neighbor_count",
+        "gradient_lsq_required_rank",
+        "gradient_component_connectivity",
+        "halo_cell_count",
+        "supported_halo_cell_count",
+        "unsupported_halo_cell_count",
+        "direct_gradient_source_count",
+        "lsq_gradient_source_count",
+        "unestimable_gradient_source_count",
+        "missing_gradient_component_count",
+        "gradient_lsq_max_radius_used_cells",
+        "gradient_lsq_residual_rms_max",
+        "gradient_lsq_relative_residual_max",
+        "gradient_lsq_condition_number_max"
+      ],
+      "properties": {
+        "method": {"const": "FIRST_ORDER_LOCAL_LSQ_GRADIENT_FAIL_CLOSED"},
+        "gradient_estimation_status": {"enum": ["PASS", "FAIL_CLOSED", "NOT_EVALUATED"]},
+        "halo_cells": {"type": "integer", "const": 1},
+        "gradient_lsq_max_radius_cells": {"type": "integer", "const": 2},
+        "gradient_lsq_max_relative_residual": {"type": "number", "const": 0.30},
+        "gradient_lsq_max_condition_number": {"type": "number", "const": 100.0},
+        "gradient_lsq_minimum_neighbor_count": {"type": "integer", "const": 3},
+        "gradient_lsq_required_rank": {"type": "integer", "const": 2},
+        "gradient_component_connectivity": {"type": "integer", "const": 4},
+        "halo_cell_count": {"type": "integer", "minimum": 0},
+        "supported_halo_cell_count": {"type": "integer", "minimum": 0},
+        "unsupported_halo_cell_count": {"type": "integer", "minimum": 0},
+        "direct_gradient_source_count": {"type": "integer", "minimum": 0},
+        "lsq_gradient_source_count": {"type": "integer", "minimum": 0},
+        "unestimable_gradient_source_count": {"type": "integer", "minimum": 0},
+        "missing_gradient_component_count": {"type": "integer", "minimum": 0},
+        "gradient_lsq_max_radius_used_cells": {"type": "integer", "minimum": 0, "maximum": 2},
+        "gradient_lsq_residual_rms_max": {"type": ["number", "null"], "minimum": 0},
+        "gradient_lsq_relative_residual_max": {"type": ["number", "null"], "minimum": 0, "maximum": 0.30},
+        "gradient_lsq_condition_number_max": {"type": ["number", "null"], "minimum": 1, "maximum": 100.0}
+      },
+      "additionalProperties": false
+    },
+    "candidateResult": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "field_id",
+        "work_block_id",
+        "family_id",
+        "phase_offset_m",
+        "phase_offset_fraction",
+        "phase_offset_role",
+        "phase_offset_selection",
+        "contour_extrapolation_qa",
+        "geometric_status",
+        "hydraulic_status",
+        "row_count",
+        "total_length_m",
+        "diagnostic_row_count",
+        "diagnostic_total_length_m",
+        "metrics",
+        "blocker_codes"
+      ],
+      "properties": {
+        "candidate_id": {
+          "enum": ["CF0A_CONSERVACAO", "CF0B_EQUILIBRIO", "CF0C_OPERACAO"]
+        },
+        "field_id": {"type": "string", "minLength": 1},
+        "work_block_id": {"type": "string", "minLength": 1},
+        "family_id": {"type": "string", "minLength": 1},
+        "phase_offset_m": {"type": ["number", "null"], "minimum": 0},
+        "phase_offset_fraction": {"enum": [0, 0.25, 0.5, 0.75, null]},
+        "phase_offset_role": {"enum": ["SELECTED_PASS", "DIAGNOSTIC_ONLY", "NOT_EVALUATED"]},
+        "phase_offset_selection": {"$ref": "#/$defs/phaseOffsetSelection"},
+        "contour_extrapolation_qa": {"$ref": "#/$defs/contourExtrapolationQa"},
+        "geometric_status": {"enum": ["GEOMETRIC_PASS", "NO_FEASIBLE_FAMILY"]},
+        "hydraulic_status": {"const": "HYDRAULIC_UNCONFIRMED"},
+        "row_count": {"type": "integer", "minimum": 0},
+        "total_length_m": {"type": "number", "minimum": 0},
+        "diagnostic_row_count": {"type": "integer", "minimum": 0},
+        "diagnostic_total_length_m": {"type": "number", "minimum": 0},
+        "metrics": {"$ref": "#/$defs/candidateMetrics"},
+        "blocker_codes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"geometric_status": {"const": "GEOMETRIC_PASS"}}},
+          "then": {
+            "properties": {
+              "row_count": {"minimum": 1},
+              "total_length_m": {"exclusiveMinimum": 0},
+              "diagnostic_row_count": {"const": 0},
+              "diagnostic_total_length_m": {"const": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"geometric_status": {"const": "NO_FEASIBLE_FAMILY"}}},
+          "then": {
+            "properties": {
+              "row_count": {"const": 0},
+              "total_length_m": {"const": 0},
+              "blocker_codes": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "blocker_codes": {"contains": {"const": "WORK_BLOCK_BELOW_CF0_GRID_SUPPORT"}}
+            }
+          },
+          "then": {
+            "properties": {
+              "metrics": {
+                "properties": {
+                  "solver_gate_metrics": {
+                    "properties": {"solve_mask_component_count": {"const": null}}
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "metrics": {
+                "properties": {
+                  "solver_gate_metrics": {
+                    "properties": {"solve_mask_component_count": {"type": "integer", "minimum": 1}}
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "metrics": {
+                "properties": {
+                  "solver_gate_metrics": {
+                    "properties": {
+                      "solve_mask_component_count": {"type": "integer", "not": {"const": 1}}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "geometric_status": {"const": "NO_FEASIBLE_FAMILY"},
+              "blocker_codes": {"contains": {"const": "WORK_BLOCK_SOLVE_MASK_DISCONNECTED"}}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "metrics": {
+                "properties": {
+                  "solver_gate_metrics": {
+                    "properties": {"solve_mask_component_count": {"const": 1}}
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "blocker_codes": {
+                "not": {"contains": {"const": "WORK_BLOCK_SOLVE_MASK_DISCONNECTED"}}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "candidateMetrics": {
+      "type": "object",
+      "description": "Metricas da geometria diagnostica antes da decisao. Em NO_FEASIBLE_FAMILY elas explicam a rejeicao, embora row_count e a camada publicada sejam zero.",
+      "required": [
+        "spacing_error_p95_m",
+        "eikonal_residual_p95",
+        "integrability_residual_p95",
+        "orientation_misalignment_p95_deg",
+        "minimum_radius_m",
+        "radius_status",
+        "maximum_abs_grade_pct",
+        "internal_endpoint_count",
+        "intersection_count",
+        "self_intersection_count",
+        "loop_count",
+        "coverage_proxy_ratio",
+        "solver_gate_metrics"
+      ],
+      "properties": {
+        "spacing_error_p95_m": {"type": ["number", "null"], "minimum": 0},
+        "eikonal_residual_p95": {"type": ["number", "null"], "minimum": 0},
+        "integrability_residual_p95": {"type": ["number", "null"], "minimum": 0},
+        "orientation_misalignment_p95_deg": {"type": ["number", "null"], "minimum": 0, "maximum": 90},
+        "minimum_radius_m": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0,
+          "description": "Menor valor conservador da familia entre o raio analitico da spline e o raio reamostrado da LineString persistida em curvature_sample_step_m. Nunca pode superar o raio sustentado pela geometria persistida alem da tolerancia de discretizacao; em GEOMETRIC_PASS deve atender ao requisito minimo declarado da frota."
+        },
+        "radius_status": {"enum": ["PASS", "FAIL", "NOT_EVALUATED"]},
+        "maximum_abs_grade_pct": {"type": ["number", "null"], "minimum": 0},
+        "internal_endpoint_count": {"type": "integer", "minimum": 0},
+        "intersection_count": {"type": "integer", "minimum": 0},
+        "self_intersection_count": {"type": "integer", "minimum": 0},
+        "loop_count": {"type": "integer", "minimum": 0},
+        "coverage_proxy_ratio": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Proxy comprimento_planimetrico * espacamento / area_util. Pode exceder 1 e nao representa fracao areal exata. O gate CF0 declarado e 0.70 a 1.30."
+        },
+        "solver_gate_metrics": {"$ref": "#/$defs/solverGateMetrics"}
+      },
+      "additionalProperties": false
+    },
+    "solverGateMetrics": {
+      "type": "object",
+      "description": "Medicoes internas independentes dos indicadores P95. Todos os campos sao obrigatorios; null so e permitido quando o work block nao oferece suporte de grid e o candidato declara WORK_BLOCK_BELOW_CF0_GRID_SUPPORT.",
+      "required": [
+        "solve_mask_component_count",
+        "low_coherence_fraction",
+        "abrupt_edge_fraction",
+        "cycle_conflict_fraction",
+        "integrability_residual_rms",
+        "critical_fraction",
+        "singular_fraction",
+        "cut_locus_fraction",
+        "solver_spacing_p05_m",
+        "solver_spacing_p95_m",
+        "solver_spacing_outside_tolerance_fraction",
+        "final_spacing_outside_tolerance_fraction",
+        "spline_failure_count"
+      ],
+      "properties": {
+        "solve_mask_component_count": {"type": ["integer", "null"], "minimum": 1},
+        "low_coherence_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "abrupt_edge_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "cycle_conflict_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "integrability_residual_rms": {"type": ["number", "null"], "minimum": 0},
+        "critical_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "singular_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "cut_locus_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "solver_spacing_p05_m": {"type": ["number", "null"], "minimum": 0},
+        "solver_spacing_p95_m": {"type": ["number", "null"], "minimum": 0},
+        "solver_spacing_outside_tolerance_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "final_spacing_outside_tolerance_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "spline_failure_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "stageQa": {
+      "type": "object",
+      "required": [
+        "candidate_field_count",
+        "geometric_pass_count",
+        "no_feasible_family_count",
+        "hydraulic_unconfirmed_count",
+        "radius_not_evaluated_count",
+        "invalid_geometry_count",
+        "non_3d_geometry_count",
+        "internal_endpoint_count",
+        "intersection_count",
+        "nonfinite_coordinate_count",
+        "raster_invalid_count",
+        "gate_failures"
+      ],
+      "properties": {
+        "candidate_field_count": {"type": "integer", "minimum": 1},
+        "geometric_pass_count": {"type": "integer", "minimum": 0},
+        "no_feasible_family_count": {"type": "integer", "minimum": 0},
+        "hydraulic_unconfirmed_count": {"type": "integer", "minimum": 1},
+        "radius_not_evaluated_count": {"type": "integer", "minimum": 0},
+        "invalid_geometry_count": {"type": "integer", "minimum": 0},
+        "non_3d_geometry_count": {"type": "integer", "minimum": 0},
+        "internal_endpoint_count": {"type": "integer", "minimum": 0},
+        "intersection_count": {"type": "integer", "minimum": 0},
+        "nonfinite_coordinate_count": {"type": "integer", "minimum": 0},
+        "raster_invalid_count": {"type": "integer", "minimum": 0},
+        "gate_failures": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "rasterRecord": {
+      "type": "object",
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256",
+        "candidate_id",
+        "field_id",
+        "work_block_id",
+        "raster_role",
+        "width",
+        "height",
+        "band_count",
+        "geotransform",
+        "nodata"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_id": {
+          "enum": ["CF0A_CONSERVACAO", "CF0B_EQUILIBRIO", "CF0C_OPERACAO"]
+        },
+        "field_id": {"type": "string", "minLength": 1},
+        "work_block_id": {"type": "string", "minLength": 1},
+        "raster_role": {"enum": ["orientation_coherence", "phase"]},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "band_count": {"type": "integer", "minimum": 1, "maximum": 2},
+        "geotransform": {
+          "type": "array",
+          "prefixItems": [
+            {"type": "number"}, {"type": "number"}, {"type": "number"},
+            {"type": "number"}, {"type": "number"}, {"type": "number"}
+          ],
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "nodata": {"type": ["number", "null"]}
+      },
+      "additionalProperties": false
+    }
+  }
+}

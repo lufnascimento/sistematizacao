@@ -1,0 +1,377 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "e0-exemplo-publico-v1",
+  "project_id": "projeto-demonstracao",
+  "created_at": "2026-08-11T12:00:00-03:00",
+  "requested_delivery_level": "E0_TRIAGEM",
+  "revisions": {
+    "parameter_catalog_revision": "1.2.0",
+    "terrain_revision": "dtm-1m-current",
+    "fleet_revision": "not-supplied-e0",
+    "rule_pack_revision": "e0-screening-only",
+    "constraint_revision": "example-declared-no-power-v1",
+    "hydrology_revision": "screening-current",
+    "logistics_revision": null,
+    "uncertainty_set_revision": null
+  },
+  "scope": {
+    "field_ids": ["TALHAO-DEMO-A", "TALHAO-DEMO-B"],
+    "property_ids": ["IMOVEL-DEMO"],
+    "cross_field_generation": false,
+    "cross_property_generation": false,
+    "analysis_buffer_m": 0
+  },
+  "input_datasets": [
+    {
+      "dataset_id": "dtm-1m-current",
+      "role": "DTM",
+      "format": "TIF",
+      "source_ref": "dataset/example/dtm_1m.tif",
+      "revision": "current",
+      "captured_at": "2026-06-23T00:00:00-03:00",
+      "responsible": {
+        "name": "dataset-received",
+        "organization": "project-audit",
+        "role": "data-custodian",
+        "identifier": null
+      },
+      "crs": {
+        "horizontal": "EPSG:31982",
+        "vertical": null,
+        "horizontal_unit": "m",
+        "vertical_unit": "m"
+      },
+      "geometry_type": null,
+      "checksum_sha256": null,
+      "qa_status": "VALIDATED"
+    },
+    {
+      "dataset_id": "field-boundary-current",
+      "role": "FIELD_BOUNDARY",
+      "format": "GPKG",
+      "source_ref": "dataset/example/field_boundaries.gpkg",
+      "layer_name": "field_boundaries",
+      "id_field": "field_id",
+      "revision": "contorno-current",
+      "captured_at": "2026-06-23T00:00:00-03:00",
+      "responsible": {
+        "name": "dataset-received",
+        "organization": "project-audit",
+        "role": "data-custodian",
+        "identifier": null
+      },
+      "crs": {
+        "horizontal": "EPSG:31982",
+        "vertical": null,
+        "horizontal_unit": "m",
+        "vertical_unit": null
+      },
+      "geometry_type": "Polygon",
+      "checksum_sha256": null,
+      "qa_status": "VALIDATED"
+    }
+  ],
+  "constraint_inventory": {
+    "general_review_status": "NOT_REVIEWED",
+    "overhead_power_line": {
+      "status": "DECLARED_NONE",
+      "layer_ids": [],
+      "declaration_ref": "example-declaration-no-power-v1",
+      "declared_at": "2026-08-24T10:31:41-03:00",
+      "responsible": {
+        "name": "example-declarant",
+        "organization": "example-organization",
+        "role": "project-declarant",
+        "identifier": null
+      }
+    },
+    "notes": "Exemplo ficticio de declaracao de ausencia de rede eletrica aerea. O inventario geral de outras interferencias permanece NOT_REVIEWED."
+  },
+  "constraint_layers": [],
+  "parameter_values": [
+    {
+      "parameter_id": "scope.target_field_ids",
+      "parameter_class": "USER_FACT",
+      "value": ["TALHAO-DEMO-A", "TALHAO-DEMO-B"],
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "dataset/example/field_boundaries.gpkg",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "example-boundary-v1",
+        "applicability": "PROJECT",
+        "method": "field identifiers read from the supplied boundary layer"
+      }
+    },
+    {
+      "parameter_id": "scope.target_property_ids",
+      "parameter_class": "USER_FACT",
+      "value": ["IMOVEL-DEMO"],
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-audit-placeholder-property",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "LOW",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "opaque placeholder; legal property identity still pending"
+      }
+    },
+    {
+      "parameter_id": "scope.allow_cross_field_work",
+      "parameter_class": "USER_FACT",
+      "value": false,
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-fail-closed-policy",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "disabled because portals and constraints are unreviewed"
+      }
+    },
+    {
+      "parameter_id": "scope.allow_cross_property_work",
+      "parameter_class": "USER_FACT",
+      "value": false,
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-fail-closed-policy",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "disabled because legal boundaries and permissions are pending"
+      }
+    },
+    {
+      "parameter_id": "scope.cross_property_permission_status",
+      "parameter_class": "USER_FACT",
+      "value": "NOT_APPLICABLE",
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-no-cross-property-request",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "cross-property generation is disabled"
+      }
+    },
+    {
+      "parameter_id": "terrain.dtm_dataset_ref",
+      "parameter_class": "USER_FACT",
+      "value": "dtm-1m-current",
+      "unit": null,
+      "provenance": {
+        "origin": "UPLOADED",
+        "source_ref": "dataset/example/dtm_1m.tif",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "MEDIUM",
+        "revision": "dtm-1m-current",
+        "applicability": "PROJECT",
+        "method": "derived from supplied ground-classified point cloud"
+      }
+    },
+    {
+      "parameter_id": "terrain.horizontal_crs",
+      "parameter_class": "USER_FACT",
+      "value": "EPSG:31982",
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "dataset-spatial-reference",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "HIGH",
+        "revision": "current",
+        "applicability": "PROJECT",
+        "method": "read from supplied spatial metadata"
+      }
+    },
+    {
+      "parameter_id": "agronomy.row_spacing_m",
+      "parameter_class": "USER_FACT",
+      "value": 1.5,
+      "unit": "m",
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-illustrative-assumption-confirm-before-e1",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "LOW",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "value used by the existing E0 experiment; client confirmation pending"
+      }
+    },
+    {
+      "parameter_id": "fleet.operations_in_scope",
+      "parameter_class": "USER_FACT",
+      "value": ["FURROW"],
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-geometric-scope",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "LOW",
+        "revision": "e0-only",
+        "applicability": "PROJECT",
+        "method": "geometry screening only; no fleet validation"
+      }
+    },
+    {
+      "parameter_id": "constraints.inventory_review_status",
+      "parameter_class": "USER_FACT",
+      "value": "NOT_REVIEWED",
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "dataset-audit-gap-register",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "not-reviewed-e0",
+        "applicability": "PROJECT",
+        "method": "no complete obstacle inventory was supplied"
+      }
+    },
+    {
+      "parameter_id": "constraints.overhead_power_line_inventory_status",
+      "parameter_class": "USER_FACT",
+      "value": "DECLARED_NONE",
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "example-declaration-no-power-v1",
+        "captured_at": "2026-08-24T10:31:41-03:00",
+        "responsible": {"name": "example-declarant", "organization": "example-organization", "role": "project-declarant", "identifier": null},
+        "confidence": "HIGH",
+        "revision": "example-declared-no-power-v1",
+        "applicability": "PROJECT",
+        "method": "explicit client declaration that no overhead power line exists in the project area"
+      }
+    },
+    {
+      "parameter_id": "connections.minimum_preferred_shot_length_m",
+      "parameter_class": "OPTIMIZER",
+      "value": 0,
+      "unit": "m",
+      "provenance": {
+        "origin": "OPTIMIZER",
+        "source_ref": "e0-neutral-objective",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "LOW",
+        "revision": "e0-only",
+        "applicability": "SCENARIO",
+        "method": "no preferred minimum used while connections are disabled"
+      }
+    },
+    {
+      "parameter_id": "objectives.selection_mode",
+      "parameter_class": "OPTIMIZER",
+      "value": "PARETO",
+      "unit": null,
+      "provenance": {
+        "origin": "OPTIMIZER",
+        "source_ref": "portfolio-policy",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "portfolio-2.1.0",
+        "applicability": "SCENARIO",
+        "method": "hard gates followed by Pareto comparison"
+      }
+    },
+    {
+      "parameter_id": "qa.rule_pack_revision",
+      "parameter_class": "USER_FACT",
+      "value": "e0-screening-only",
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "config/cenarios_conservacionistas.json",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "LOW",
+        "revision": "2.1.0-e0",
+        "applicability": "PROJECT",
+        "method": "screening rules only; no regional executive rule pack"
+      }
+    },
+    {
+      "parameter_id": "qa.constraint_revision",
+      "parameter_class": "USER_FACT",
+      "value": "not-reviewed-e0",
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "dataset-audit-gap-register",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "dataset-audit", "organization": "project-audit", "role": "technical-auditor", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "not-reviewed-e0",
+        "applicability": "PROJECT",
+        "method": "explicitly unresolved constraint inventory"
+      }
+    },
+    {
+      "parameter_id": "qa.release_block_on_unreviewed_constraints",
+      "parameter_class": "RULE_PACK",
+      "value": true,
+      "unit": null,
+      "provenance": {
+        "origin": "RULE_PACK",
+        "source_ref": "config/cenarios_conservacionistas.json#interference_policy",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": {"name": "technical-policy", "organization": "project-audit", "role": "rule-pack-owner", "identifier": null},
+        "confidence": "VERIFIED",
+        "revision": "2.1.0",
+        "applicability": "PROJECT",
+        "method": "fail-closed release policy"
+      }
+    }
+  ],
+  "scenario_request": {
+    "conservation_macros": ["C1_CURVA_EMBUTIDA", "C2_BASE_LARGA_PASSANTE", "C3_ESD"],
+    "connection_modes": ["OC0_ISOLADO"],
+    "poa_strategy_modes": ["NOT_REQUESTED"],
+    "poa_objective_profiles": ["NOT_REQUESTED"],
+    "logistics_simulation_modes": ["NOT_REQUESTED"],
+    "coupling_policy": "SEQUENTIAL_SCREENING",
+    "uncertainty_cases": ["E0_TOPOGRAPHIC_ONLY"]
+  },
+  "objective_policy": {
+    "selection_mode": "PARETO",
+    "hard_gate_policy": "FILTER_BEFORE_SCORING",
+    "objectives": [
+      {
+        "metric_id": "topographic_screening_diversity",
+        "direction": "MAXIMIZE",
+        "priority": 1,
+        "weight": null
+      }
+    ]
+  },
+  "release_policy": {
+    "block_on_unreviewed_constraints": true,
+    "maximum_release_with_unreviewed_power": "E0_GEOMETRIC_ONLY",
+    "allow_safety_gate_override": false,
+    "require_professional_approval": ["ELECTRICAL_BARRIER", "HYDRAULIC_DESIGN", "POA_SITE", "E2_RELEASE", "E3_RELEASE"]
+  },
+  "overrides": []
+}

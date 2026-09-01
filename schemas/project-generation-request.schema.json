@@ -1,0 +1,816 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/project-generation-request.schema.json",
+  "title": "TerraFlux project generation request",
+  "description": "Pedido versionado para gerar cenarios de sistematizacao, sulcacao, conexao entre talhoes e POA/logistica.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "request_id",
+    "project_id",
+    "created_at",
+    "requested_delivery_level",
+    "revisions",
+    "scope",
+    "input_datasets",
+    "constraint_inventory",
+    "constraint_layers",
+    "parameter_values",
+    "scenario_request",
+    "objective_policy",
+    "release_policy",
+    "overrides"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requested_delivery_level": {
+      "$ref": "#/$defs/deliveryLevel"
+    },
+    "revisions": {
+      "$ref": "#/$defs/revisions"
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "input_datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/inputDataset"
+      }
+    },
+    "constraint_inventory": {
+      "$ref": "#/$defs/constraintInventory"
+    },
+    "constraint_layers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/constraintLayer"
+      }
+    },
+    "parameter_values": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/parameterValue"
+      },
+      "contains": {
+        "type": "object",
+        "properties": {
+          "parameter_id": {
+            "const": "constraints.overhead_power_line_inventory_status"
+          }
+        },
+        "required": ["parameter_id"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "scenario_request": {
+      "$ref": "#/$defs/scenarioRequest"
+    },
+    "objective_policy": {
+      "$ref": "#/$defs/objectivePolicy"
+    },
+    "release_policy": {
+      "$ref": "#/$defs/releasePolicy"
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/override"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "constraint_inventory": {
+            "properties": {
+              "overhead_power_line": {
+                "properties": {
+                  "status": {"const": "PROVIDED"}
+                },
+                "required": ["status"]
+              }
+            },
+            "required": ["overhead_power_line"]
+          }
+        },
+        "required": ["constraint_inventory"]
+      },
+      "then": {
+        "properties": {
+          "constraint_layers": {
+            "contains": {
+              "type": "object",
+              "properties": {
+                "type": {"const": "OVERHEAD_POWER_LINE_AXIS"}
+              },
+              "required": ["type"]
+            },
+            "minContains": 1
+          },
+          "parameter_values": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "parameter_id": {"const": "constraints.overhead_power_line_axis_dataset_ref"}
+                  },
+                  "required": ["parameter_id"]
+                }
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "parameter_id": {"const": "constraints.overhead_power_line_exclusion_half_width_m"}
+                  },
+                  "required": ["parameter_id"]
+                }
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "parameter_id": {"const": "constraints.overhead_power_line_work_behavior"}
+                  },
+                  "required": ["parameter_id"]
+                }
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "parameter_id": {"const": "constraints.overhead_power_line_transit_policy"}
+                  },
+                  "required": ["parameter_id"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "constraint_inventory": {
+            "properties": {
+              "overhead_power_line": {
+                "properties": {
+                  "status": {"const": "DECLARED_NONE"}
+                },
+                "required": ["status"]
+              }
+            },
+            "required": ["overhead_power_line"]
+          }
+        },
+        "required": ["constraint_inventory"]
+      },
+      "then": {
+        "properties": {
+          "constraint_layers": {
+            "not": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "type": {"const": "OVERHEAD_POWER_LINE_AXIS"}
+                },
+                "required": ["type"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "constraint_inventory": {
+            "properties": {
+              "overhead_power_line": {
+                "properties": {
+                  "status": {"const": "NOT_REVIEWED"}
+                },
+                "required": ["status"]
+              }
+            },
+            "required": ["overhead_power_line"]
+          }
+        },
+        "required": ["constraint_inventory"]
+      },
+      "then": {
+        "properties": {
+          "release_policy": {
+            "properties": {
+              "maximum_release_with_unreviewed_power": {
+                "const": "E0_GEOMETRIC_ONLY"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "deliveryLevel": {
+      "enum": ["E0_TRIAGEM", "E1_OPERACIONAL", "E2_CONSERVACIONISTA", "E3_EXECUTIVO"]
+    },
+    "revisions": {
+      "type": "object",
+      "required": [
+        "parameter_catalog_revision",
+        "terrain_revision",
+        "fleet_revision",
+        "rule_pack_revision",
+        "constraint_revision"
+      ],
+      "properties": {
+        "parameter_catalog_revision": {"const": "1.2.0"},
+        "terrain_revision": {"type": "string", "minLength": 1},
+        "fleet_revision": {"type": "string", "minLength": 1},
+        "rule_pack_revision": {"type": "string", "minLength": 1},
+        "constraint_revision": {"type": "string", "minLength": 1},
+        "hydrology_revision": {"type": ["string", "null"]},
+        "logistics_revision": {"type": ["string", "null"]},
+        "uncertainty_set_revision": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "field_ids",
+        "property_ids",
+        "cross_field_generation",
+        "cross_property_generation"
+      ],
+      "properties": {
+        "field_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "property_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "cross_field_generation": {"type": "boolean"},
+        "cross_property_generation": {"type": "boolean"},
+        "analysis_buffer_m": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "inputDataset": {
+      "type": "object",
+      "required": [
+        "dataset_id",
+        "role",
+        "format",
+        "source_ref",
+        "revision",
+        "captured_at",
+        "responsible",
+        "qa_status"
+      ],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "role": {
+          "enum": [
+            "FIELD_BOUNDARY",
+            "PROPERTY_BOUNDARY",
+            "POINT_CLOUD",
+            "DTM",
+            "ORTHOMOSAIC",
+            "SOIL_ZONES",
+            "YIELD_MAP",
+            "FLEET_PROFILE",
+            "ROAD_NETWORK",
+            "CONSTRAINT_LAYER",
+            "PORTAL_LAYER",
+            "RECEIVER_LAYER",
+            "EXISTING_POA",
+            "POA_CANDIDATE_AREA",
+            "UNCERTAINTY_SET",
+            "OTHER"
+          ]
+        },
+        "format": {
+          "enum": ["SHP", "GPKG", "GEOJSON", "KML", "DXF", "LAS", "LAZ", "TIF", "CSV", "JSON", "OTHER"]
+        },
+        "source_ref": {"type": "string", "minLength": 1},
+        "layer_name": {"type": ["string", "null"], "minLength": 1},
+        "id_field": {"type": ["string", "null"], "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "responsible": {"$ref": "#/$defs/responsible"},
+        "crs": {
+          "type": ["object", "null"],
+          "properties": {
+            "horizontal": {"type": "string", "minLength": 1},
+            "vertical": {"type": ["string", "null"]},
+            "horizontal_unit": {"type": "string", "minLength": 1},
+            "vertical_unit": {"type": ["string", "null"]}
+          },
+          "required": ["horizontal", "horizontal_unit"],
+          "additionalProperties": false
+        },
+        "geometry_type": {
+          "type": ["string", "null"]
+        },
+        "checksum_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "qa_status": {
+          "enum": ["UPLOADED", "VALIDATED", "REJECTED", "SUPERSEDED"]
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {"role": {"const": "FIELD_BOUNDARY"}},
+            "required": ["role"]
+          },
+          "then": {
+            "required": ["id_field"],
+            "properties": {
+              "geometry_type": {"enum": ["Polygon", "MultiPolygon"]},
+              "id_field": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {"const": "FIELD_BOUNDARY"},
+              "format": {"const": "GPKG"}
+            },
+            "required": ["role", "format"]
+          },
+          "then": {"required": ["layer_name"]}
+        }
+      ]
+    },
+    "constraintInventory": {
+      "type": "object",
+      "required": ["general_review_status", "overhead_power_line"],
+      "properties": {
+        "general_review_status": {
+          "enum": ["COMPLETE", "PARTIAL", "NOT_REVIEWED"]
+        },
+        "overhead_power_line": {
+          "$ref": "#/$defs/powerInventoryDeclaration"
+        },
+        "notes": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "powerInventoryDeclaration": {
+      "type": "object",
+      "required": ["status", "declared_at", "responsible"],
+      "properties": {
+        "status": {
+          "enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]
+        },
+        "layer_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "declaration_ref": {
+          "type": ["string", "null"]
+        },
+        "declared_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "responsible": {
+          "$ref": "#/$defs/responsible"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "PROVIDED"}}, "required": ["status"]},
+          "then": {"required": ["layer_ids"], "properties": {"layer_ids": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "DECLARED_NONE"}}, "required": ["status"]},
+          "then": {
+            "required": ["declaration_ref"],
+            "properties": {
+              "declaration_ref": {"type": "string", "minLength": 1},
+              "layer_ids": {"maxItems": 0}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "NOT_REVIEWED"}}, "required": ["status"]},
+          "then": {"properties": {"layer_ids": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "constraintLayer": {
+      "type": "object",
+      "required": [
+        "layer_id",
+        "type",
+        "dataset_ref",
+        "geometry_type",
+        "dimension",
+        "geometry_semantics",
+        "review_status",
+        "operation_behaviors"
+      ],
+      "properties": {
+        "layer_id": {"type": "string", "minLength": 1},
+        "type": {
+          "enum": [
+            "OVERHEAD_POWER_LINE_AXIS",
+            "PUBLIC_ROAD",
+            "PRIVATE_ROAD_OR_CARRIER",
+            "RAILWAY",
+            "PIPELINE",
+            "UNDERGROUND_UTILITY",
+            "IRRIGATION_INFRASTRUCTURE",
+            "BUILDING_OR_STRUCTURE",
+            "FENCE_WALL_OR_GATE",
+            "WATERCOURSE_OR_SPRING",
+            "ENVIRONMENTAL_EXCLUSION",
+            "TREE_OR_VEGETATION",
+            "ROCK_OR_OUTCROP",
+            "GULLY_OR_EROSION",
+            "SOFT_OR_FLOOD_PRONE_SOIL",
+            "EXISTING_TERRACE_OR_DRAIN",
+            "FIREBREAK",
+            "PROPERTY_OR_PERMISSION_BOUNDARY",
+            "OTHER"
+          ]
+        },
+        "dataset_ref": {"type": "string", "minLength": 1},
+        "geometry_type": {
+          "enum": ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
+        },
+        "dimension": {"enum": ["2D", "2.5D", "3D"]},
+        "geometry_semantics": {"type": "string", "minLength": 1},
+        "review_status": {
+          "enum": ["CLIENT_DECLARED", "SURVEYED", "PROFESSIONALLY_REVIEWED", "UNCONFIRMED"]
+        },
+        "operation_behaviors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/operationBehavior"}
+        },
+        "barrier_policy": {
+          "$ref": "#/$defs/barrierPolicy"
+        },
+        "attributes_contract": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "notes": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"type": {"const": "OVERHEAD_POWER_LINE_AXIS"}}, "required": ["type"]},
+          "then": {
+            "required": ["barrier_policy"],
+            "properties": {
+              "geometry_type": {"const": "LineString"},
+              "dimension": {"const": "2D"},
+              "geometry_semantics": {"const": "AXIS_THROUGH_POST_CENTERS"},
+              "operation_behaviors": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "FURROW"}, "behavior": {"const": "SPLIT_WORK"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "PLANT"}, "behavior": {"const": "SPLIT_WORK"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "HARVEST"}, "behavior": {"const": "SPLIT_WORK"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "TRANSSHIPMENT"}, "behavior": {"const": "EXCLUDE"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "TRUCK"}, "behavior": {"const": "EXCLUDE"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "type": "object",
+                      "properties": {"operation": {"const": "MAINTENANCE"}, "behavior": {"const": "EXCLUDE"}},
+                      "required": ["operation", "behavior"]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "operationBehavior": {
+      "type": "object",
+      "required": ["operation", "behavior"],
+      "properties": {
+        "operation": {
+          "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE", "ALL"]
+        },
+        "behavior": {
+          "enum": ["EXCLUDE", "SPLIT_WORK", "TRANSIT_ONLY", "CROSS_AT_PORTAL", "CLEARANCE_3D", "HYDRAULIC_NODE", "REVIEW_REQUIRED"]
+        },
+        "rule_ref": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "barrierPolicy": {
+      "type": "object",
+      "required": [
+        "mode",
+        "exclusion_half_width_parameter_id",
+        "work_behavior",
+        "transit_behavior"
+      ],
+      "properties": {
+        "mode": {"const": "HORIZONTAL_EXCLUSION_BUFFER"},
+        "exclusion_half_width_parameter_id": {
+          "const": "constraints.overhead_power_line_exclusion_half_width_m"
+        },
+        "work_behavior": {"const": "SPLIT_AND_EXCLUDE"},
+        "transit_behavior": {"const": "PROHIBITED"},
+        "buffer_join_style": {"enum": ["ROUND", "MITRE", "BEVEL"]}
+      },
+      "additionalProperties": false
+    },
+    "parameterValue": {
+      "type": "object",
+      "required": ["parameter_id", "parameter_class", "value", "unit", "provenance"],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "parameter_class": {
+          "enum": ["USER_FACT", "CALCULATED", "RULE_PACK", "OPTIMIZER", "E0_ASSUMPTION"]
+        },
+        "value": {},
+        "unit": {"type": ["string", "null"]},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "quality_flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "origin",
+        "source_ref",
+        "captured_at",
+        "responsible",
+        "confidence",
+        "revision",
+        "applicability"
+      ],
+      "properties": {
+        "origin": {
+          "enum": [
+            "DECLARED",
+            "UPLOADED",
+            "MEASURED",
+            "IMPORTED",
+            "CALCULATED",
+            "RULE_PACK",
+            "PROFESSIONAL_CALIBRATION",
+            "OPTIMIZER",
+            "E0_ASSUMPTION"
+          ]
+        },
+        "source_ref": {"type": "string", "minLength": 1},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "responsible": {"$ref": "#/$defs/responsible"},
+        "confidence": {"enum": ["LOW", "MEDIUM", "HIGH", "VERIFIED"]},
+        "revision": {"type": "string", "minLength": 1},
+        "applicability": {"enum": ["PROJECT", "PROPERTY", "FIELD", "ZONE", "FLEET", "SCENARIO"]},
+        "method": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "responsible": {
+      "type": "object",
+      "required": ["name", "organization", "role"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "organization": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "identifier": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "scenarioRequest": {
+      "type": "object",
+      "required": [
+        "conservation_macros",
+        "connection_modes",
+        "poa_strategy_modes",
+        "poa_objective_profiles",
+        "logistics_simulation_modes",
+        "coupling_policy"
+      ],
+      "properties": {
+        "conservation_macros": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["C1_CURVA_EMBUTIDA", "C2_BASE_LARGA_PASSANTE", "C3_ESD", "C4_MISTO_POR_ZONA"]}
+        },
+        "connection_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["OC0_ISOLADO", "OC1_EIXO_COMUM", "OC2_GUIA_CONTINUA", "OC3_TRABALHO_CONTINUO"]}
+        },
+        "poa_strategy_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "NOT_REQUESTED",
+              "P0_POA_EXISTENTE",
+              "P1_SEM_NOVA_OBRA",
+              "P2_NOVOS_POAS",
+              "P3_INTEGRADO"
+            ]
+          }
+        },
+        "poa_objective_profiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "NOT_REQUESTED",
+              "MIN_TRANSBORDO",
+              "MIN_COMPACTACAO",
+              "BALANCEADO_CAPACITADO",
+              "ROBUSTO_PICO"
+            ]
+          }
+        },
+        "logistics_simulation_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["NOT_REQUESTED", "STATIC_DETERMINISTIC", "DISCRETE_EVENT", "MONTE_CARLO"]}
+        },
+        "coupling_policy": {
+          "enum": ["JOINT_ITERATIVE", "SEQUENTIAL_SCREENING"]
+        },
+        "uncertainty_cases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "objectivePolicy": {
+      "type": "object",
+      "required": ["selection_mode", "hard_gate_policy", "objectives"],
+      "properties": {
+        "selection_mode": {"enum": ["PARETO", "WEIGHTED_AFTER_GATES", "LEXICOGRAPHIC_AFTER_GATES"]},
+        "hard_gate_policy": {"const": "FILTER_BEFORE_SCORING"},
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["metric_id", "direction", "priority"],
+            "properties": {
+              "metric_id": {"type": "string", "minLength": 1},
+              "direction": {"enum": ["MINIMIZE", "MAXIMIZE", "TARGET"]},
+              "priority": {"type": "integer", "minimum": 1},
+              "weight": {"type": ["number", "null"], "minimum": 0},
+              "target": {}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "releasePolicy": {
+      "type": "object",
+      "required": [
+        "block_on_unreviewed_constraints",
+        "maximum_release_with_unreviewed_power",
+        "allow_safety_gate_override",
+        "require_professional_approval"
+      ],
+      "properties": {
+        "block_on_unreviewed_constraints": {"const": true},
+        "maximum_release_with_unreviewed_power": {"const": "E0_GEOMETRIC_ONLY"},
+        "allow_safety_gate_override": {"const": false},
+        "require_professional_approval": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["ELECTRICAL_BARRIER", "HYDRAULIC_DESIGN", "POA_SITE", "PUBLIC_OR_THIRD_PARTY_CROSSING", "E2_RELEASE", "E3_RELEASE"]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "override": {
+      "type": "object",
+      "required": [
+        "override_id",
+        "parameter_id",
+        "effect",
+        "proposed_value",
+        "reason",
+        "requested_by",
+        "requested_at",
+        "approval"
+      ],
+      "properties": {
+        "override_id": {"type": "string", "minLength": 1},
+        "parameter_id": {"type": "string", "minLength": 1},
+        "effect": {"enum": ["REPLACE_PARAMETER", "RELAX_SOFT_PREFERENCE"]},
+        "proposed_value": {},
+        "reason": {"type": "string", "minLength": 1},
+        "requested_by": {"$ref": "#/$defs/responsible"},
+        "requested_at": {"type": "string", "format": "date-time"},
+        "approval": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {"enum": ["PENDING", "APPROVED", "REJECTED"]},
+            "approved_by": {"$ref": "#/$defs/responsible"},
+            "approved_at": {"type": "string", "format": "date-time"},
+            "evidence_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {"properties": {"status": {"const": "APPROVED"}}, "required": ["status"]},
+              "then": {"required": ["approved_by", "approved_at", "evidence_ref"]}
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

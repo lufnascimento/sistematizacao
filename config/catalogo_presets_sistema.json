@@ -1,0 +1,330 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "terraflux-system-preset-catalog",
+  "purpose": "Oferecer uma rota configuravel e rastreavel para cada parametro do projeto: padrao E0 do sistema, modelo real selecionavel ou valor proprio do cliente, sem transformar referencia publica em evidencia executiva.",
+  "contracts": {
+    "parameter_catalog_revision": "terraflux-project-parameter-catalog-1.2.0",
+    "acquisition_catalog_revision": "terraflux-input-acquisition-catalog-1.0.0",
+    "reference_model_catalog_revision": "terraflux-sugarcane-reference-model-catalog-1.0.0",
+    "reference_model_catalog_ref": "config/catalogo_modelos_reais_cana.json"
+  },
+  "selection_policy": {
+    "default_application": "E0_ONLY_UNLESS_REPLACED_BY_PROJECT_EVIDENCE",
+    "rules": [
+      "system defaults never promote project readiness above E0",
+      "a selected regional method must match the project jurisdiction and applicability",
+      "an OEM model is a nominal prior until the exact unit and configuration are measured",
+      "unbound parameters become explicit local input templates instead of invented values",
+      "custom values are always allowed when unit, schema and provenance are valid",
+      "fail-closed values prevail while safety, permission or approval evidence is missing"
+    ]
+  },
+  "package_profiles": [
+    {
+      "package_id": "SCOPE_BOUNDARY_PERMISSION",
+      "default_model_ids": ["SYS-SCOPE-CLOSED-E0"],
+      "selectable_model_ids": ["SYS-SCOPE-CLOSED-E0", "SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Continuidade entre talhoes ou propriedades permanece desligada ate identificacao e permissao explicitas.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "SURVEY_VERTICAL",
+      "default_model_ids": ["SYS-VERTICAL-IBGE-HGEOHNOR2020-E0"],
+      "selectable_model_ids": ["SYS-VERTICAL-IBGE-HGEOHNOR2020-E0"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O referencial brasileiro e o modelo de conversao orientam a coleta, mas checkpoints independentes continuam obrigatorios.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "TERRAIN_SURFACE_CONTEXT",
+      "default_model_ids": ["SYS-TERRAIN-LAZ-DTM-TEMPLATE"],
+      "selectable_model_ids": ["SYS-TERRAIN-LAZ-DTM-TEMPLATE"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O fluxo padrao parte de LAS/LAZ ou MDT auditavel e exige envelope e breaklines do projeto.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "AGRONOMIC_CONFIGURATION",
+      "default_model_ids": ["SYS-CANA-ROW-SIMPLE-1P50-E0", "SYS-CANA-VARIETY-CENSUS-CS-2024-E0"],
+      "selectable_model_ids": ["SYS-CANA-ROW-SIMPLE-1P50-E0", "SYS-CANA-ROW-DOUBLE-0P90X1P50-E0", "SYS-CANA-ROW-DOUBLE-0P40X1P50-E0", "SYS-CANA-VARIETY-CENSUS-CS-2024-E0", "OEM-ANTONIOSI-PCP1102", "OEM-JD-CH670-TRACK-2ROW-ALT", "OEM-JD-CH950-TRACK-2ROW", "OEM-CIVEMASA-SATP-HD-2R"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O espacamento simples de 1,50 m e uma referencia publicada como usual na colheita mecanizada; variedade e arranjo final continuam zonais e locais.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "YIELD_LOAD_EVENTS",
+      "default_model_ids": ["SYS-YIELD-CONAB-BR-2026-27-E0"],
+      "selectable_model_ids": ["SYS-YIELD-CONAB-BR-2026-27-E0", "SYS-YIELD-CONAB-SE-2026-27-E0", "SYS-YIELD-CONAB-CO-2026-27-E0", "SYS-YIELD-CONAB-NE-2026-27-E0"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "A media Brasil da Conab serve somente para sensibilidade E0; regioes podem selecionar a estimativa regional e projetos liberados usam mapa ou massa calibrada.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "SOIL_PROFILE_HYDRAULIC",
+      "default_model_ids": ["SYS-SOIL-PUBLIC-PREFILL-E0"],
+      "selectable_model_ids": ["SYS-SOIL-PUBLIC-PREFILL-E0", "SYS-SOIL-CAMPAIGN-EMBRAPA-TEMPLATE", "SYS-CONSERVATION-EMBRAPA-DOC480-FIELD-CAL"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Mapas publicos fazem pre-classificacao; perfil, erodibilidade e comportamento hidraulico exigem campanha local rastreada.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "SOIL_OPERATION_STATE",
+      "default_model_ids": ["SYS-SOIL-OPERATION-LOCAL-TEMPLATE"],
+      "selectable_model_ids": ["SYS-SOIL-OPERATION-LOCAL-TEMPLATE"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Umidade, trafegabilidade e suporte de carga variam no tempo e devem ser observados localmente.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "RAINFALL_DESIGN",
+      "default_model_ids": ["SYS-RAIN-SGB-IDF-AUTO-E0"],
+      "selectable_model_ids": ["SYS-RAIN-SGB-IDF-AUTO-E0", "SYS-CONSERVATION-EPAGRI-HIDROTERRACO"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O sistema busca IDF oficial do SGB por localizacao; periodo de retorno e chuva de projeto continuam escolhas tecnicas aprovadas.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "FULL_CATCHMENT",
+      "default_model_ids": ["SYS-CATCHMENT-ANA-BHO6-E0"],
+      "selectable_model_ids": ["SYS-CATCHMENT-ANA-BHO6-E0", "SYS-CONSERVATION-ANA-PPA-V5-PROCESS", "SYS-CONSERVATION-ESD-PROCESS-CLOSED"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "A BHO6 fornece contexto inicial; a microbacia completa, entradas externas e exutorios precisam ser confirmados no projeto.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "DRAINAGE_NETWORK",
+      "default_model_ids": ["SYS-DRAINAGE-ASSET-CENSUS-TEMPLATE"],
+      "selectable_model_ids": ["SYS-DRAINAGE-ASSET-CENSUS-TEMPLATE", "SYS-CONSERVATION-ANA-PPA-V5-PROCESS", "SYS-CONSERVATION-EPAGRI-HIDROTERRACO", "SYS-CONSERVATION-ESD-PROCESS-CLOSED", "SYS-CONSERVATION-EMBRAPA-DOC483-ASBUILT-OM", "SYS-ROAD-DNIT-CONTEXT-TEMPLATE"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Todo receptor, canal, bueiro, travessia e saida deve ser inventariado; ausencia de vistoria mantem capacidade e conectividade nao revisadas.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "CONSERVATION_RULE_PACK",
+      "default_model_ids": ["SYS-CONSERVATION-ANA-PPA-V5-PROCESS"],
+      "selectable_model_ids": ["SYS-CONSERVATION-ANA-PPA-V5-PROCESS", "SYS-CONSERVATION-IAC-BT216-SP-CANA", "SYS-CONSERVATION-PR-BT71-CANA-PCE", "SYS-CONSERVATION-EPAGRI-HIDROTERRACO", "SYS-CONSERVATION-UFV-TERRACO41-PARITY", "SYS-CONSERVATION-ESD-PROCESS-CLOSED", "SYS-CONSERVATION-EMBRAPA-DOC480-FIELD-CAL", "SYS-GOV-SP-SAA-CONSERVATION", "SYS-GOV-PR-PROSOLO"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O processo nacional da ANA e o ponto de partida neutro; regras dimensionais so entram por pack regional e aprovacao profissional.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "SUBSURFACE_HYDROLOGY",
+      "default_model_ids": ["SYS-SUBSURFACE-ASSESSMENT-TEMPLATE"],
+      "selectable_model_ids": ["SYS-SUBSURFACE-ASSESSMENT-TEMPLATE"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Surgencias, lençol, drenos e camadas restritivas precisam de investigacao local.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "FLEET_IDENTITY_GEOMETRY",
+      "default_model_ids": ["SYS-FLEET-UNSELECTED-CLOSED"],
+      "selectable_model_ids": ["SYS-FLEET-UNSELECTED-CLOSED", "OEM-JD-CH570-TRACK-1ROW", "OEM-CASE-AUSTOFT9000-1ROW-WHEEL", "OEM-JD-CH670-TRACK-2ROW-ALT", "OEM-JD-CH950-TRACK-2ROW", "OEM-JD-6210M-TRACTOR", "OEM-CIVEMASA-TAC10500", "OEM-CIVEMASA-TAC22000-REV08", "OEM-ANTONIOSI-PCP1102", "OEM-CIVEMASA-SATP-HD-2R", "OEM-SCANIA-G560-6X4-XT-CANE", "OEM-RANDON-CANE-9AXLE-74T"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Nenhuma frota e presumida; catalogos OEM ajudam a iniciar o cadastro, mas a unidade e a composicao reais devem ser levantadas.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "FLEET_LOAD_STABILITY",
+      "default_model_ids": ["SYS-FLEET-LOAD-STABILITY-TEMPLATE"],
+      "selectable_model_ids": ["SYS-FLEET-LOAD-STABILITY-TEMPLATE", "OEM-CIVEMASA-TAC10500", "OEM-CIVEMASA-TAC22000-REV08", "OEM-ANTONIOSI-PCP1102", "OEM-CIVEMASA-SATP-HD-2R", "OEM-JD-6210M-TRACTOR", "OEM-SCANIA-G560-6X4-XT-CANE", "OEM-RANDON-CANE-9AXLE-74T"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Carga por eixo, centro de gravidade, estabilidade e frenagem dependem do estado vazio, parcial ou carregado.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "FLEET_WORK_TURN",
+      "default_model_ids": ["SYS-FLEET-WORK-TURN-TRIAL-TEMPLATE"],
+      "selectable_model_ids": ["SYS-FLEET-WORK-TURN-TRIAL-TEMPLATE"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Raio de catalogo nao substitui ensaio da composicao em WORK, LIFT, CROSS, TURN, TRANSPORT e UNLOAD.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "CONTROLLER_GUIDANCE",
+      "default_model_ids": ["SYS-GUIDANCE-UNSELECTED-CLOSED"],
+      "selectable_model_ids": ["SYS-GUIDANCE-UNSELECTED-CLOSED", "OEM-GUIDANCE-JD-SF7500-SFRTK-G5", "OEM-GUIDANCE-CASE-XCN2050-AG25-TM200", "OEM-GUIDANCE-PTX-GFX1060-NAV900", "OEM-GUIDANCE-HEXAGON-TI10"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O controlador fica sem selecao ate informar hardware, firmware, correcao, formatos, offsets e desempenho medido.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "PERFORMANCE_RELIABILITY",
+      "default_model_ids": ["SYS-OP-SPEED-5KMH-E0", "SYS-OP-TURN-TANDEM-47P3S-E0"],
+      "selectable_model_ids": ["SYS-OP-SPEED-5KMH-E0", "SYS-OP-TURN-HARVESTER-38P5S-E0", "SYS-OP-TURN-TANDEM-47P3S-E0", "SYS-PERFORMANCE-TELEMETRY-TEMPLATE", "OEM-JD-CH570-TRACK-1ROW", "OEM-CASE-AUSTOFT9000-1ROW-WHEEL", "OEM-JD-CH670-TRACK-2ROW-ALT", "OEM-JD-CH950-TRACK-2ROW", "OEM-JD-6210M-TRACTOR"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Velocidade e manobra publicadas servem a comparacao E0; distribuicoes da operacao real devem vir de telemetria e balanca.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "CONSTRAINTS_GENERAL",
+      "default_model_ids": ["SYS-CONSTRAINTS-NOT-REVIEWED-CLOSED"],
+      "selectable_model_ids": ["SYS-CONSTRAINTS-NOT-REVIEWED-CLOSED"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Interferencias desconhecidas nao sao tratadas como ausentes.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "POWER_CONSTRAINT",
+      "default_model_ids": ["SYS-POWER-AXIS-SPLIT-EXCLUDE-CLOSED"],
+      "selectable_model_ids": ["SYS-POWER-AXIS-SPLIT-EXCLUDE-CLOSED"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Rede eletrica nao revisada bloqueia continuidade; o eixo e os centros dos postes devem ser enviados ou levantados.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "ENVIRONMENT_LEGAL",
+      "default_model_ids": ["SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0"],
+      "selectable_model_ids": ["SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0", "SYS-GOV-SP-SAA-CONSERVATION", "SYS-GOV-PR-PROSOLO"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Bases oficiais apoiam descoberta e reconciliacao; delimitacao e autorizacao aplicaveis continuam sob revisao local.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "CONNECTIONS_PORTALS",
+      "default_model_ids": ["SYS-CONNECTIONS-DISABLED-CLOSED"],
+      "selectable_model_ids": ["SYS-CONNECTIONS-DISABLED-CLOSED", "SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Pular talhao ou propriedade permanece desligado ate validar portal, corredor, relevo, barreiras, permissao e composicao da maquina.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "POA_SITE_LAYOUT",
+      "default_model_ids": ["SYS-POA-NOT-REQUESTED-CLOSED"],
+      "selectable_model_ids": ["SYS-POA-NOT-REQUESTED-CLOSED", "SYS-POA-EXISTING-SITE-TEMPLATE", "SYS-POA-DRIVE-THROUGH-1BAY-TEMPLATE", "SYS-POA-DRIVE-THROUGH-MULTIBAY-TEMPLATE", "SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "POA nao e presumido; o cliente escolhe sitio existente ou familia de layout e fornece suporte, drenagem, acessos e demanda.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "LOGISTICS_ROAD",
+      "default_model_ids": ["SYS-ROAD-DNIT-CONTEXT-TEMPLATE"],
+      "selectable_model_ids": ["SYS-ROAD-DNIT-CONTEXT-TEMPLATE", "OEM-SCANIA-G560-6X4-XT-CANE", "OEM-RANDON-CANE-9AXLE-74T"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "A rede deve registrar largura, rampa, superficie, pontes e limites; normas rodoviarias sao contexto e nao aprovacao da rota.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "LOGISTICS_CYCLE",
+      "default_model_ids": ["SYS-LOGISTICS-CYCLE-LOCAL-TEMPLATE"],
+      "selectable_model_ids": ["SYS-LOGISTICS-CYCLE-LOCAL-TEMPLATE", "OEM-CIVEMASA-TAC10500", "OEM-CIVEMASA-TAC22000-REV08", "OEM-SCANIA-G560-6X4-XT-CANE", "OEM-RANDON-CANE-9AXLE-74T", "SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Ciclo, fila, capacidade, turno e recebimento precisam refletir a frota e a usina reais.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "CUT_TO_MILL",
+      "default_model_ids": ["SYS-CUT-TO-MILL-EVENT-TEMPLATE"],
+      "selectable_model_ids": ["SYS-CUT-TO-MILL-EVENT-TEMPLATE"],
+      "unbound_parameter_policy": "LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "O sistema oferece o contrato de eventos; SLA e deterioracao dependem da cadeia e da qualidade local.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "package_id": "QA_APPROVAL_LIFECYCLE",
+      "default_model_ids": ["SYS-QA-E0-CLOSED"],
+      "selectable_model_ids": ["SYS-QA-E0-CLOSED", "SYS-OBJECTIVE-PARETO-3", "SYS-CONSERVATION-EMBRAPA-DOC483-ASBUILT-OM"],
+      "unbound_parameter_policy": "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE",
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "default_reason": "Revisao de campo e aprovacao profissional iniciam como nao revisadas e nenhuma escolha de preset altera esse estado.",
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    }
+  ],
+  "standalone_parameter_profiles": [
+    {
+      "parameter_id": "connections.max_nonworking_gap_m",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "connections.minimum_preferred_shot_length_m",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "poa.maximum_site_count",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "logistics.maximum_preferred_transshipment_distance_m",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "objectives.selection_mode",
+      "default_model_id": "SYS-OBJECTIVE-PARETO-3",
+      "selectable_model_ids": ["SYS-OBJECTIVE-PARETO-3"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "objectives.weights",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "objectives.pareto_representative_count",
+      "default_model_id": "SYS-OBJECTIVE-PARETO-3",
+      "selectable_model_ids": ["SYS-OBJECTIVE-PARETO-3"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "e0.nominal_field_speed_kmh",
+      "default_model_id": "SYS-OP-SPEED-5KMH-E0",
+      "selectable_model_ids": ["SYS-OP-SPEED-5KMH-E0"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "e0.maneuver_time_s",
+      "default_model_id": "SYS-OP-TURN-TANDEM-47P3S-E0",
+      "selectable_model_ids": ["SYS-OP-TURN-HARVESTER-38P5S-E0", "SYS-OP-TURN-TANDEM-47P3S-E0"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
+      "parameter_id": "e0.yield_proxy_t_ha",
+      "default_model_id": "SYS-YIELD-CONAB-BR-2026-27-E0",
+      "selectable_model_ids": ["SYS-YIELD-CONAB-BR-2026-27-E0", "SYS-YIELD-CONAB-SE-2026-27-E0", "SYS-YIELD-CONAB-CO-2026-27-E0", "SYS-YIELD-CONAB-NE-2026-27-E0"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    }
+  ]
+}

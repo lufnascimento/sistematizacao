@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0",
+  "selection_id": "preset-library-demo-sp-2026-08-24",
+  "project_id": "preset-library-demo-sp",
+  "created_at": "2026-08-24T12:00:00-03:00",
+  "project_context": {
+    "country": "BR",
+    "state": "SP",
+    "crop": "SUGARCANE"
+  },
+  "requested_delivery_level": "E0_TRIAGEM",
+  "use_system_defaults_for_unselected_packages": true,
+  "package_selections": [
+    {
+      "package_id": "AGRONOMIC_CONFIGURATION",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-CANA-ROW-SIMPLE-1P50-E0", "SYS-CANA-VARIETY-CENSUS-CS-2024-E0"],
+      "applicability_justification": "Sao Paulo integra o recorte Centro-Sul do censo varietal; a selecao serve somente para lista E0 de cultivares candidatas."
+    },
+    {
+      "package_id": "CONSERVATION_RULE_PACK",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-GOV-SP-SAA-CONSERVATION", "SYS-CONSERVATION-IAC-BT216-SP-CANA", "SYS-CONSERVATION-ESD-PROCESS-CLOSED"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "ENVIRONMENT_LEGAL",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0", "SYS-GOV-SP-SAA-CONSERVATION"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "FLEET_IDENTITY_GEOMETRY",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["OEM-JD-CH570-TRACK-1ROW", "OEM-JD-6210M-TRACTOR", "OEM-CIVEMASA-TAC22000-REV08", "OEM-ANTONIOSI-PCP1102", "OEM-CIVEMASA-SATP-HD-2R"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "CONTROLLER_GUIDANCE",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["OEM-GUIDANCE-HEXAGON-TI10"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "PERFORMANCE_RELIABILITY",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-OP-SPEED-5KMH-E0", "SYS-OP-TURN-HARVESTER-38P5S-E0", "SYS-PERFORMANCE-TELEMETRY-TEMPLATE"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "POA_SITE_LAYOUT",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-POA-DRIVE-THROUGH-1BAY-TEMPLATE"],
+      "applicability_justification": null
+    }
+  ],
+  "standalone_parameter_selections": [
+    {
+      "parameter_id": "e0.yield_proxy_t_ha",
+      "mode": "SYSTEM_MODEL",
+      "model_id": "SYS-YIELD-CONAB-SE-2026-27-E0"
+    },
+    {
+      "parameter_id": "e0.maneuver_time_s",
+      "mode": "SYSTEM_MODEL",
+      "model_id": "SYS-OP-TURN-HARVESTER-38P5S-E0"
+    }
+  ],
+  "custom_parameter_values": [
+    {
+      "parameter_id": "scope.target_field_ids",
+      "value": ["TALHAO-DEMO-A", "TALHAO-DEMO-B"],
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "demo://field-boundary-register",
+        "captured_at": "2026-08-24T12:00:00-03:00",
+        "responsible": "demo-data-custodian",
+        "revision": "demo-boundary-v1"
+      }
+    },
+    {
+      "parameter_id": "terrain.horizontal_crs",
+      "value": "EPSG:31982",
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "demo://spatial-metadata",
+        "captured_at": "2026-08-24T12:00:00-03:00",
+        "responsible": "demo-survey-team",
+        "revision": "demo-crs-v1"
+      }
+    },
+    {
+      "parameter_id": "agronomy.row_spacing_m",
+      "value": 1.5,
+      "unit": "m",
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "demo://client-crop-plan",
+        "captured_at": "2026-08-24T12:00:00-03:00",
+        "responsible": "demo-agronomist",
+        "revision": "demo-crop-plan-v1"
+      }
+    }
+  ]
+}

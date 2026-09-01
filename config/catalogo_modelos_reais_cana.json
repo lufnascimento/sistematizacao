@@ -1,0 +1,1759 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "terraflux-sugarcane-reference-model-catalog",
+  "as_of": "2026-08-24",
+  "purpose": "Biblioteca selecionavel de referencias reais, dados oficiais, metodos, equipamentos OEM, priors E0 e templates fail-closed para projetos de sistematizacao de cana-de-acucar.",
+  "market_claim_policy": {
+    "rules": [
+      "market_common_requires_an_explicit_census_or_publication",
+      "major_oem_examples_are_not_market_share_rankings",
+      "a_popular_variety_is_not_an_agronomic_recommendation_for_a_zone",
+      "oem_nominal_data_does_not_replace_the_measured_complete_machine_configuration",
+      "public_data_and_field_study_priors_are_screening_inputs_only",
+      "every_system_value_can_be_replaced_by_a_traceable_project_value",
+      "no_reference_model_resolves_project_evidence_or_professional_approval"
+    ]
+  },
+  "source_registry": [
+    {
+      "id": "TF_PARAMETER_CATALOG_1.2",
+      "title": "Catalogo de parametros do projeto TerraFlux 1.2.0",
+      "publisher": "TerraFlux project",
+      "source_kind": "SYSTEM_CONTRACT",
+      "url": "config/catalogo_parametros_projeto.json",
+      "published_at": "2026-08-24",
+      "checked_at": "2026-08-24",
+      "locators": ["default_policy", "parameters"],
+      "limitations": ["Contrato de produto; nao e uma recomendacao agronomica ou norma externa."]
+    },
+    {
+      "id": "TF_ACQUISITION_CATALOG_1.0",
+      "title": "Catalogo de aquisicao de insumos TerraFlux 1.0.0",
+      "publisher": "TerraFlux project",
+      "source_kind": "SYSTEM_CONTRACT",
+      "url": "config/catalogo_aquisicao_insumos.json",
+      "published_at": "2026-08-24",
+      "checked_at": "2026-08-24",
+      "locators": ["evidence_packages", "data_contract", "absence_policy"],
+      "limitations": ["Define como obter evidencia; nao fornece valores locais da fazenda."]
+    },
+    {
+      "id": "IAC_BT216_2016",
+      "title": "Recomendacoes gerais para a conservacao do solo na cultura da cana-de-acucar",
+      "publisher": "Instituto Agronomico de Campinas",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.iac.sp.gov.br/media/publicacoes/iacbt126.pdf",
+      "published_at": "2016",
+      "checked_at": "2026-08-24",
+      "locators": ["Boletim Tecnico 216", "secao 4.5", "quadros 6 a 10", "paginas 37 e 81 do documento"],
+      "limitations": ["Aplicacao numerica depende do solo, uso, manejo, declive, chuva e validacao profissional; vigencia regional deve ser confirmada."]
+    },
+    {
+      "id": "IAC_DOC109_2012",
+      "title": "Sistema de multiplicacao de cana-de-acucar com mudas pre-brotadas",
+      "publisher": "Instituto Agronomico de Campinas",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.iac.sp.gov.br/publicacoes/publicacoes/iacdoc109.pdf",
+      "published_at": "2012",
+      "checked_at": "2026-08-24",
+      "locators": ["secao de plantio", "espacamentos simples de 1,5 m e combinado de 1,5 m por 0,90 m"],
+      "limitations": ["Documento de MPB; o arranjo deve ser conciliado com variedade, solo, frota e sistema de colheita."]
+    },
+    {
+      "id": "IAC_BT245_2025",
+      "title": "Censo varietal IAC de cana-de-acucar no Brasil - safra 2024/25",
+      "publisher": "Instituto Agronomico de Campinas",
+      "source_kind": "OFFICIAL_MARKET_CENSUS",
+      "url": "https://www.iac.sp.gov.br/media/publicacoes/iacbt245.pdf",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["tabela 1", "tabela 10", "regiao Centro-Sul"],
+      "limitations": ["Retrato de adocao, nao recomendacao de variedade; a participacao muda por safra e regiao."]
+    },
+    {
+      "id": "EMBRAPA_CANA_PLANTIO",
+      "title": "Plantio de cana-de-acucar",
+      "publisher": "Embrapa",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.embrapa.br/en/web/agencia-de-informacao-tecnologica/cultivos/cana-de-acucar/producao/manejo/plantio",
+      "published_at": "updated 2022",
+      "checked_at": "2026-08-24",
+      "locators": ["espacamento entre sulcos", "colheita mecanizada", "espacamento uniforme e combinado"],
+      "limitations": ["Faixas gerais; nao substituem posicionamento agronomico por ambiente de producao."]
+    },
+    {
+      "id": "CONAB_CANA_2026_27_2LEV",
+      "title": "Segundo levantamento da safra de cana-de-acucar 2026/27",
+      "publisher": "Companhia Nacional de Abastecimento",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.gov.br/conab/pt-br/atuacao/informacoes-agropecuarias/safras/safra-de-cana-de-acucar/arquivos-boletins/2o-levantamento-safra-2026-27/2o-levantamento-safra-2026-27",
+      "published_at": "2026-08-20",
+      "checked_at": "2026-08-24",
+      "locators": ["produtividade nacional 77.905 kg/ha", "Sudeste 80.872 kg/ha", "Centro-Oeste 78.755 kg/ha", "Nordeste 60.037 kg/ha"],
+      "limitations": ["Estimativa regional e temporal; nao representa a produtividade de um talhao ou variedade especifica."]
+    },
+    {
+      "id": "ANA_PPA_V5_2025",
+      "title": "Programa Produtor de Agua, volume 5 - praticas mecanicas",
+      "publisher": "Agencia Nacional de Aguas e Saneamento Basico",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.gov.br/ana/pt-br/acesso-a-informacao/acoes-e-programas/programa-produtor-de-agua/manuais-e-capacitacao/manuais/manual-programa-produtor-de-agua-volume-5",
+      "published_at": "2025-12-02",
+      "checked_at": "2026-08-24",
+      "locators": ["terraceamento", "escoamento superficial difuso", "estradas rurais", "praticas mecanicas"],
+      "limitations": ["Metodo nacional de processo; nao fornece um conjunto numerico universal para cada fazenda."]
+    },
+    {
+      "id": "SGB_IDF_2023",
+      "title": "Atlas pluviometrico do Brasil - equacoes IDF definidas em 2023",
+      "publisher": "Servico Geologico do Brasil",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://rigeo.sgb.gov.br/items/ca0aefe1-91de-48b4-8810-b8517907ceb1",
+      "published_at": "2023",
+      "checked_at": "2026-08-24",
+      "locators": ["equacoes intensidade-duracao-frequencia", "estacoes com registros continuos e desagregados"],
+      "limitations": ["A escolha de estacao, extrapolacao, periodo de retorno, duracao e hietograma requer justificativa e aprovacao."]
+    },
+    {
+      "id": "ANA_HYDROWEB",
+      "title": "Orientacoes e manuais de dados hidrologicos HydroWeb",
+      "publisher": "Agencia Nacional de Aguas e Saneamento Basico",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais-de-sistemas-e-servicos-de-disponibilizacao-de-dados-hidrologicos",
+      "published_at": "current service",
+      "checked_at": "2026-08-24",
+      "locators": ["series hidrologicas", "servicos de disponibilizacao"],
+      "limitations": ["Serie publica precisa de controle de qualidade, completude e representatividade espacial."]
+    },
+    {
+      "id": "ANA_BHO6_2024",
+      "title": "Base Hidrografica Ottocodificada Multiescalas versao 6",
+      "publisher": "Agencia Nacional de Aguas e Saneamento Basico",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/base-de-dados-geoespaciais-da-ana-permite-gestao-mais-eficiente-das-bacias-hidrograficas/",
+      "published_at": "2024-10-01",
+      "checked_at": "2026-08-24",
+      "locators": ["BHO6", "cobertura nacional", "escala igual ou melhor que 1:250.000"],
+      "limitations": ["Serve ao contexto regional; nao substitui o fechamento de microdrenagem e estruturas levantadas em campo."]
+    },
+    {
+      "id": "INMET_BDMEP",
+      "title": "BDMEP - dados historicos meteorologicos",
+      "publisher": "Instituto Nacional de Meteorologia",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://portal.inmet.gov.br/servicos/bdmep-dados-historicos",
+      "published_at": "current service",
+      "checked_at": "2026-08-24",
+      "locators": ["dados historicos diarios", "estacoes convencionais e automaticas"],
+      "limitations": ["Dado diario ou bruto nao gera sozinho um evento sub-horario de projeto."]
+    },
+    {
+      "id": "IBGE_HGEOHNOR2020",
+      "title": "hgeoHNOR2020 - conversao entre altitudes GNSS e data verticais",
+      "publisher": "Instituto Brasileiro de Geografia e Estatistica",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.ibge.gov.br/geociencias/modelos-digitais-de-superficie/modelos-digitais-de-superficie/31283-hgeohnor2020-modeloconversaoaltitudesgeometricasgnss-datumverticalsgb.html",
+      "published_at": "2020",
+      "checked_at": "2026-08-24",
+      "locators": ["REALT2018", "conversao de altitudes geometricas"],
+      "limitations": ["Conversao nao comprova a acuracia local nem substitui checkpoints independentes."]
+    },
+    {
+      "id": "IBGE_PEDOLOGIA_250K",
+      "title": "Pedologia 1:250.000",
+      "publisher": "Instituto Brasileiro de Geografia e Estatistica",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.ibge.gov.br/geociencias/informacoes-ambientais/pedologia/10871-pedologia.html",
+      "published_at": "version 2023",
+      "checked_at": "2026-08-24",
+      "locators": ["base espacial 1:250.000", "pedo_area e pedo_ponto"],
+      "limitations": ["Escala regional; nao determina grupo hidrologico, Ksat ou erodibilidade executiva de um talhao."]
+    },
+    {
+      "id": "EMBRAPA_PRONASOLOS",
+      "title": "Portal de dados da plataforma PronaSolos",
+      "publisher": "Embrapa Solos",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.embrapa.br/en/busca-de-solucoes-tecnologicas/-/produto-servico/9076/portal-de-dados-da-plataforma-tecnologica-pronasolos-em-ambiente-sigweb",
+      "published_at": "current portal",
+      "checked_at": "2026-08-24",
+      "locators": ["SIGWeb", "dados de solos"],
+      "limitations": ["Prior de estratificacao; requer perfil, laboratorio e ensaio hidraulico local."]
+    },
+    {
+      "id": "EMBRAPA_SIBCS_2025",
+      "title": "Sistema Brasileiro de Classificacao de Solos, 6a edicao",
+      "publisher": "Embrapa Solos",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.infoteca.cnptia.embrapa.br/handle/doc/1176834?locale=pt_BR",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["6a edicao", "classificacao ate o quarto nivel"],
+      "limitations": ["Taxonomia nao substitui ensaios fisico-hidricos ou classificacao do perfil no campo."]
+    },
+    {
+      "id": "EMBRAPA_SOIL_METHODS_2017",
+      "title": "Manual de metodos de analise de solo",
+      "publisher": "Embrapa Solos",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://portaldxp-p.sede.embrapa.br/busca-de-publicacoes/-/publicacao/1085209/manual-de-metodos-de-analise-de-solo",
+      "published_at": "2017",
+      "checked_at": "2026-08-24",
+      "locators": ["analises fisicas", "condutividade hidraulica", "densidade e porosidade"],
+      "limitations": ["Metodo de ensaio; quantidade de amostras e zonas depende da variabilidade do projeto."]
+    },
+    {
+      "id": "EPAGRI_HIDROTERRACO_2022",
+      "title": "HidroTerraco 1.0",
+      "publisher": "Epagri",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://publicacoes.epagri.sc.gov.br/DOC/article/view/1508",
+      "published_at": "2022-06-21",
+      "checked_at": "2026-08-24",
+      "locators": ["Documento 348", "terracos e estruturas complementares"],
+      "limitations": ["Metodo selecionavel e caso de paridade; exemplos catarinenses nao sao defaults nacionais ou para cana."]
+    },
+    {
+      "id": "UFV_TERRACO41",
+      "title": "Terraco 4.1",
+      "publisher": "Grupo de Pesquisa em Recursos Hidricos da Universidade Federal de Vicosa",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://gprh.ufv.br/?area=softwares",
+      "published_at": "current software listing",
+      "checked_at": "2026-08-24",
+      "locators": ["Terraco 4.1", "dimensionamento e manejo de conservacao e drenagem superficial"],
+      "limitations": ["Referencia de metodo e paridade; nao e norma legal nem fornece dados locais."]
+    },
+    {
+      "id": "DNIT_ISF208",
+      "title": "ISF-208 - estudos hidrologicos",
+      "publisher": "Departamento Nacional de Infraestrutura de Transportes",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.gov.br/dnit/pt-br/assuntos/ferrovias/instrucoes-de-servicos-ferroviarios/isf-208-estudos-hidrologicos.pdf",
+      "published_at": "current instruction",
+      "checked_at": "2026-08-24",
+      "locators": ["estudos hidrologicos", "chuvas, bacias e vazoes"],
+      "limitations": ["Aplicar somente aos componentes e contextos compativeis; nao e regra agronomica de sulcacao."]
+    },
+    {
+      "id": "SICAR_API",
+      "title": "API SICAR tema imovel",
+      "publisher": "Servico Florestal Brasileiro",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.gov.br/conecta/catalogo/apis/sicar-tema/imovel-tema.yaml/swagger_view",
+      "published_at": "current API",
+      "checked_at": "2026-08-24",
+      "locators": ["imovel rural", "dados do CAR"],
+      "limitations": ["CAR e declaratorio e nao equivale a licenca, dominio ou vistoria ambiental."]
+    },
+    {
+      "id": "MEU_IMOVEL_RURAL",
+      "title": "Meu Imovel Rural",
+      "publisher": "Governo Federal",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://www.gov.br/gestao/pt-br/assuntos/meu-imovel-rural/como-funciona-1/visualizar-dados-e-baixar-documentos-de-imoveis-rurais/",
+      "published_at": "current service",
+      "checked_at": "2026-08-24",
+      "locators": ["visualizar dados", "baixar documentos"],
+      "limitations": ["Serve para reconciliacao cadastral; permissao operacional continua especifica por acao e geometria."]
+    },
+    {
+      "id": "SIGEF_MANUAL",
+      "title": "Manual do SIGEF",
+      "publisher": "Instituto Nacional de Colonizacao e Reforma Agraria",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://sigef.incra.gov.br/documentos/manual/",
+      "published_at": "current service",
+      "checked_at": "2026-08-24",
+      "locators": ["parcelas certificadas", "documentacao"],
+      "limitations": ["Certificacao georreferenciada nao concede permissao para trabalho entre imoveis."]
+    },
+    {
+      "id": "ANEEL_GCEM",
+      "title": "Gestao de informacoes de campos eletromagneticos",
+      "publisher": "Agencia Nacional de Energia Eletrica",
+      "source_kind": "OFFICIAL_DATA",
+      "url": "https://dadosabertos.aneel.gov.br/dataset/gcem-gestao-de-informacoes-de-campos-eletromagneticos",
+      "published_at": "current open data",
+      "checked_at": "2026-08-24",
+      "locators": ["dados abertos GCEM"],
+      "limitations": ["Nao e inventario completo de postes, condutores, flecha ou altura da rede de distribuicao da fazenda."]
+    },
+    {
+      "id": "JD_CH570",
+      "title": "Colhedora de cana CH570",
+      "publisher": "John Deere Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.deere.com.br/pt/colheitadeiras/colhedora-de-cana/ch570/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["uma linha em 1,5 m", "velocidade 0 a 9 km/h", "peso aproximado 21.000 kg", "bitola da esteira 1,88 m"],
+      "limitations": ["Peso e dimensoes variam com opcionais; pagina nao fornece envelope 3D, raio WORK/TURN ou carga por eixo do conjunto real."]
+    },
+    {
+      "id": "CASE_AUSTOFT9000",
+      "title": "Austoft 9000 de uma linha com pneus",
+      "publisher": "Case IH Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.caseih.com/pt-br/brasil/produtos/colhedoras-de-cana/austoft-9000/austoft-9000-1-linha-de-pneus",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["420 cv", "tanque 620 L", "uma linha com pneus", "piloto automatico"],
+      "limitations": ["Pagina publica nao fecha dimensoes, massa, bitola, raio, estabilidade ou configuracao entregue."]
+    },
+    {
+      "id": "CIVEMASA_TAC22000_MANUAL",
+      "title": "Manual TAC 22000",
+      "publisher": "Civemasa",
+      "source_kind": "OEM",
+      "url": "https://civemasa.com.br/uploads/produtos/manual/TAC_0501090906%20Rev08_0522.pdf",
+      "published_at": "revision 08, 2022",
+      "checked_at": "2026-08-24",
+      "locators": ["especificacoes tecnicas", "capacidade, alturas, largura, comprimento, bitolas e peso"],
+      "limitations": ["O conjunto, pneus, carga real, centro de gravidade, engate e estado de descarga precisam ser confirmados por unidade."]
+    },
+    {
+      "id": "ANTONIOSI_PCP1102",
+      "title": "PCP1102 - plantadora de cana automatica",
+      "publisher": "Antoniosi",
+      "source_kind": "OEM",
+      "url": "https://antoniosi.com.br/produto/pcp1102-plantadora-de-cana-automatica/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["duas hastes", "espacamento 900 a 1500 mm", "dimensoes, massa e potencia requerida"],
+      "limitations": ["Especificacao nominal nao fornece raio WORK/TURN, envelope articulado, carga por eixo ou desempenho no solo local."]
+    },
+    {
+      "id": "JD_STARFIRE7500",
+      "title": "StarFire 7500 com SF-RTK",
+      "publisher": "John Deere Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.deere.com.br/pt/agricultura-de-precis%C3%A3o/receptores-monitores-e-rtk/starfire-7500-gps-agr%C3%ADcola/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["precisao horizontal anunciada de ate 2,5 cm", "SF-RTK", "Monitor G5"],
+      "limitations": ["Especificacao anunciada nao substitui ensaio de erro transversal, latencia, dropout e repetibilidade no conjunto real."]
+    },
+    {
+      "id": "CASE_PRECISION_GUIDANCE",
+      "title": "Piloto automatico e receptores AFS",
+      "publisher": "Case IH Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.caseih.com/pt-br/brasil/produtos/tecnologia-de-precisao/tecnologias-embarcadas/piloto-automatico",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["XCN-2050", "AG25", "TM-200", "NAV-900", "Vector Pro"],
+      "limitations": ["Compatibilidade, desbloqueios, firmware, sinal contratado e desempenho dinamico devem ser confirmados."]
+    },
+    {
+      "id": "PTX_NAV900_GFX1060",
+      "title": "NAV-900 e GFX-1060",
+      "publisher": "PTx Trimble",
+      "source_kind": "OEM",
+      "url": "https://ag.ptxtrimble.com/hubfs/PTx%20Datasheets/022503-2051A-1-pt-BR_PTx%20Trimble_NAV-900_DS_A4_0125_LR_SEC.pdf?hsLang=en",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["NAV-900", "opcoes de exatidao", "compatibilidade GFX"],
+      "limitations": ["Precisa de configuracao exata, correcao ativa, calibracao e teste dinamico no implemento."]
+    },
+    {
+      "id": "CORREA_MANEUVER_2025",
+      "title": "Integrated model to reduce maneuver time in sugarcane harvest",
+      "publisher": "Agriengineering",
+      "source_kind": "PRIMARY_RESEARCH",
+      "url": "https://www.mdpi.com/2624-7402/7/2/25",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["commercial fields in Sao Paulo", "three-stage harvester maneuver 38.5 s", "infield wagon 47.3 s"],
+      "limitations": ["Valores observados em uma configuracao e local; somente prior de sensibilidade E0."]
+    },
+    {
+      "id": "SALVI_BASECUTTER_2007",
+      "title": "Avaliacao do desempenho de dispositivo de corte de base de colhedora de cana",
+      "publisher": "Engenharia Agricola",
+      "source_kind": "PRIMARY_RESEARCH",
+      "url": "https://www.scielo.br/j/eagri/a/D3QzRQpsrhqCm4gjfGMdZXm/?lang=pt",
+      "published_at": "2007",
+      "checked_at": "2026-08-24",
+      "locators": ["velocidade media de trabalho 5,0 km/h"],
+      "limitations": ["Ensaio historico de uma operacao; nao e velocidade aprovada para outro equipamento, relevo ou estado do solo."]
+    },
+    {
+      "id": "CONTRAN_872_2021",
+      "title": "Resolucao CONTRAN 872/2021",
+      "publisher": "Conselho Nacional de Transito",
+      "source_kind": "LAW_OR_STANDARD",
+      "url": "https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-contran/resolucoes/resolucao8722021.pdf",
+      "published_at": "2021",
+      "checked_at": "2026-08-24",
+      "locators": ["combinacoes de veiculos de carga", "AET e transporte de cana"],
+      "limitations": ["Aplicabilidade e alteracoes devem ser verificadas para a composicao, via, autoridade e data do projeto."]
+    },
+    {
+      "id": "CONTRAN_882_2021",
+      "title": "Resolucao CONTRAN 882/2021",
+      "publisher": "Conselho Nacional de Transito",
+      "source_kind": "LAW_OR_STANDARD",
+      "url": "https://www.gov.br/transportes/pt-br/pt-br/assuntos/transito/conteudo-contran/resolucoes/Resolucao8822021.pdf",
+      "published_at": "2021",
+      "checked_at": "2026-08-24",
+      "locators": ["pesos e dimensoes de veiculos"],
+      "limitations": ["Nao substitui documentos do veiculo, AET, capacidade de pontes ou regra da autoridade competente."]
+    },
+    {
+      "id": "JD_CH670",
+      "title": "Colhedora de cana CH670",
+      "publisher": "John Deere Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.deere.com.br/pt/colheitadeiras/colhedora-de-cana/ch670/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["duas linhas alternadas 0,90 x 1,50 m", "380 cv", "tanque de 605 L"],
+      "limitations": ["Configuracao exata, bitola, massa, raio, envelope, perdas e compatibilidade com o canavial precisam de confirmacao local."]
+    },
+    {
+      "id": "JD_CH950",
+      "title": "Colhedora de cana CH950",
+      "publisher": "John Deere Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.deere.com.br/pt/colheitadeiras/colhedora-de-cana/ch950/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["duas linhas independentes de 1,40 ou 1,50 m", "490 cv", "1135 L", "0 a 9 km/h"],
+      "limitations": ["Opcao de esteira e bitola, envelope, estabilidade, raio WORK e desempenho precisam ser confirmados na unidade real."]
+    },
+    {
+      "id": "CIVEMASA_TAC10500",
+      "title": "TAC 10500 - transbordo agricola",
+      "publisher": "Civemasa",
+      "source_kind": "OEM",
+      "url": "https://civemasa.com.br/uploads/produtos/manual/0501094048%20-%20S-0524%20-%20REV.01%20-%20TAC%2010500.pdf",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["TAC 10500", "manual Rev.01", "capacidade e dimensoes nominais"],
+      "limitations": ["Volume nao define carga em toneladas; configuracao, placa, engate, pneus, bitola e estados de carga precisam ser verificados."]
+    },
+    {
+      "id": "CIVEMASA_SATP_HD",
+      "title": "SATP HD - sulcador adubador de terceiro ponto",
+      "publisher": "Civemasa",
+      "source_kind": "OEM",
+      "url": "https://civemasa.com.br/uploads/produtos/manual/0501092399_SATP_HD_CATP_HD_REV02_0422.pdf",
+      "published_at": "2022",
+      "checked_at": "2026-08-24",
+      "locators": ["duas hastes", "espacamento regulavel", "potencia de 160 a 230 cv"],
+      "limitations": ["Profundidade, esforco de tracao, patinagem, offsets e raio WORK dependem do trator, solo e regulagem reais."]
+    },
+    {
+      "id": "JD_6210M",
+      "title": "Trator 6210M",
+      "publisher": "John Deere Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.deere.com.br/pt/tratores/m%C3%A9dio-cabinado-4x4/6210m-210cv/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["210 cv", "entre-eixos de 2688 mm", "comprimento de 5020 mm", "peso maximo permitido de 12300 kg"],
+      "limitations": ["Raio e geometria do trator isolado nao representam o conjunto articulado com transbordo ou implemento."]
+    },
+    {
+      "id": "SCANIA_G560_CANE",
+      "title": "G 560 6x4 XT Super para operacao canavieira",
+      "publisher": "Scania Brasil",
+      "source_kind": "OEM",
+      "url": "https://www.scania.com/br/pt/home/newsroom/news/2024/news-article-template-simple35.html",
+      "published_at": "2024",
+      "checked_at": "2026-08-24",
+      "locators": ["560 cv", "2800 Nm", "CMT de 150 t", "aplicacao canavieira"],
+      "limitations": ["CMT do cavalo nao homologa a CVC; composicao, PBTC, rota, AET, freios, rampas e obras de arte devem ser comprovados."]
+    },
+    {
+      "id": "RANDON_CANE_74T",
+      "title": "Rodotrem canavieiro rebaixado 9 eixos HD",
+      "publisher": "Randon",
+      "source_kind": "OEM",
+      "url": "https://www.randon.com.br/pt/produtos/linha-pesada/canavieiro/canavieiro-rebaixado/",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["25,00 m", "180 m3", "PBTC de 74 t"],
+      "limitations": ["Implemento nominal nao prova compatibilidade com cavalo, rota, limites por eixo, capacidade de pontes ou autorizacao aplicavel."]
+    },
+    {
+      "id": "HEXAGON_TI10",
+      "title": "Display Ti10 e piloto automatico Hexagon",
+      "publisher": "Hexagon",
+      "source_kind": "OEM",
+      "url": "https://hexagon.com/pt/products/ti10",
+      "published_at": "current product page",
+      "checked_at": "2026-08-24",
+      "locators": ["display de 10 polegadas", "ISOBUS", "importacao de linhas e mapas", "interfaces CAN, USB e RS-232"],
+      "limitations": ["Configuracao GNSS, correcao, firmware, licencas, formatos e XTE medido precisam ser validados no conjunto real."]
+    },
+    {
+      "id": "SP_SAA_RES11_2015",
+      "title": "Resolucao SAA 11/2015 - projeto tecnico de conservacao do solo em Sao Paulo",
+      "publisher": "Secretaria de Agricultura e Abastecimento de Sao Paulo",
+      "source_kind": "LAW_OR_STANDARD",
+      "url": "https://www.defesa.agricultura.sp.gov.br/legislacoes/resolucao-saa-11-de-15-04-2015%2C1024.html",
+      "published_at": "2015",
+      "checked_at": "2026-08-24",
+      "locators": ["roteiro do projeto tecnico", "solo, textura, declive e capacidade de uso", "memoria, bibliografia e CREA"],
+      "limitations": ["Governanca estadual nao fornece automaticamente dimensionamento hidraulico nem aprova um projeto especifico."]
+    },
+    {
+      "id": "PR_PROSOLO",
+      "title": "Programa Integrado de Conservacao do Solo e Agua do Parana",
+      "publisher": "Secretaria da Agricultura e do Abastecimento do Parana",
+      "source_kind": "LAW_OR_STANDARD",
+      "url": "https://www.agricultura.pr.gov.br/Prosolo",
+      "published_at": "current official portal",
+      "checked_at": "2026-08-24",
+      "locators": ["Lei 8.014/1984", "Decreto 6.120/1985", "Resolucao SEAB 172/2010", "Portaria Adapar 272/2014"],
+      "limitations": ["O overlay legal define governanca; metodo e memoria do projeto continuam explicitos e sujeitos a versao vigente."]
+    },
+    {
+      "id": "IAPAR_BT71_2010",
+      "title": "Boletim Tecnico 71 - espacamento entre terracos no Parana",
+      "publisher": "Instituto Agronomico do Parana",
+      "source_kind": "OFFICIAL_METHOD",
+      "url": "https://www.idrparana.pr.gov.br/system/files/publico/pesquisa/publicacoes/bt/71/bt-71.pdf",
+      "published_at": "2010",
+      "checked_at": "2026-08-24",
+      "locators": ["cana-de-acucar no grupo 4", "tabelas 12, 16, 20, 24 e 28", "espacamento vertical e horizontal"],
+      "limitations": ["Resolve espacamento PCE conforme solo, declive, preparo e residuo; nao dimensiona secao, PCX, passabilidade ou ESD."]
+    },
+    {
+      "id": "EMBRAPA_DOC480_2025",
+      "title": "Documento 480 - infiltracao e calibracao de terracos",
+      "publisher": "Embrapa",
+      "source_kind": "PRIMARY_RESEARCH",
+      "url": "https://www.infoteca.cnptia.embrapa.br/handle/doc/1183218",
+      "published_at": "2025",
+      "checked_at": "2026-08-24",
+      "locators": ["protocolo de TIE", "permeametro de Guelph", "integracao com Terraco 4.1"],
+      "limitations": ["Caso de pesquisa no Parana; valores medidos nao podem preencher outro projeto, mas o protocolo orienta a campanha local."]
+    },
+    {
+      "id": "EMBRAPA_DOC483_2026",
+      "title": "Documento 483 - capacidade efetiva, as-built e manutencao de terracos",
+      "publisher": "Embrapa",
+      "source_kind": "PRIMARY_RESEARCH",
+      "url": "https://www.infoteca.cnptia.embrapa.br/handle/doc/1185689",
+      "published_at": "2026",
+      "checked_at": "2026-08-24",
+      "locators": ["CER igual a CA menos LES", "secao medida", "estado degradado", "inspecao e margem"],
+      "limitations": ["Degradacao e margens observadas no estudo nao sao coeficientes universais; medir a estrutura e o risco locais."]
+    }
+  ],
+  "models": [
+    {
+      "id": "SYS-SCOPE-CLOSED-E0",
+      "title": "Escopo fechado ate classificacao e permissao",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["SCOPE_BOUNDARY_PERMISSION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["default project start"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "scope.allow_cross_field_work", "resolution_mode": "FAIL_CLOSED_VALUE", "value": false, "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "scope.allow_cross_property_work", "resolution_mode": "FAIL_CLOSED_VALUE", "value": false, "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "scope.cross_property_permission_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false}
+      ],
+      "model_data": {"cross_field": "disabled", "cross_property": "disabled"},
+      "local_confirmation_requirements": ["target field ids", "target property ids", "permission per action and geometry"],
+      "limitations": ["Nao gera continuidade entre talhoes ou imoveis enquanto portais, barreiras e permissoes estiverem pendentes."]
+    },
+    {
+      "id": "SYS-VERTICAL-IBGE-HGEOHNOR2020-E0",
+      "title": "Referencia vertical IBGE com hgeoHNOR2020",
+      "category": "GEODETIC_REFERENCE",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["SURVEY_VERTICAL"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["GNSS altitude conversion"]},
+      "source_ids": ["IBGE_HGEOHNOR2020"],
+      "parameter_candidates": [
+        {"parameter_id": "terrain.vertical_reference", "resolution_mode": "REFERENCE_LOOKUP", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true, "notes": "Select the actual datum, reference station and hgeoHNOR version used."},
+        {"parameter_id": "terrain.survey_evidence_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "terrain.checkpoint_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"conversion_model": "hgeoHNOR2020", "target_vertical_system": "SGB/REALT2018 when applicable"},
+      "local_confirmation_requirements": ["projected horizontal CRS", "survey datum", "independent checkpoints", "RMSE, bias, P95 and maximum residual"],
+      "limitations": ["Nao preenche vertical_accuracy_m sem checkpoints independentes."]
+    },
+    {
+      "id": "SYS-TERRAIN-LAZ-DTM-TEMPLATE",
+      "title": "Entrada de terreno por LAZ, LAS ou MDT",
+      "category": "DATA_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["TERRAIN_SURFACE_CONTEXT"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["point cloud or DTM available"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "terrain.dtm_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "terrain.analysis_envelope_ref", "resolution_mode": "FORMULA_DERIVED", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "terrain.breakline_inventory_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"accepted": ["LAS", "LAZ", "COG_GTIFF"], "screening_outputs": ["DTM", "SLOPE", "CONTOURS", "FLOW", "POINT_DENSITY"]},
+      "local_confirmation_requirements": ["ground classification", "coverage", "CRS and vertical reference", "roads, culverts, channels and breaklines"],
+      "limitations": ["A nuvem nao contem chuva, solo hidraulico, receptor, permissao ou geometria completa da infraestrutura."]
+    },
+    {
+      "id": "SYS-CANA-ROW-SIMPLE-1P50-E0",
+      "title": "Cana mecanizada em linha simples de 1,50 m",
+      "category": "ROW_LAYOUT",
+      "status": "ACTIVE",
+      "market_position": "PUBLISHED_AS_COMMON",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["CENTER_SOUTH", "ALL"], "conditions": ["mechanized harvest screening"]},
+      "source_ids": ["IAC_BT216_2016", "EMBRAPA_CANA_PLANTIO"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.row_spacing_m", "resolution_mode": "FIXED_E0_VALUE", "value": 1.5, "unit": "m", "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true, "notes": "Pattern SINGLE with dates, zones and compatible track gauges still required."}
+      ],
+      "model_data": {"row_pattern": "SINGLE", "interval_sequence_m": [1.5], "market_statement": "IAC describes 1.5 m as the most usual spacing with mechanical harvest."},
+      "local_confirmation_requirements": ["zone geometry", "variety", "track gauges", "traffic bands", "valid crop cycle"],
+      "limitations": ["Mais usual nao significa mais produtivo ou compativel com toda frota e ambiente."]
+    },
+    {
+      "id": "SYS-CANA-ROW-DOUBLE-0P90X1P50-E0",
+      "title": "Cana em espacamento combinado 0,90 x 1,50 m",
+      "category": "ROW_LAYOUT",
+      "status": "ACTIVE",
+      "market_position": "PUBLISHED_AS_COMMON",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["CENTER_SOUTH", "ALL"], "conditions": ["combined row screening"]},
+      "source_ids": ["IAC_DOC109_2012", "IAC_BT216_2016"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.row_spacing_m", "resolution_mode": "REFERENCE_ONLY", "unit": "m", "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true, "notes": "Scalar row_spacing_m is insufficient; use the alternating interval sequence."},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"row_pattern": "ALTERNATING", "interval_sequence_m": [0.9, 1.5]},
+      "local_confirmation_requirements": ["zone", "sequence phase", "machine gauge compatibility", "traffic band design"],
+      "limitations": ["Nao reduzir o arranjo alternado a uma media escalar."]
+    },
+    {
+      "id": "SYS-CANA-ROW-DOUBLE-0P40X1P50-E0",
+      "title": "Cana em linha dupla 0,40 x 1,50 m",
+      "category": "ROW_LAYOUT",
+      "status": "REFERENCE_ONLY",
+      "market_position": "PUBLISHED_AS_COMMON",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["double row comparison"]},
+      "source_ids": ["IAC_BT216_2016", "EMBRAPA_CANA_PLANTIO"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.row_spacing_m", "resolution_mode": "REFERENCE_ONLY", "unit": "m", "confidence": "MEDIUM", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"row_pattern": "DOUBLE", "interval_sequence_m": [0.4, 1.5]},
+      "local_confirmation_requirements": ["planting implement", "harvester compatibility", "track gauges", "variety and soil validation"],
+      "limitations": ["Arranjo publicado em estudos e faixas tecnicas; nao default comercial universal."]
+    },
+    {
+      "id": "SYS-CANA-VARIETY-CENSUS-CS-2024-E0",
+      "title": "Lista de variedades mais presentes no Centro-Sul em 2024",
+      "category": "VARIETY_REFERENCE",
+      "status": "ACTIVE",
+      "market_position": "MARKET_CENSUS_RANKED",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["CENTER_SOUTH"], "conditions": ["market reference only"]},
+      "source_ids": ["IAC_BT245_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.crop_variety_by_zone", "resolution_mode": "CATALOG_SELECTION", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true}
+      ],
+      "model_data": {"snapshot_year": 2024, "surveyed_area_ha": 6173189, "varieties": [{"id": "CTC4", "share_pct": 12.6}, {"id": "RB966928", "share_pct": 10.7}, {"id": "RB867515", "share_pct": 10.3}, {"id": "RB975242", "share_pct": 6.0}]},
+      "local_confirmation_requirements": ["variety actually planted", "maturity group", "crop cycle stage", "zone recommendation by agronomist"],
+      "limitations": ["A participacao de mercado nao autoriza selecionar CTC4 ou qualquer RB para uma zona especifica."]
+    },
+    {
+      "id": "SYS-YIELD-CONAB-BR-2026-27-E0",
+      "title": "Produtividade media Brasil Conab 2026/27",
+      "category": "YIELD_PRIOR",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["YIELD_LOAD_EVENTS"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["national sensitivity prior"]},
+      "source_ids": ["CONAB_CANA_2026_27_2LEV"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.expected_yield_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 77.905, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "e0.yield_proxy_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 77.905, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"crop_year": "2026/27", "geography": "Brazil", "value_t_ha": 77.905},
+      "local_confirmation_requirements": ["historical field yields", "variety and cut", "P10 P50 P90 surface", "mass-flow calibration"],
+      "limitations": ["Nao dimensiona POA, ponto de enchimento ou transbordo de um talhao."]
+    },
+    {
+      "id": "SYS-YIELD-CONAB-SE-2026-27-E0",
+      "title": "Produtividade media Sudeste Conab 2026/27",
+      "category": "YIELD_PRIOR",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["YIELD_LOAD_EVENTS"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["SOUTHEAST"], "conditions": ["regional sensitivity prior"]},
+      "source_ids": ["CONAB_CANA_2026_27_2LEV"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.expected_yield_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 80.872, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "e0.yield_proxy_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 80.872, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"crop_year": "2026/27", "geography": "Southeast", "value_t_ha": 80.872},
+      "local_confirmation_requirements": ["project state", "field yield history", "yield uncertainty"],
+      "limitations": ["Media regional nao e produtividade local."]
+    },
+    {
+      "id": "SYS-YIELD-CONAB-CO-2026-27-E0",
+      "title": "Produtividade media Centro-Oeste Conab 2026/27",
+      "category": "YIELD_PRIOR",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["YIELD_LOAD_EVENTS"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["CENTER_WEST"], "conditions": ["regional sensitivity prior"]},
+      "source_ids": ["CONAB_CANA_2026_27_2LEV"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.expected_yield_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 78.755, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "e0.yield_proxy_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 78.755, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"crop_year": "2026/27", "geography": "Center-West", "value_t_ha": 78.755},
+      "local_confirmation_requirements": ["project state", "field yield history", "yield uncertainty"],
+      "limitations": ["Media regional nao e produtividade local."]
+    },
+    {
+      "id": "SYS-YIELD-CONAB-NE-2026-27-E0",
+      "title": "Produtividade media Nordeste Conab 2026/27",
+      "category": "YIELD_PRIOR",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["YIELD_LOAD_EVENTS"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["NORTHEAST"], "conditions": ["regional sensitivity prior"]},
+      "source_ids": ["CONAB_CANA_2026_27_2LEV"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.expected_yield_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 60.037, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "e0.yield_proxy_t_ha", "resolution_mode": "FIXED_E0_VALUE", "value": 60.037, "unit": "t/ha", "confidence": "HIGH", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"crop_year": "2026/27", "geography": "Northeast", "value_t_ha": 60.037},
+      "local_confirmation_requirements": ["project state", "field yield history", "yield uncertainty"],
+      "limitations": ["Media regional nao e produtividade local."]
+    },
+    {
+      "id": "SYS-SOIL-PUBLIC-PREFILL-E0",
+      "title": "Prefill pedologico IBGE e PronaSolos",
+      "category": "SOIL_DATA",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["SOIL_PROFILE_HYDRAULIC"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["campaign stratification"]},
+      "source_ids": ["IBGE_PEDOLOGIA_250K", "EMBRAPA_PRONASOLOS", "EMBRAPA_SIBCS_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.soil_zones_dataset_ref", "resolution_mode": "REFERENCE_LOOKUP", "unit": null, "confidence": "LOW", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.soil_profile_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"prefill_layers": ["IBGE_PEDOLOGIA_250K", "PRONASOLOS"], "classification_revision": "SIBCS_2025_6ED"},
+      "local_confirmation_requirements": ["soil-landscape zones", "field profiles", "horizon laboratory analyses", "hydraulic tests", "erosion inventory"],
+      "limitations": ["Nao atribui Ksat, infiltracao, erodibilidade, CN ou grupo hidrologico executivo."]
+    },
+    {
+      "id": "SYS-SOIL-CAMPAIGN-EMBRAPA-TEMPLATE",
+      "title": "Campanha de solo fisico-hidrica conforme metodos Embrapa",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["SOIL_PROFILE_HYDRAULIC"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["field and laboratory campaign"]},
+      "source_ids": ["EMBRAPA_SOIL_METHODS_2017", "EMBRAPA_SIBCS_2025", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.soil_profile_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.soil_hydraulic_test_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.field_erosion_inventory_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"strata": ["soil prior", "slope position", "curvature", "management", "traffic"], "adaptive_sampling": true, "hydraulic_repeat_policy": "pilot_then_variance_based"},
+      "local_confirmation_requirements": ["method, depth and initial water state", "replicates per stratum", "laboratory identity", "spatial uncertainty"],
+      "limitations": ["Nao fixa uma densidade nacional de amostras."]
+    },
+    {
+      "id": "SYS-SOIL-OPERATION-LOCAL-TEMPLATE",
+      "title": "Umidade, compactacao e suporte por estado operacional",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["SOIL_OPERATION_STATE"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["trafficability analysis"]},
+      "source_ids": ["EMBRAPA_SOIL_METHODS_2017", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.soil_wetness_and_trafficability_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "agronomy.correlated_environmental_measurements", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.soil_load_bearing_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"positions": ["CROP_ROW", "TRAFFIC_ROW", "HEADLAND", "POA", "CARRIER"], "states": ["DRY", "WET", "DEGRADED"]},
+      "local_confirmation_requirements": ["water content and penetration resistance at same point and time", "bearing or precompression curve", "axle stress comparison"],
+      "limitations": ["Textura ou resistencia sem umidade correlata nao abre uma rota."]
+    },
+    {
+      "id": "SYS-RAIN-SGB-IDF-AUTO-E0",
+      "title": "Selecao assistida de IDF SGB e series ANA",
+      "category": "RAINFALL_DATA",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["RAINFALL_DESIGN"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["design rainfall screening"]},
+      "source_ids": ["SGB_IDF_2023", "ANA_HYDROWEB", "INMET_BDMEP"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.idf_model_ref", "resolution_mode": "REFERENCE_LOOKUP", "unit": null, "confidence": "MEDIUM", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.design_rainfall_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.design_event_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"lookup_order": ["local approved IDF", "SGB IDF station", "ANA continuous rainfall series", "INMET context only"], "auto_selection": "rank stations by distance, altitude, record quality and regional consistency; never nearest-only"},
+      "local_confirmation_requirements": ["station and period", "IDF fit", "return period", "duration", "hyetograph", "antecedent moisture", "professional approval"],
+      "limitations": ["Nao seleciona automaticamente TR, duracao ou hietograma executivo."]
+    },
+    {
+      "id": "SYS-CATCHMENT-ANA-BHO6-E0",
+      "title": "Contexto de bacia com BHO6 e terreno ampliado",
+      "category": "CATCHMENT_DATA",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FULL_CATCHMENT"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["upstream and downstream discovery"]},
+      "source_ids": ["ANA_BHO6_2024", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [],
+      "model_data": {"prefill": ["regional drainage", "ottobasin identity", "candidate receiver context"], "analysis_rule": "extend beyond field and property until every upstream entry and downstream destination is closed"},
+      "local_confirmation_requirements": ["fine terrain envelope", "border inflows", "outlet elevations", "complete receptor path", "roads and culverts"],
+      "limitations": ["BHO6 nao resolve microbacias, bueiros ou sulcos na escala da fazenda."]
+    },
+    {
+      "id": "SYS-DRAINAGE-ASSET-CENSUS-TEMPLATE",
+      "title": "Censo de drenagem, secoes e receptores",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["DRAINAGE_NETWORK"],
+      "applicability": {"country": ["ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["hydraulic project"]},
+      "source_ids": ["ANA_PPA_V5_2025", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.receiver_inventory_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "conservation.receiver_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.drainage_asset_inventory_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.hydraulic_section_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"assets": ["CHANNEL", "DITCH", "TERRACE", "ROAD_DRAIN", "CULVERT", "CEV", "DISSIPATOR", "RECEIVER"], "states": ["DESIGN", "AS_BUILT", "DEGRADED"]},
+      "local_confirmation_requirements": ["100 percent census", "inlet and outlet Z", "section and material", "condition and obstruction", "capacity and legal destination"],
+      "limitations": ["Estrada ou borda de talhao nunca e receptor implicito."]
+    },
+    {
+      "id": "SYS-CONSERVATION-ANA-PPA-V5-PROCESS",
+      "title": "Processo nacional ANA para praticas mecanicas e ESD",
+      "category": "CONSERVATION_METHOD",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK", "DRAINAGE_NETWORK", "FULL_CATCHMENT"],
+      "applicability": {"country": ["BR"], "crop": ["ANY", "SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["national process baseline"]},
+      "source_ids": ["ANA_PPA_V5_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "SYS-CONSERVATION-ANA-PPA-V5-PROCESS", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pce_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pcx_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"families": ["TERRACING", "ESD", "ROAD_DRAINAGE", "VEGETATIVE_COMPLEMENTS"], "numeric_defaults": false},
+      "local_confirmation_requirements": ["regional rule pack", "PCE", "PCX", "receiver", "implementation and maintenance plan"],
+      "limitations": ["Nao define uma receita numerica nacional para C1, C2 ou C3."]
+    },
+    {
+      "id": "SYS-CONSERVATION-IAC-BT216-SP-CANA",
+      "title": "IAC BT216 para conservacao de cana em Sao Paulo",
+      "category": "CONSERVATION_METHOD",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["SP", "CENTER_SOUTH_WITH_JUSTIFICATION"], "conditions": ["edition and jurisdiction verified"]},
+      "source_ids": ["IAC_BT216_2016"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "BR-SP-IAC-BT216-2016-CANA", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.terrace_spacing_rule_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pce_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pcx_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_id": "BR-SP-IAC-BT216-2016-CANA", "edition": 2016, "revision_status": "verification_required", "supports": ["PCE_SPACING", "TI", "TD", "C1", "C2", "C3_CONTEXT"], "formula_registry_required": true},
+      "local_confirmation_requirements": ["jurisdiction and current edition", "soil group and use-management class", "rainfall and runoff", "section feasibility", "professional approval"],
+      "limitations": ["Exemplos de TR, greide, velocidade ou comprimento do boletim nao sao defaults universais."]
+    },
+    {
+      "id": "SYS-CONSERVATION-EPAGRI-HIDROTERRACO",
+      "title": "Metodo HidroTerraco 1.0",
+      "category": "CONSERVATION_METHOD",
+      "status": "REFERENCE_ONLY",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK", "RAINFALL_DESIGN", "DRAINAGE_NETWORK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["SC", "OTHER_WITH_JUSTIFICATION"], "conditions": ["method selected explicitly"]},
+      "source_ids": ["EPAGRI_HIDROTERRACO_2022"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "BR-SC-EPAGRI-HIDROTERRACO-2022", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_id": "BR-SC-EPAGRI-HIDROTERRACO-2022", "supports": ["TI", "TD", "CHANNEL", "RAINFALL", "TIME_OF_CONCENTRATION", "PEAK_FLOW"]},
+      "local_confirmation_requirements": ["regional rainfall", "soil infiltration", "selected hydrologic method", "parity case and professional approval"],
+      "limitations": ["Exemplos de Chapeco ou Santa Catarina nao devem ser copiados para outra regiao."]
+    },
+    {
+      "id": "SYS-CONSERVATION-UFV-TERRACO41-PARITY",
+      "title": "Terraco 4.1 como referencia de paridade",
+      "category": "CONSERVATION_METHOD",
+      "status": "REFERENCE_ONLY",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["software parity tests"]},
+      "source_ids": ["UFV_TERRACO41"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "BR-UFV-TERRACO41-PARITY", "unit": null, "confidence": "MEDIUM", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_id": "BR-UFV-TERRACO41-PARITY", "purpose": "golden and parity cases"},
+      "local_confirmation_requirements": ["same inputs and method", "documented output comparison", "local calibration"],
+      "limitations": ["Software de referencia nao e norma legal nem valida o projeto por si so."]
+    },
+    {
+      "id": "SYS-SUBSURFACE-ASSESSMENT-TEMPLATE",
+      "title": "Avaliacao de drenagem subsuperficial e surgencias",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["SUBSURFACE_HYDROLOGY"],
+      "applicability": {"country": ["ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["wetness, seepage or restrictive layer suspected"]},
+      "source_ids": ["ANA_PPA_V5_2025", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.subsurface_assessment_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"observations": ["seepage", "water table", "restrictive horizon", "tile drain", "spring", "seasonality"]},
+      "local_confirmation_requirements": ["field observation by season", "profile and water level", "existing drains and outlets"],
+      "limitations": ["DTM e ortomosaico nao mostram toda drenagem subsuperficial."]
+    },
+    {
+      "id": "OEM-JD-CH570-TRACK-1ROW",
+      "title": "John Deere CH570 de esteiras, uma linha",
+      "category": "MACHINE",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["exact option set verified"]},
+      "source_ids": ["JD_CH570"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-JD-CH570-TRACK-1ROW", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.profile_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "John Deere", "model": "CH570", "role": "HARVESTER", "row_count": 1, "nominal_row_spacing_m": 1.5, "travel_speed_range_kmh": [0.0, 9.0], "track_gauge_length_m": 1.88, "track_shoe_options_m": [0.406, 0.457, 0.508], "machine_mass_approx_kg": 21000, "topper_max_reach_m": 5.2, "autotrac_ready": true},
+      "local_confirmation_requirements": ["serial, year and options", "complete 3D geometry", "mass and loads", "WORK and TURN trials", "elevator swept envelope", "stability rules"],
+      "limitations": ["Nao ha dado publico de market share; modelo e representativo, nao default de frota."]
+    },
+    {
+      "id": "OEM-CASE-AUSTOFT9000-1ROW-WHEEL",
+      "title": "Case IH Austoft 9000 de uma linha com pneus",
+      "category": "MACHINE",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["exact configuration verified"]},
+      "source_ids": ["CASE_AUSTOFT9000"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-CASE-AUSTOFT9000-1ROW-WHEEL", "unit": null, "confidence": "MEDIUM", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.profile_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Case IH", "model": "Austoft 9000", "role": "HARVESTER", "row_count": 1, "undercarriage": "WHEELED", "engine_power_cv": 420, "fuel_capacity_l": 620, "transmission": "HYDROSTATIC_VARIABLE", "autoguidance": true},
+      "local_confirmation_requirements": ["serial, tires and option set", "dimensions and gauge", "mass and loads", "WORK and TURN", "elevator envelope", "controller configuration"],
+      "limitations": ["Pagina OEM nao fecha toda geometria; nao inferir dimensoes de outra Austoft."]
+    },
+    {
+      "id": "OEM-CIVEMASA-TAC22000-REV08",
+      "title": "Civemasa TAC 22000 revisao 08",
+      "category": "MACHINE",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "LOGISTICS_CYCLE"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["manual revision and gauge verified"]},
+      "source_ids": ["CIVEMASA_TAC22000_MANUAL"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-CIVEMASA-TAC22000-REV08", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.maximum_operating_height_m", "resolution_mode": "FIXED_E0_VALUE", "value": {"TRANSSHIPMENT": 4.7}, "unit": "m", "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true, "notes": "Nominal unloading height for this revision; complete fleet maximum may be higher."},
+        {"parameter_id": "logistics.transshipment_capacity_t", "resolution_mode": "MODEL_TEMPLATE", "unit": "t", "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true, "notes": "OEM publishes volume, not an approved payload mass for project conditions."}
+      ],
+      "model_data": {"manufacturer": "Civemasa", "model": "TAC 22000", "role": "INFIELD_WAGON", "manual_revision": "08_0522", "volume_level_m3": 49.5, "volume_crowned_m3": 50.5, "load_height_m": 3.65, "unload_height_m": 4.7, "max_width_m": 3.828, "total_length_m": 10.125, "track_gauge_options_m": [2.4, 3.0], "approx_mass_kg": 14440},
+      "local_confirmation_requirements": ["exact gauge and tires", "payload by sugarcane density and approved load", "tractor and hitch", "axis loads", "CG empty and loaded", "turn and reverse trials"],
+      "limitations": ["Volume nao pode ser convertido em toneladas sem densidade e carga aprovada; marketing de 52 m3 diverge do manual Rev08."]
+    },
+    {
+      "id": "OEM-ANTONIOSI-PCP1102",
+      "title": "Antoniosi PCP1102 automatica",
+      "category": "MACHINE",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "AGRONOMIC_CONFIGURATION", "FLEET_LOAD_STABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["automatic planting comparison"]},
+      "source_ids": ["ANTONIOSI_PCP1102"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-ANTONIOSI-PCP1102", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.maximum_operating_height_m", "resolution_mode": "FIXED_E0_VALUE", "value": {"PLANT": 3.0}, "unit": "m", "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Antoniosi", "model": "PCP1102", "role": "CANE_PLANTER", "furrow_shanks": 2, "plant_spacing_range_m": [0.9, 1.5], "furrow_depth_range_m": [0.2, 0.45], "seed_cane_capacity_t": 8.0, "fertilizer_capacity_kg": 1200, "track_gauge_options_m": [2.5, 2.8, 3.0], "height_m": 3.0, "working_width_m": 3.5, "transport_width_m": 3.0, "length_m": 7.3, "mass_kg": 12000, "required_power_cv": [230, 260]},
+      "local_confirmation_requirements": ["tractor model and hitch", "selected gauge and row arrangement", "loaded axis distribution", "WORK radius", "vertical clearance", "field trial"],
+      "limitations": ["Nao usar largura ou bitola nominal como envelope varrido do conjunto articulado."]
+    },
+    {
+      "id": "SYS-FLEET-UNSELECTED-CLOSED",
+      "title": "Frota nao selecionada",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["no client fleet supplied"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.profile_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.operations_in_scope", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"catalog_options": ["OEM-JD-CH570-TRACK-1ROW", "OEM-CASE-AUSTOFT9000-1ROW-WHEEL", "OEM-CIVEMASA-TAC22000-REV08", "OEM-ANTONIOSI-PCP1102"]},
+      "local_confirmation_requirements": ["select every machine and implement in the lifecycle", "record exact unit and option set"],
+      "limitations": ["Nenhuma maquina OEM e escolhida silenciosamente como frota do cliente."]
+    },
+    {
+      "id": "SYS-FLEET-LOAD-STABILITY-TEMPLATE",
+      "title": "Pesagem, pneus, centro de gravidade e estabilidade",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["FLEET_LOAD_STABILITY"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["complete fleet selected"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.operational_state_measurements", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.axle_hitch_tire_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.mass_cg_axis_load_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.grade_stability_braking_rule_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"load_states": ["EMPTY", "PARTIAL", "LOADED"], "surface_states": ["DRY", "WET", "DEGRADED"], "directions": ["FORWARD", "REVERSE"]},
+      "local_confirmation_requirements": ["mass per axis", "tire and inflation", "CG", "approved load-speed-inflation rules", "braking and stability envelope"],
+      "limitations": ["Angulo estatico ou capacidade nominal nao vira declividade operacional automatica."]
+    },
+    {
+      "id": "SYS-FLEET-WORK-TURN-TRIAL-TEMPLATE",
+      "title": "Ensaio WORK, TURN e envelope varrido",
+      "category": "CAMPAIGN_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["FLEET_WORK_TURN"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["full articulated set"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.minimum_turn_radius_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.minimum_work_path_radius_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.swept_envelope_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.control_execution_envelope_measurements", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.work_turn_trial_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"movements": ["WORK", "LIFT", "CROSS", "TURN", "TRANSPORT", "UNLOAD"], "statistics": ["P50", "P95", "MAX", "BIAS"]},
+      "local_confirmation_requirements": ["GNSS trajectories for every unit and axle", "speed and load state", "offtracking", "tail swing", "vertical profile"],
+      "limitations": ["Raio de catalogo nao substitui o conjunto completo em movimento."]
+    },
+    {
+      "id": "OEM-GUIDANCE-JD-SF7500-SFRTK-G5",
+      "title": "John Deere StarFire 7500, SF-RTK e G5",
+      "category": "GUIDANCE_CONFIGURATION",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONTROLLER_GUIDANCE"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["active subscription and compatible machine"]},
+      "source_ids": ["JD_STARFIRE7500"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.controller_configuration_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-GUIDANCE-JD-SF7500-SFRTK-G5", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_performance_trial_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_export_contract_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"receiver": "StarFire 7500", "correction": "SF-RTK", "display": "G5", "advertised_horizontal_accuracy_cm": 2.5},
+      "local_confirmation_requirements": ["firmware and unlocks", "correction availability", "antenna and IMU offsets", "dynamic XTE test", "round-trip file test"],
+      "limitations": ["Acuracia anunciada nao e envelope de execucao da plantadora ou transbordo."]
+    },
+    {
+      "id": "OEM-GUIDANCE-CASE-XCN2050-AG25-TM200",
+      "title": "Case IH XCN-2050, AG25 e TM-200",
+      "category": "GUIDANCE_CONFIGURATION",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONTROLLER_GUIDANCE"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["compatible machine and correction"]},
+      "source_ids": ["CASE_PRECISION_GUIDANCE"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.controller_configuration_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-GUIDANCE-CASE-XCN2050-AG25-TM200", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_performance_trial_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_export_contract_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"display": "XCN-2050", "receiver": "AG25", "processor": "TM-200", "correction_options": [{"id": "RTX_RANGEPOINT", "advertised_cm": 15.0}, {"id": "RTX_CENTERPOINT", "advertised_cm": 3.8}, {"id": "RTK_RADIO", "advertised_cm": null}]},
+      "local_confirmation_requirements": ["exact receiver and controller", "signal and radio", "firmware", "dynamic test", "file round-trip"],
+      "limitations": ["Opcao de sinal e compatibilidade mudam a performance."]
+    },
+    {
+      "id": "OEM-GUIDANCE-PTX-GFX1060-NAV900",
+      "title": "PTx Trimble GFX-1060 e NAV-900",
+      "category": "GUIDANCE_CONFIGURATION",
+      "status": "ACTIVE",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONTROLLER_GUIDANCE"],
+      "applicability": {"country": ["BR", "ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["compatible steering and correction"]},
+      "source_ids": ["PTX_NAV900_GFX1060"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.controller_configuration_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-GUIDANCE-PTX-GFX1060-NAV900", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_performance_trial_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_export_contract_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"display": "GFX-1060", "receiver_controller": "NAV-900", "corrections": ["RTK", "VRS", "RTX"]},
+      "local_confirmation_requirements": ["vehicle kit", "steering controller", "correction", "firmware", "dynamic and round-trip tests"],
+      "limitations": ["Catalogo nao comprova compatibilidade com a maquina especifica do cliente."]
+    },
+    {
+      "id": "SYS-GUIDANCE-UNSELECTED-CLOSED",
+      "title": "Controlador nao selecionado",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONTROLLER_GUIDANCE"],
+      "applicability": {"country": ["ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["no controller supplied"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.controller_configuration_ref", "resolution_mode": "CATALOG_SELECTION", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"catalog_options": ["OEM-GUIDANCE-JD-SF7500-SFRTK-G5", "OEM-GUIDANCE-CASE-XCN2050-AG25-TM200", "OEM-GUIDANCE-PTX-GFX1060-NAV900"]},
+      "local_confirmation_requirements": ["select exact controller or register another", "test export and execution"],
+      "limitations": ["Nenhuma linha e homologada para controlador sem configuracao e teste."]
+    },
+    {
+      "id": "SYS-OP-SPEED-5KMH-E0",
+      "title": "Velocidade de trabalho de 5 km/h para sensibilidade E0",
+      "category": "OPERATION_PRIOR",
+      "status": "REFERENCE_ONLY",
+      "market_position": "FIELD_STUDY_PRIOR",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["E0 comparative proxy"]},
+      "source_ids": ["SALVI_BASECUTTER_2007"],
+      "parameter_candidates": [
+        {"parameter_id": "e0.nominal_field_speed_kmh", "resolution_mode": "FIXED_E0_VALUE", "value": 5.0, "unit": "km/h", "confidence": "MEDIUM", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false},
+        {"parameter_id": "fleet.performance_distribution_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"value_kmh": 5.0, "operation_context": "historical sugarcane harvester base-cutting study"},
+      "local_confirmation_requirements": ["telemetry distributions by operation, machine, slope, load and soil state"],
+      "limitations": ["Nao e limite operacional nem representa sulcacao, plantio e transbordo igualmente."]
+    },
+    {
+      "id": "SYS-OP-TURN-HARVESTER-38P5S-E0",
+      "title": "Manobra correta de colhedora, 38,5 s, para E0",
+      "category": "OPERATION_PRIOR",
+      "status": "REFERENCE_ONLY",
+      "market_position": "FIELD_STUDY_PRIOR",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["SP"], "conditions": ["three-stage harvester maneuver sensitivity"]},
+      "source_ids": ["CORREA_MANEUVER_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "e0.maneuver_time_s", "resolution_mode": "FIXED_E0_VALUE", "value": 38.5, "unit": "s", "confidence": "MEDIUM", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"value_s": 38.5, "machine_role": "HARVESTER", "maneuver": "THREE_STAGE"},
+      "local_confirmation_requirements": ["headland geometry", "machine and wagon synchronization", "local time distribution"],
+      "limitations": ["Prior de um estudo; nao default de frota completa."]
+    },
+    {
+      "id": "SYS-OP-TURN-TANDEM-47P3S-E0",
+      "title": "Manobra limitante do trator-transbordo, 47,3 s, para E0",
+      "category": "OPERATION_PRIOR",
+      "status": "REFERENCE_ONLY",
+      "market_position": "FIELD_STUDY_PRIOR",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["SP"], "conditions": ["harvester and infield wagon tandem sensitivity"]},
+      "source_ids": ["CORREA_MANEUVER_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "e0.maneuver_time_s", "resolution_mode": "FIXED_E0_VALUE", "value": 47.3, "unit": "s", "confidence": "MEDIUM", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": false}
+      ],
+      "model_data": {"value_s": 47.3, "machine_role": "TRACTOR_INFIELD_WAGON", "use": "recommended E0 tandem sensitivity"},
+      "local_confirmation_requirements": ["actual composition", "turn type", "slope", "headland", "P50 and P95"],
+      "limitations": ["O valor nao inclui toda espera, troca, fila ou falha do ciclo logistico."]
+    },
+    {
+      "id": "SYS-PERFORMANCE-TELEMETRY-TEMPLATE",
+      "title": "Distribuicoes de desempenho, confiabilidade e custo",
+      "category": "DATA_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["telemetry and maintenance data"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.performance_distribution_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.reliability_cost_profile_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"metrics": ["km/h", "t/h", "ha/h", "L/h", "L/t", "MTBF_h", "MTTR_h", "BRL/h", "BRL/t"], "statistics": ["P10", "P50", "P90", "P95", "MAX"]},
+      "local_confirmation_requirements": ["machine and state", "timestamp and geofence", "mass balance", "planned versus unplanned downtime"],
+      "limitations": ["Valor OEM escalar so pode ser prior E0."]
+    },
+    {
+      "id": "SYS-CONSTRAINTS-NOT-REVIEWED-CLOSED",
+      "title": "Inventario de interferencias nao revisado",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSTRAINTS_GENERAL"],
+      "applicability": {"country": ["ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["project start"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "constraints.inventory_review_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "constraints.internal_work_stop_policy", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "ONLY_ON_APPROVED_OPERATIONAL_SURFACE", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "constraints.complete_feature_inventory_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"effects": ["EXCLUDE", "SPLIT_WORK", "BLOCK_ROUTE", "TRANSIT_ONLY", "NO_STOP", "NO_TURN", "NO_LOAD", "NO_EARTHWORK", "HYDRAULIC_NODE", "SEASONAL"]},
+      "local_confirmation_requirements": ["census of roads, utilities, structures, water, wet soil, erosion and permissions", "operation-specific effect"],
+      "limitations": ["Ausencia no LAZ ou ortomosaico nao prova ausencia em campo."]
+    },
+    {
+      "id": "SYS-POWER-AXIS-SPLIT-EXCLUDE-CLOSED",
+      "title": "Rede aerea como barreira absoluta v1",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["POWER_CONSTRAINT"],
+      "applicability": {"country": ["BR", "ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["overhead network may exist"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0", "ANEEL_GCEM"],
+      "parameter_candidates": [
+        {"parameter_id": "constraints.overhead_power_line_inventory_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "constraints.overhead_power_line_work_behavior", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "SPLIT_AND_EXCLUDE", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "constraints.overhead_power_line_transit_policy", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "PROHIBITED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "constraints.overhead_power_line_axis_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "constraints.overhead_power_line_exclusion_half_width_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "constraints.power_asset_survey_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"input_geometry": "LINESTRING_THROUGH_POLE_CENTERS", "work_effect": "SPLIT_AND_EXCLUDE", "transit": "PROHIBITED", "width_default": null},
+      "local_confirmation_requirements": ["complete pole-center axis shape", "voltage and concessionaire", "survey method and uncertainty", "engineer-approved exclusion half-width", "declared-none coverage when absent"],
+      "limitations": ["Eixo pelos postes nao comprova altura, flecha ou clearance; nao existe buffer numerico universal."]
+    },
+    {
+      "id": "SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0",
+      "title": "Descoberta ambiental e fundiaria SICAR, SIGEF e bases oficiais",
+      "category": "LEGAL_DATA",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_DATA_SOURCE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["ENVIRONMENT_LEGAL", "SCOPE_BOUNDARY_PERMISSION"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["official discovery"]},
+      "source_ids": ["SICAR_API", "MEU_IMOVEL_RURAL", "SIGEF_MANUAL", "ANA_BHO6_2024"],
+      "parameter_candidates": [
+        {"parameter_id": "constraints.water_environment_dataset_ref", "resolution_mode": "REFERENCE_LOOKUP", "unit": null, "confidence": "LOW", "evidence_state": "ESTIMATED_PRIOR", "requires_user_confirmation": true},
+        {"parameter_id": "constraints.environment_legal_evidence_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "constraints.permission_records_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"sources": ["SICAR", "SIGEF", "MEU_IMOVEL_RURAL", "ANA_BHO6"], "role": "discovery and reconciliation"},
+      "local_confirmation_requirements": ["field survey of water and wetland features", "legal review", "permission by action, geometry and validity"],
+      "limitations": ["CAR nao e licenca; cadastro e geometria publica nao concedem permissao operacional."]
+    },
+    {
+      "id": "SYS-CONNECTIONS-DISABLED-CLOSED",
+      "title": "Portais e continuidade desabilitados por padrao",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONNECTIONS_PORTALS"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["portal inventory pending"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "connections.allowed_boundary_ids", "resolution_mode": "FAIL_CLOSED_VALUE", "value": [], "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "connections.portal_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "connections.portal_min_width_m", "resolution_mode": "FORMULA_DERIVED", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "connections.max_gap_grade_pct", "resolution_mode": "MODEL_TEMPLATE", "unit": "%", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "connections.maximum_operational_shot_length_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"default_mode": "OC0_ISOLATED", "portal_width_formula": "swept_envelope_width_plus_approved_margin"},
+      "local_confirmation_requirements": ["portal geometry and profile", "complete fleet envelope", "drainage", "barriers", "permission", "terrain coverage"],
+      "limitations": ["Mesma nuvem nao prova passagem, permissao ou continuidade hidraulica."]
+    },
+    {
+      "id": "SYS-POA-NOT-REQUESTED-CLOSED",
+      "title": "POA nao solicitado e sem nova obra",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["POA_SITE_LAYOUT"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["POA not requested"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "poa.site_permission_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "poa.drainage_approval_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false}
+      ],
+      "model_data": {"strategy": "NOT_REQUESTED", "new_work": false},
+      "local_confirmation_requirements": ["explicitly request POA before candidate generation"],
+      "limitations": ["Nao cria patio, acesso ou capacidade implicitamente."]
+    },
+    {
+      "id": "SYS-POA-EXISTING-SITE-TEMPLATE",
+      "title": "POA existente com capacidade medida",
+      "category": "POA_TOPOLOGY",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["POA_SITE_LAYOUT"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["existing POA"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "poa.existing_sites_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.site_observation_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.layout_geometry_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.service_capacity_measurements_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"topology": "EXISTING", "capacity_source": "observed events", "distance": "drivable network"},
+      "local_confirmation_requirements": ["polygon and access", "fleet turn", "soil support", "drainage", "queue", "permission"],
+      "limitations": ["Area minima, rampa e fila nao possuem default nacional."]
+    },
+    {
+      "id": "SYS-POA-DRIVE-THROUGH-1BAY-TEMPLATE",
+      "title": "POA passante de uma baia",
+      "category": "POA_TOPOLOGY",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["POA_SITE_LAYOUT"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["new POA candidate"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "poa.candidate_areas_dataset_ref", "resolution_mode": "FORMULA_DERIVED", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.layout_geometry_ref", "resolution_mode": "FORMULA_DERIVED", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"topology": "DRIVE_THROUGH", "service_bays": 1, "dimensions": "derived from swept envelopes, queue and safety margins"},
+      "local_confirmation_requirements": ["arrival and service distributions", "truck and transshipment geometry", "soil, drainage and legal permission"],
+      "limitations": ["Topologia selecionavel; nao e layout dimensionado."]
+    },
+    {
+      "id": "SYS-POA-DRIVE-THROUGH-MULTIBAY-TEMPLATE",
+      "title": "POA passante multibaia",
+      "category": "POA_TOPOLOGY",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["POA_SITE_LAYOUT"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["parallel service demand"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "poa.candidate_areas_dataset_ref", "resolution_mode": "FORMULA_DERIVED", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.layout_geometry_ref", "resolution_mode": "FORMULA_DERIVED", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.truck_queue_capacity", "resolution_mode": "FORMULA_DERIVED", "unit": "truck", "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"topology": "DRIVE_THROUGH", "service_bays": "optimizer decision >=2", "dimensions": "derived"},
+      "local_confirmation_requirements": ["demand peak", "queue P95", "dispatch policy", "fleet envelope", "soil, drainage and permission"],
+      "limitations": ["Numero de baias e fila sao resultados, nao constantes de mercado."]
+    },
+    {
+      "id": "SYS-ROAD-DNIT-CONTEXT-TEMPLATE",
+      "title": "Rede viaria, bueiros e drenagem com referencia DNIT",
+      "category": "ROAD_METHOD",
+      "status": "ACTIVE",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["LOGISTICS_ROAD", "DRAINAGE_NETWORK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["applicable road and drainage components"]},
+      "source_ids": ["DNIT_ISF208", "CONTRAN_872_2021", "CONTRAN_882_2021", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "logistics.road_network_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.road_and_bridge_capacity_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "logistics.road_edge_state_profile_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.legal_route_permit_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"edge_states": ["DRY", "WET", "DEGRADED", "CLOSED"], "legal_refs": ["CONTRAN_872_2021", "CONTRAN_882_2021"]},
+      "local_confirmation_requirements": ["road geometry and surface", "width, grade and clearance", "bridge and culvert capacity", "vehicle documents and AET", "speed distributions"],
+      "limitations": ["Nao fixa velocidade, carga ou capacidade de ponte pela classe visual da via."]
+    },
+    {
+      "id": "SYS-LOGISTICS-CYCLE-LOCAL-TEMPLATE",
+      "title": "Ciclo integrado colhedora, transbordo, POA, caminhao e usina",
+      "category": "DATA_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["LOGISTICS_CYCLE"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["POA or logistics requested"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "logistics.event_stream_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.dispatch_queue_model_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.mill_receiving_profile_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.harvest_window", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.shift_duration_h", "resolution_mode": "MODEL_TEMPLATE", "unit": "h", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.harvester_capacity_t_h", "resolution_mode": "MODEL_TEMPLATE", "unit": "t/h", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.transshipment_capacity_t", "resolution_mode": "MODEL_TEMPLATE", "unit": "t", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.truck_payload_t", "resolution_mode": "MODEL_TEMPLATE", "unit": "t", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"states": ["HARVEST", "LOAD", "TRAVEL_LOADED", "TRANSFER", "TRAVEL_EMPTY", "QUEUE", "FAILURE"], "simulation": "discrete event with correlated distributions"},
+      "local_confirmation_requirements": ["all capacities and unit counts", "loaded and empty speeds", "service times", "dispatch", "failures", "mill target and receiving profile"],
+      "limitations": ["Nenhuma jornada, velocidade, capacidade ou tempo de transferencia e universal."]
+    },
+    {
+      "id": "SYS-CUT-TO-MILL-EVENT-TEMPLATE",
+      "title": "Cadeia de eventos corte ate moagem",
+      "category": "DATA_TEMPLATE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["CUT_TO_MILL"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["quality and logistics integration"]},
+      "source_ids": ["TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "logistics.cut_to_mill_chain_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.cut_to_mill_sla_rule_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"events": ["CUT", "LOAD", "POA_TRANSFER", "ROAD_DEPARTURE", "MILL_SCALE", "UNLOAD", "MILLING"], "time_basis": "UTC with synchronized clocks", "mass_lineage": true},
+      "local_confirmation_requirements": ["event integration", "split and merge lineage", "mass closure", "mill-approved SLA and quality model"],
+      "limitations": ["Nao existe SLA de horas universal para perda de qualidade."]
+    },
+    {
+      "id": "SYS-QA-E0-CLOSED",
+      "title": "QA sem aprovacao mantido em E0",
+      "category": "FAIL_CLOSED_POLICY",
+      "status": "ACTIVE",
+      "market_position": "FAIL_CLOSED_POLICY",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["QA_APPROVAL_LIFECYCLE"],
+      "applicability": {"country": ["ALL"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["no project approvals"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "qa.field_review_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "qa.professional_approval_status", "resolution_mode": "FAIL_CLOSED_VALUE", "value": "NOT_REVIEWED", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "qa.release_block_on_unreviewed_constraints", "resolution_mode": "FAIL_CLOSED_VALUE", "value": true, "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": false},
+        {"parameter_id": "qa.rule_pack_revision", "resolution_mode": "REFERENCE_ONLY", "value": "system-presets-1.0.0-e0", "unit": null, "confidence": "VERIFIED", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "qa.constraint_revision", "resolution_mode": "REFERENCE_ONLY", "value": "not-reviewed-system-default", "unit": null, "confidence": "VERIFIED", "evidence_state": "FAIL_CLOSED", "requires_user_confirmation": true}
+      ],
+      "model_data": {"maximum_delivery": "E0_TRIAGEM", "approval_override": false},
+      "local_confirmation_requirements": ["field review", "domain approvals", "uncertainty", "pilot acceptance", "as-built", "maintenance plan"],
+      "limitations": ["Selecionar um preset nao aprova o projeto."]
+    },
+    {
+      "id": "SYS-OBJECTIVE-PARETO-3",
+      "title": "Pareto com tres representantes",
+      "category": "OPTIMIZER_PROFILE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["QA_APPROVAL_LIFECYCLE"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["scenario comparison"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2"],
+      "parameter_candidates": [
+        {"parameter_id": "objectives.selection_mode", "resolution_mode": "FIXED_E0_VALUE", "value": "PARETO", "unit": null, "confidence": "VERIFIED", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": false},
+        {"parameter_id": "objectives.pareto_representative_count", "resolution_mode": "FIXED_E0_VALUE", "value": 3, "unit": "count", "confidence": "VERIFIED", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": false}
+      ],
+      "model_data": {"representatives": ["CONSERVATION", "BALANCE", "OPERATION"], "hard_gates_before_scoring": true},
+      "local_confirmation_requirements": ["business objectives when a weighted or lexicographic selection is requested"],
+      "limitations": ["Pareto nao compensa violacao de restricao dura."]
+    },
+    {
+      "id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "title": "Preferencias operacionais e logisticas do cliente",
+      "category": "OPTIMIZER_PROFILE",
+      "status": "ACTIVE",
+      "market_position": "SYSTEM_TEMPLATE",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONNECTIONS_PORTALS", "POA_SITE_LAYOUT", "LOGISTICS_CYCLE"],
+      "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["optimization requested"]},
+      "source_ids": ["TF_PARAMETER_CATALOG_1.2"],
+      "parameter_candidates": [
+        {"parameter_id": "connections.max_nonworking_gap_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "connections.minimum_preferred_shot_length_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "poa.maximum_site_count", "resolution_mode": "MODEL_TEMPLATE", "unit": "count", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.maximum_preferred_transshipment_distance_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "objectives.weights", "resolution_mode": "MODEL_TEMPLATE", "unit": "fraction", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"profiles": ["CONSERVATION", "BALANCED", "OPERATION", "LOGISTICS", "MIN_INTERVENTION"]},
+      "local_confirmation_requirements": ["client preference or Pareto mode"],
+      "limitations": ["Preferencias nao alteram gates de seguranca, agua, solo, legalidade ou maquina."]
+    },
+    {
+      "id": "OEM-JD-CH670-TRACK-2ROW-ALT",
+      "title": "John Deere CH670 - duas linhas alternadas",
+      "category": "MACHINE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "PERFORMANCE_RELIABILITY", "AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["alternating 0.90 x 1.50 m row system"]},
+      "source_ids": ["JD_CH670"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-JD-CH670-TRACK-2ROW-ALT", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.profile_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "John Deere", "model": "CH670", "role": "SUGARCANE_HARVESTER", "row_count": 2, "row_pattern": "ALTERNATING", "row_spacing_m": [0.9, 1.5], "engine_power_cv": 380, "fuel_capacity_l": 605},
+      "local_confirmation_requirements": ["serial and options", "actual crop pattern", "track gauge", "mass and CG", "WORK and TURN envelope", "loss and capacity trial", "telemetry calibration"],
+      "limitations": ["Duas linhas alternadas nao sao intercambiaveis com duas linhas simples; a ficha OEM nao libera geometria ou desempenho."]
+    },
+    {
+      "id": "OEM-JD-CH950-TRACK-2ROW",
+      "title": "John Deere CH950 - duas linhas independentes",
+      "category": "MACHINE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "PERFORMANCE_RELIABILITY", "AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["two independent rows at 1.40 or 1.50 m"]},
+      "source_ids": ["JD_CH950"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-JD-CH950-TRACK-2ROW", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.profile_dataset_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "John Deere", "model": "CH950", "role": "SUGARCANE_HARVESTER", "row_count": 2, "row_pattern": "SIMPLE_INDEPENDENT", "row_spacing_options_m": [1.4, 1.5], "engine_power_cv": 490, "fuel_capacity_l": 1135, "travel_speed_range_kmh": [0, 9], "track_gauge_options_m": [2.75, 3.0]},
+      "local_confirmation_requirements": ["serial and options", "selected row spacing", "track and gauge", "mass and CG", "WORK and TURN envelope", "loss and capacity trial", "telemetry calibration"],
+      "limitations": ["Potencia e velocidade maxima de catalogo nao definem capacidade de campo, raio seguro ou compactacao no solo local."]
+    },
+    {
+      "id": "OEM-CIVEMASA-TAC10500",
+      "title": "Civemasa TAC 10500",
+      "category": "MACHINE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "LOGISTICS_CYCLE"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["single infield wagon reference"]},
+      "source_ids": ["CIVEMASA_TAC10500"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-CIVEMASA-TAC10500", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "logistics.transshipment_capacity_t", "resolution_mode": "MODEL_TEMPLATE", "unit": "t", "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Civemasa", "model": "TAC 10500", "role": "INFIELD_WAGON", "manual_revision": "01_0825", "nominal_volume_m3": 24, "legacy_crowned_volume_m3": 25, "legacy_approx_mass_kg": 7600},
+      "local_confirmation_requirements": ["current build sheet", "exact volume revision", "payload", "tractor and hitch", "tires and gauge", "axis loads and CG", "WORK and UNLOAD envelope"],
+      "limitations": ["Versoes de manual mudam; usar a placa e o build sheet da unidade e nunca converter volume em toneladas sem calibracao."]
+    },
+    {
+      "id": "OEM-CIVEMASA-SATP-HD-2R",
+      "title": "Civemasa SATP HD - sulcador de duas hastes",
+      "category": "MACHINE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "AGRONOMIC_CONFIGURATION"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["two-shank furrowing reference"]},
+      "source_ids": ["CIVEMASA_SATP_HD"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-CIVEMASA-SATP-HD-2R", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "agronomy.row_pattern_by_zone", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Civemasa", "model": "SATP HD", "role": "FURROWER_FERTILIZER", "furrow_shanks": 2, "spacing_range_m": [0.9, 1.8], "fertilizer_capacity_l": 1250, "approx_mass_kg": 1550, "required_power_cv": [160, 230]},
+      "local_confirmation_requirements": ["tractor and hitch", "tool offsets", "selected spacing", "working depth", "draft and slip", "WORK radius", "lift and turn envelope"],
+      "limitations": ["Faixa de regulagem e potencia nominal nao comprovam capacidade de sulcacao no perfil de solo e umidade do projeto."]
+    },
+    {
+      "id": "OEM-JD-6210M-TRACTOR",
+      "title": "John Deere 6210M",
+      "category": "MACHINE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "PERFORMANCE_RELIABILITY"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["tractor reference for implement or transshipment composition"]},
+      "source_ids": ["JD_6210M"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-JD-6210M-TRACTOR", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "John Deere", "model": "6210M", "role": "TRACTOR", "nominal_power_cv": 210, "wheelbase_m": 2.688, "total_length_m": 5.02, "maximum_permitted_mass_kg": 12300},
+      "local_confirmation_requirements": ["serial and axle option", "tires and gauge", "ballast", "hitch and implement", "loads and CG", "WORK and TURN envelope", "traction trial"],
+      "limitations": ["O raio do trator isolado nao e o raio WORK da composicao articulada e carregada."]
+    },
+    {
+      "id": "OEM-SCANIA-G560-6X4-XT-CANE",
+      "title": "Scania G 560 6x4 XT Super canavieiro",
+      "category": "ROAD_FLEET_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "LOGISTICS_ROAD", "LOGISTICS_CYCLE"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["off-road sugarcane tractor unit reference"]},
+      "source_ids": ["SCANIA_G560_CANE", "CONTRAN_872_2021", "CONTRAN_882_2021"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-SCANIA-G560-6X4-XT-CANE", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Scania", "model": "G 560 6x4 XT Super", "role": "TRUCK_TRACTOR", "engine_power_cv": 560, "maximum_torque_nm": 2800, "technical_cmt_t": 150, "legal_combination_status": "NOT_HOMOLOGATED_BY_PRESET"},
+      "local_confirmation_requirements": ["vehicle documents", "exact CVC", "axis loads", "PBTC and CMT", "swept envelope", "braking and grade study", "route inventory", "AET when applicable"],
+      "limitations": ["Capacidade maxima de tracao nao autoriza PBTC nem torna qualquer implemento ou rota compativel."]
+    },
+    {
+      "id": "OEM-RANDON-CANE-9AXLE-74T",
+      "title": "Randon rodotrem canavieiro rebaixado 9 eixos HD",
+      "category": "ROAD_FLEET_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "LOGISTICS_ROAD", "LOGISTICS_CYCLE"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["74 t road combination reference"]},
+      "source_ids": ["RANDON_CANE_74T", "CONTRAN_882_2021"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.configuration_registry_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-RANDON-CANE-9AXLE-74T", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Randon", "model": "Rodotrem Rebaixado 9 Eixos HD", "role": "CANE_TRAILER_COMBINATION", "total_length_m": 25, "nominal_volume_m3": 180, "nominal_pbtc_t": 74, "legal_combination_status": "NOT_HOMOLOGATED_BY_PRESET"},
+      "local_confirmation_requirements": ["exact tractor and trailers", "vehicle documents", "axis spacing and loads", "couplings", "swept envelope", "route and bridge capacity", "permits when applicable"],
+      "limitations": ["Ficha do implemento nao homologa cavalo, distribuicao por eixo, trajeto ou capacidade de obras de arte."]
+    },
+    {
+      "id": "OEM-GUIDANCE-HEXAGON-TI10",
+      "title": "Hexagon Ti10 e piloto automatico",
+      "category": "GUIDANCE_REFERENCE",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REPRESENTATIVE_MAJOR_OEM",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONTROLLER_GUIDANCE"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["compatible receiver, steering and correction selected"]},
+      "source_ids": ["HEXAGON_TI10"],
+      "parameter_candidates": [
+        {"parameter_id": "fleet.controller_configuration_ref", "resolution_mode": "REFERENCE_ONLY", "value": "model://OEM-GUIDANCE-HEXAGON-TI10", "unit": null, "confidence": "HIGH", "evidence_state": "OEM_NOMINAL", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_performance_trial_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "LOW", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "fleet.guidance_export_contract_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"manufacturer": "Hexagon", "display": "Ti10", "screen_in": 10, "isobus": true, "interfaces": ["USB", "CAN", "RS-232", "Wi-Fi", "4G", "Bluetooth"], "line_import": true, "position_accuracy_status": "DEPENDS_ON_RECEIVER_AND_CORRECTION"},
+      "local_confirmation_requirements": ["display and receiver model", "firmware", "correction service", "steering controller", "licenses", "line format and size test", "antenna and implement offsets", "XTE P50/P95/MAX", "dropout and latency"],
+      "limitations": ["Compatibilidade de arquivo e precisao nominal nao comprovam execucao da linha pela maquina real."]
+    },
+    {
+      "id": "SYS-GOV-SP-SAA-CONSERVATION",
+      "title": "Governanca de conservacao do solo de Sao Paulo",
+      "category": "REGULATORY_OVERLAY",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REGULATORY_GOVERNANCE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["ENVIRONMENT_LEGAL", "CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY", "SUGARCANE"], "jurisdiction": ["SP"], "conditions": ["current law and supersession verified"]},
+      "source_ids": ["SP_SAA_RES11_2015"],
+      "parameter_candidates": [
+        {"parameter_id": "constraints.environment_legal_evidence_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "GOVERNANCE", "issuer_class": "STATE_GOVERNMENT", "regulatory_status": "BINDING_OVERLAY_REVIEW_REQUIRED", "maturity": "M1_PROCESS", "automatic_method_selection": false},
+      "local_confirmation_requirements": ["applicable property and works", "current consolidated rules", "soil and land capability", "technical record", "responsible professional registration and approvals"],
+      "limitations": ["O roteiro legal nao fornece parametros hidraulicos nem substitui o metodo de projeto e a aprovacao aplicavel."]
+    },
+    {
+      "id": "SYS-GOV-PR-PROSOLO",
+      "title": "Governanca Prosolo do Parana",
+      "category": "REGULATORY_OVERLAY",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "REGULATORY_GOVERNANCE",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["ENVIRONMENT_LEGAL", "CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY", "SUGARCANE"], "jurisdiction": ["PR"], "conditions": ["current state rules verified"]},
+      "source_ids": ["PR_PROSOLO"],
+      "parameter_candidates": [
+        {"parameter_id": "constraints.environment_legal_evidence_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "GOVERNANCE", "issuer_class": "STATE_GOVERNMENT", "regulatory_status": "BINDING_OVERLAY_REVIEW_REQUIRED", "maturity": "M1_PROCESS", "automatic_method_selection": false},
+      "local_confirmation_requirements": ["applicable property and works", "current consolidated rules", "technical plan", "responsible professional and authority requirements"],
+      "limitations": ["Governanca estadual nao e solver e nao preenche solo, chuva, secao, greide ou receptor."]
+    },
+    {
+      "id": "SYS-CONSERVATION-PR-BT71-CANA-PCE",
+      "title": "IAPAR BT71 para PCE de cana no Parana",
+      "category": "CONSERVATION_METHOD",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "OFFICIAL_METHOD",
+      "release_ceiling": "E0_TRIAGEM",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["SUGARCANE"], "jurisdiction": ["PR"], "conditions": ["soil group, slope, tillage and residue management verified"]},
+      "source_ids": ["IAPAR_BT71_2010", "PR_PROSOLO"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "BR-PR-SEAB172-IAPAR-BT71-2010-CANA-PCE", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.terrace_spacing_rule_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pce_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "DESIGN_METHOD", "maturity": "M2_CODEABLE", "crop_group": 4, "sugarcane_use_factor_u": 1.25, "table_numbers": [12, 16, 20, 24, 28], "modules": ["PCE_SPACING"], "not_supported": ["PCX_SECTION", "PASSABILITY", "ESD"]},
+      "local_confirmation_requirements": ["jurisdiction and current edition", "soil group A to D", "slope", "tillage", "residue management", "separate PCX method", "professional approval"],
+      "limitations": ["O BT71 calcula espacamento PCE; nao dimensiona capacidade, geometria ou seguranca da estrutura."]
+    },
+    {
+      "id": "SYS-CONSERVATION-ESD-PROCESS-CLOSED",
+      "title": "ESD nacional como processo, sem receita numerica automatica",
+      "category": "CONSERVATION_PROCESS",
+      "status": "VERIFICATION_REQUIRED",
+      "market_position": "PROCESS_ONLY",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["CONSERVATION_RULE_PACK", "FULL_CATCHMENT", "DRAINAGE_NETWORK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY", "SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["C3 ESD requested"]},
+      "source_ids": ["ANA_PPA_V5_2025", "TF_PARAMETER_CATALOG_1.2", "TF_ACQUISITION_CATALOG_1.0"],
+      "parameter_candidates": [
+        {"parameter_id": "conservation.regional_method_pack_ref", "resolution_mode": "REFERENCE_ONLY", "value": "BR-NAT-ANA-PPA-V5-2025-ESD-PROCESS", "unit": null, "confidence": "HIGH", "evidence_state": "PUBLISHED_REFERENCE", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.max_furrow_grade_pct", "resolution_mode": "MODEL_TEMPLATE", "unit": "%", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.min_conveyance_grade_pct", "resolution_mode": "MODEL_TEMPLATE", "unit": "%", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.max_hydraulic_reach_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pce_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pcx_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "DESIGN_PROCESS", "maturity": "M1_PROCESS_ONLY", "scenario": "C3_ESD", "automatic_numeric_solver": false, "project_overlay_required": true, "execution_status_without_overlay": "FAIL_CLOSED", "chain": ["FULL_CATCHMENT", "PCE", "PCX", "FURROW_REACH_AND_GRADE", "CONVERGENCES", "ROAD_DRAINAGE", "ESD", "STABLE_RECEIVER", "AS_BUILT", "MAINTENANCE"]},
+      "local_confirmation_requirements": ["signed numeric project overlay", "complete catchment graph", "soil and rainfall", "furrow balance by reach", "convergences", "road drainage", "ESD sections and grades", "stable receiver", "phased implementation", "monitoring and maintenance"],
+      "limitations": ["Nao foi localizada receita publica oficial numericamente completa para C3; sem overlay profissional o sistema deve bloquear E2 e E3."]
+    },
+    {
+      "id": "SYS-CONSERVATION-EMBRAPA-DOC480-FIELD-CAL",
+      "title": "Embrapa Documento 480 - campanha de calibracao em campo",
+      "category": "FIELD_PROTOCOL",
+      "status": "REFERENCE_ONLY",
+      "market_position": "RESEARCH_PROTOCOL",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["SOIL_PROFILE_HYDRAULIC", "CONSERVATION_RULE_PACK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["field infiltration calibration planned"]},
+      "source_ids": ["EMBRAPA_DOC480_2025"],
+      "parameter_candidates": [
+        {"parameter_id": "agronomy.soil_hydraulic_test_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.pce_calibration_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "MEDIUM", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "CALIBRATION_PROTOCOL", "maturity": "M2_FIELD_PROTOCOL", "methods": ["TIE_SAMPLING", "GUELPH_PERMEAMETER", "TERRACO41_COMPARISON"], "copy_study_values": false},
+      "local_confirmation_requirements": ["sampling design", "local field measurements", "laboratory and field QA", "spatial variability", "method and equipment revision", "professional interpretation"],
+      "limitations": ["O protocolo pode ser reutilizado; TIE, TR, Cd e dimensoes observadas no caso publicado nao podem ser copiadas."]
+    },
+    {
+      "id": "SYS-CONSERVATION-EMBRAPA-DOC483-ASBUILT-OM",
+      "title": "Embrapa Documento 483 - as-built e manutencao",
+      "category": "FIELD_PROTOCOL",
+      "status": "REFERENCE_ONLY",
+      "market_position": "RESEARCH_PROTOCOL",
+      "release_ceiling": "NO_PROJECT_RELEASE",
+      "supported_package_ids": ["QA_APPROVAL_LIFECYCLE", "DRAINAGE_NETWORK"],
+      "applicability": {"country": ["BR"], "crop": ["ANY"], "jurisdiction": ["ALL"], "conditions": ["terrace or drainage structure inspection"]},
+      "source_ids": ["EMBRAPA_DOC483_2026"],
+      "parameter_candidates": [
+        {"parameter_id": "qa.as_built_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "qa.lifecycle_and_maintenance_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
+        {"parameter_id": "conservation.hydraulic_section_set_ref", "resolution_mode": "MODEL_TEMPLATE", "unit": null, "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true}
+      ],
+      "model_data": {"pack_type": "AS_BUILT_AND_OM_PROTOCOL", "maturity": "M2_FIELD_PROTOCOL", "effective_capacity_expression": "CER=CA-LES", "requires_measured_section": true, "local_degradation_model": true},
+      "local_confirmation_requirements": ["measured as-built section", "condition survey", "local loss of section", "capacity margin", "inspection frequency", "maintenance owner and triggers"],
+      "limitations": ["Perda de secao e sigma do estudo sao casos observados, nao defaults de degradacao para outra fazenda."]
+    }
+  ]
+}

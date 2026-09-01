@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "terraflux-engine-capability-catalog",
+  "capabilities": [
+    {
+      "id": "TOPO_E0_PRODUCTS",
+      "title": "Produtos topograficos E0 derivados do LAZ",
+      "domain": "TERRAIN",
+      "declared_status": "IMPLEMENTED_VERIFIED",
+      "required_evidence_packages": ["TERRAIN_SURFACE_CONTEXT"],
+      "required_capabilities": [],
+      "outputs": ["DTM", "SLOPE", "CONTOURS", "FLOW_SCREENING", "POINT_DENSITY"],
+      "blocker_code": null,
+      "next_implementation": "Manter reprodutibilidade e separar triagem topografica de hidrologia dimensionada."
+    },
+    {
+      "id": "CF0_GEOMETRY",
+      "title": "Familia curva continua geometrica",
+      "domain": "SULCATION",
+      "declared_status": "IMPLEMENTED_VERIFIED",
+      "required_evidence_packages": ["TERRAIN_SURFACE_CONTEXT", "AGRONOMIC_CONFIGURATION"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["CF0_GEOMETRY"],
+      "blocker_code": "HYDRAULIC_UNCONFIRMED",
+      "next_implementation": "Consumir evidencias de frota e PCX sem remover o rotulo nao hidraulico do CF0 isolado."
+    },
+    {
+      "id": "PCE_ENGINE",
+      "title": "Motor de controle de erosao PCE",
+      "domain": "CONSERVATION",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["SOIL_PROFILE_HYDRAULIC", "SOIL_OPERATION_STATE", "CONSERVATION_RULE_PACK"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["PCE_RISK", "PCE_PRACTICES"],
+      "blocker_code": "PCE_SOLVER_NOT_IMPLEMENTED",
+      "next_implementation": "Implementar suscetibilidade e praticas com calibracao local, sem usar RUSLE como PCX."
+    },
+    {
+      "id": "C1_ALIGNMENT_SCREENING",
+      "title": "Triagem geometrica de alinhamentos C1 embutidos TI",
+      "domain": "CONSERVATION",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["TERRAIN_SURFACE_CONTEXT", "AGRONOMIC_CONFIGURATION"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "CF0_GEOMETRY"],
+      "outputs": ["C1_E0_CONCEPT_ALIGNMENT"],
+      "blocker_code": "C1_NOT_DIMENSIONED",
+      "next_implementation": "Resolver PCE/PCX, secao, superficie proposta, TI/TD, frota e receptores sem promover isolinhas de sensibilidade a projeto."
+    },
+    {
+      "id": "PCX_ENGINE",
+      "title": "Motor chuva-excesso, hidrograma, armazenamento e falha",
+      "domain": "HYDROLOGY",
+      "declared_status": "NOT_IMPLEMENTED",
+      "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE"],
+      "outputs": ["PCX_MASS_BALANCE", "HYDROGRAPH", "HYDRAULIC_GATES"],
+      "blocker_code": "PCX_SOLVER_NOT_IMPLEMENTED",
+      "next_implementation": "Implementar eventos, chuva-excesso, Tc, roteamento, secoes, receptores, excedencia e incerteza."
+    },
+    {
+      "id": "C1_CURVA_EMBUTIDA",
+      "title": "Solver C1 curva embutida TI e TD",
+      "domain": "CONSERVATION",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["SURVEY_VERTICAL", "SOIL_PROFILE_HYDRAULIC", "RAINFALL_DESIGN", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK", "FLEET_WORK_TURN"],
+      "required_capabilities": ["CF0_GEOMETRY", "PCE_ENGINE", "PCX_ENGINE"],
+      "outputs": ["C1_CURVA_EMBUTIDA"],
+      "blocker_code": "C1_SOLVER_NOT_IMPLEMENTED",
+      "next_implementation": "Resolver secao embutida, espacamento, balanco de massa, superficie proposta e implantacao."
+    },
+    {
+      "id": "C2_BASE_LARGA_PASSANTE",
+      "title": "Solver C2 base larga passante TI e TD",
+      "domain": "CONSERVATION",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["SURVEY_VERTICAL", "SOIL_PROFILE_HYDRAULIC", "SOIL_OPERATION_STATE", "RAINFALL_DESIGN", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK", "FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "FLEET_WORK_TURN"],
+      "required_capabilities": ["C1_CURVA_EMBUTIDA", "FULL_FLEET_3D_SIMULATOR"],
+      "outputs": ["C2_BASE_LARGA_PASSANTE"],
+      "blocker_code": "C2_SOLVER_NOT_IMPLEMENTED",
+      "next_implementation": "Adicionar estados novo/degradado, trafegabilidade, trilhas de roda e travessias explicitas."
+    },
+    {
+      "id": "C3_ESD",
+      "title": "Solver C3 ESD setorial e complementado",
+      "domain": "CONSERVATION",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["SURVEY_VERTICAL", "SOIL_PROFILE_HYDRAULIC", "RAINFALL_DESIGN", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
+      "required_capabilities": ["CF0_GEOMETRY", "PCE_ENGINE", "PCX_ENGINE"],
+      "outputs": ["C3_ESD"],
+      "blocker_code": "C3_SOLVER_NOT_IMPLEMENTED",
+      "next_implementation": "Fechar contribuicao, capacidade, destino e falha de cada alcance do sistema difuso."
+    },
+    {
+      "id": "OPERATIONAL_PATH_STATE_ENGINE",
+      "title": "Estados guidance work movement e comandos de implemento",
+      "domain": "OPERATIONS",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["CONSTRAINTS_GENERAL", "POWER_CONSTRAINT", "CONNECTIONS_PORTALS", "FLEET_WORK_TURN"],
+      "required_capabilities": ["CF0_GEOMETRY"],
+      "outputs": ["OPERATIONAL_RUNS"],
+      "blocker_code": "OPERATIONAL_STATE_ENGINE_NOT_IMPLEMENTED",
+      "next_implementation": "Emitir estados inequivocos e quebrar trabalho, hidraulica e rotas em todas as barreiras."
+    },
+    {
+      "id": "FULL_FLEET_3D_SIMULATOR",
+      "title": "Simulador cinematico 3D da frota articulada",
+      "domain": "FLEET",
+      "declared_status": "NOT_IMPLEMENTED",
+      "required_evidence_packages": ["FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "FLEET_WORK_TURN", "SOIL_OPERATION_STATE"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["FLEET_3D_ENVELOPE"],
+      "blocker_code": "FULL_FLEET_SIMULATOR_NOT_IMPLEMENTED",
+      "next_implementation": "Simular todos os eixos, articulacoes, offtracking, perfil vertical e estados vazio parcial carregado."
+    },
+    {
+      "id": "CONTROLLED_TRAFFIC_ENGINE",
+      "title": "Motor de trafego controlado e preservacao de soqueira",
+      "domain": "FLEET",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["AGRONOMIC_CONFIGURATION", "FLEET_IDENTITY_GEOMETRY", "FLEET_LOAD_STABILITY", "SOIL_OPERATION_STATE"],
+      "required_capabilities": ["FULL_FLEET_3D_SIMULATOR"],
+      "outputs": ["CONTROLLED_TRAFFIC_PLAN"],
+      "blocker_code": "CONTROLLED_TRAFFIC_ENGINE_NOT_IMPLEMENTED",
+      "next_implementation": "Reconciliar bitolas, pneus, erro RTK, faixas e sobreposicao em trabalho, manobra e transporte."
+    },
+    {
+      "id": "POA_STATIC",
+      "title": "Otimizador estatico capacitado de POA",
+      "domain": "POA",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["POA_SITE_LAYOUT", "LOGISTICS_ROAD"],
+      "required_capabilities": [],
+      "outputs": ["POA_STATIC_SITES"],
+      "blocker_code": "POA_STAGE_ISOLATED",
+      "next_implementation": "Traduzir o pedido central e integrar drenagem, solo, giro, energia, sequencia e filas."
+    },
+    {
+      "id": "POA_LOGISTICS",
+      "title": "Simulacao integrada sulcacao POA transbordo caminhao usina",
+      "domain": "LOGISTICS",
+      "declared_status": "NOT_IMPLEMENTED",
+      "required_evidence_packages": ["YIELD_LOAD_EVENTS", "PERFORMANCE_RELIABILITY", "POA_SITE_LAYOUT", "LOGISTICS_ROAD", "LOGISTICS_CYCLE", "CUT_TO_MILL"],
+      "required_capabilities": ["OPERATIONAL_PATH_STATE_ENGINE", "POA_STATIC"],
+      "outputs": ["POA_LOGISTICS"],
+      "blocker_code": "INTEGRATED_LOGISTICS_NOT_IMPLEMENTED",
+      "next_implementation": "Implementar eventos discretos, despacho, filas, falhas, massa e Pareto conjunto com sulcacao."
+    },
+    {
+      "id": "GUIDANCE_EXPORT",
+      "title": "Exportacao homologada para controlador e round trip",
+      "domain": "CONTROLLER",
+      "declared_status": "NOT_IMPLEMENTED",
+      "required_evidence_packages": ["CONTROLLER_GUIDANCE", "FLEET_WORK_TURN", "QA_APPROVAL_LIFECYCLE"],
+      "required_capabilities": ["OPERATIONAL_PATH_STATE_ENGINE", "FULL_FLEET_3D_SIMULATOR"],
+      "outputs": ["GUIDANCE_EXPORT"],
+      "blocker_code": "GUIDANCE_EXPORT_NOT_IMPLEMENTED",
+      "next_implementation": "Criar exportador por OEM modelo firmware e provar round trip simulador e veiculo."
+    },
+    {
+      "id": "DTM_UNCERTAINTY_ENGINE",
+      "title": "Propagacao de incerteza do MDT aos gates",
+      "domain": "QA",
+      "declared_status": "BLOCKED_BY_EVIDENCE",
+      "required_evidence_packages": ["SURVEY_VERTICAL"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS"],
+      "outputs": ["DTM_UNCERTAINTY"],
+      "blocker_code": "MISSING_INDEPENDENT_CHECKPOINTS",
+      "next_implementation": "Calcular residuos, bias por relevo/cobertura e estabilidade de cada decisao dentro do envelope de erro."
+    },
+    {
+      "id": "SUBSURFACE_DRAINAGE_ENGINE",
+      "title": "Diagnostico e projeto de drenagem subsuperficial",
+      "domain": "HYDROGEOLOGY",
+      "declared_status": "BLOCKED_BY_EVIDENCE",
+      "required_evidence_packages": ["SUBSURFACE_HYDROLOGY", "SOIL_PROFILE_HYDRAULIC", "DRAINAGE_NETWORK", "ENVIRONMENT_LEGAL"],
+      "required_capabilities": [],
+      "outputs": ["SUBSURFACE_DRAINAGE"],
+      "blocker_code": "SUBSURFACE_EVIDENCE_MISSING",
+      "next_implementation": "Somente apos diagnostico hidrogeologico assinado; LiDAR isolado gera mapa de suspeita, nao dreno."
+    },
+    {
+      "id": "LIFECYCLE_ENGINE",
+      "title": "Ciclo multi cortes, degradacao e manutencao",
+      "domain": "LIFECYCLE",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["QA_APPROVAL_LIFECYCLE", "DRAINAGE_NETWORK", "PERFORMANCE_RELIABILITY"],
+      "required_capabilities": ["PCX_ENGINE"],
+      "outputs": ["LIFECYCLE_PLAN"],
+      "blocker_code": "LIFECYCLE_ENGINE_NOT_IMPLEMENTED",
+      "next_implementation": "Simular capacidade degradada, inspecao, reparo, downtime e custo por safra."
+    },
+    {
+      "id": "CUT_TO_MILL_ENGINE",
+      "title": "Balanco temporal, massa e qualidade do corte a moagem",
+      "domain": "QUALITY",
+      "declared_status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_evidence_packages": ["CUT_TO_MILL", "LOGISTICS_CYCLE", "YIELD_LOAD_EVENTS"],
+      "required_capabilities": ["POA_LOGISTICS"],
+      "outputs": ["CUT_TO_MILL_QUALITY"],
+      "blocker_code": "CUT_TO_MILL_ENGINE_NOT_IMPLEMENTED",
+      "next_implementation": "Integrar timestamps, splits merges, balanca, usina e modelo local validado de qualidade."
+    }
+  ]
+}

@@ -1,0 +1,361 @@
+{
+  "schema_version": "2.1.0",
+  "purpose": "Presets obrigatorios para comparar sistematizacao e sulcacao de cana-de-acucar",
+  "portfolio_policy": {
+    "required_macros": [
+      "C1_CURVA_EMBUTIDA",
+      "C2_BASE_LARGA_PASSANTE",
+      "C3_ESD"
+    ],
+    "conditional_macro": "C4_MISTO_POR_ZONA",
+    "ineligible_policy": "publicar_como_nao_aplicavel_e_listar_gates_reprovados",
+    "selection_policy": "restricoes_duras_depois_pareto",
+    "representatives_per_eligible_macro": [
+      "CONSERVACAO",
+      "EQUILIBRIO",
+      "OPERACAO"
+    ],
+    "baseline_references": [
+      "SITUACAO_EXISTENTE",
+      "PROJETO_MANUAL_IMPORTADO"
+    ]
+  },
+  "operational_connection_portfolio": {
+    "required_baseline": "OC0_ISOLADO",
+    "comparison_policy": "CROSS_WITH_EVERY_ELIGIBLE_CONSERVATION_MACRO",
+    "default_boundary_policy": "CLOSED_UNTIL_CLASSIFIED",
+    "same_point_cloud_policy": "TERRAIN_COVERAGE_ONLY_NOT_PERMISSION",
+    "invariants": [
+      "guidance_continuity_is_independent_from_work_continuity",
+      "work_continuity_is_independent_from_hydraulic_continuity",
+      "operational_gain_never_overrides_a_hard_gate"
+    ],
+    "mandatory_metrics": [
+      "physical_work_length",
+      "operational_shot_length_excluding_gaps",
+      "total_span",
+      "work_lift_cross_ratio",
+      "starts_and_maneuvers_per_hectare",
+      "portal_count_by_state_and_boundary_class",
+      "p50_and_p95_operational_shot_length",
+      "time_and_fuel_delta_against_OC0",
+      "tracked_area_and_crop_overlap",
+      "maximum_hydraulic_reach"
+    ],
+    "variants": [
+      {
+        "id": "OC0_ISOLADO",
+        "connection": "ISOLADO_POR_TALHAO",
+        "description": "Cada talhao preserva sua familia local e nao usa portais."
+      },
+      {
+        "id": "OC1_EIXO_COMUM",
+        "connection": "EIXO_COMUM",
+        "description": "Talhoes compartilham orientacao e fase, sem afirmar travessia operacional."
+      },
+      {
+        "id": "OC2_GUIA_CONTINUA",
+        "connection": "GUIA_CONTINUA",
+        "description": "A guia cruza um portal autorizado com implemento levantado; os sulcos fisicos continuam separados."
+      },
+      {
+        "id": "OC3_TRABALHO_CONTINUO",
+        "connection": "TRABALHO_CONTINUO",
+        "description": "O implemento permanece engatado somente em portal cultivavel, dimensionado e aprovado."
+      }
+    ]
+  },
+  "interference_policy": {
+    "catalog_completeness_states": [
+      "COMPLETE",
+      "PARTIAL",
+      "NOT_REVIEWED"
+    ],
+    "default_unknown_policy": "CLOSED",
+    "effects_by_operation": [
+      "EXCLUDE",
+      "SPLIT_WORK",
+      "BLOCK_ROUTE",
+      "TRANSIT_ONLY",
+      "CROSS_AT_PORTAL",
+      "NO_STOP",
+      "NO_TURN",
+      "NO_LOAD",
+      "NO_EARTHWORK",
+      "HYDRAULIC_NODE",
+      "SEASONAL",
+      "LOAD_LIMITED",
+      "REVIEW_REQUIRED"
+    ],
+    "power_line_v1": {
+      "input_feature": "POWER_LINE_AXIS",
+      "input_geometry": "LINESTRING_THROUGH_POLE_CENTERS",
+      "geometry_meaning": "HORIZONTAL_AXIS_NOT_CONDUCTOR_GEOMETRY",
+      "exclusion_width_policy": "SOURCE_OR_RULE_PACK_REQUIRED_NO_UNIVERSAL_DEFAULT",
+      "operational_effect": "ABSOLUTE_BARRIER",
+      "worked_segment_effect": "SPLIT_BEFORE_AND_AFTER_EXCLUSION",
+      "operational_run_effect": "BREAK_NO_AUTOMATIC_CROSSING",
+      "hydraulic_effect": "SPLIT_OR_CONNECT_ONLY_THROUGH_SEPARATE_APPROVED_DESIGN",
+      "poa_effect": "EXCLUDE_SITE_QUEUE_LOAD_UNLOAD_TURN_AND_ROUTE",
+      "missing_layer_policy": "REQUIRE_DECLARED_NONE_OR_KEEP_PENDING",
+      "future_3d_clearance": "OUT_OF_SCOPE_FOR_V1"
+    },
+    "mandatory_output_refs": [
+      "interference_catalog_ref",
+      "exclusion_areas_ref",
+      "work_breaks_ref",
+      "constraint_checks_ref"
+    ]
+  },
+  "poa_logistics_portfolio": {
+    "unit_of_optimization": "ROWS_PLUS_HARVEST_SEQUENCE_PLUS_TRANSSHIPMENTS_PLUS_POAS_PLUS_TRUCKS_PLUS_CONSERVATION",
+    "selection_policy": "HARD_GATES_THEN_CAPACITATED_LOCATION_ROUTING_SCHEDULING_AND_PARETO",
+    "integration_policy": "ITERATE_WITH_ROW_DIRECTION_PHASE_CARRIERS_PORTALS_WATER_AND_TRAFFIC",
+    "distance_policy": "DRIVABLE_NETWORK_DISTANCE_NEVER_EUCLIDEAN_DISTANCE",
+    "variants": [
+      {
+        "id": "P0_POA_EXISTENTE",
+        "description": "Baseline com patios e vias existentes, sem nova obra."
+      },
+      {
+        "id": "P1_SEM_NOVA_OBRA",
+        "description": "Reorganiza atribuicao, sequencia e despacho apenas na infraestrutura elegivel existente."
+      },
+      {
+        "id": "P2_NOVOS_POAS",
+        "description": "Permite novos patios e acessos locais depois dos gates de solo, agua, infraestrutura e permissao."
+      },
+      {
+        "id": "P3_INTEGRADO",
+        "description": "Redesenha sulcacao, saidas, carreadores e POAs em ciclos de realimentacao."
+      }
+    ],
+    "objective_profiles": [
+      "MIN_TRANSBORDO",
+      "MIN_COMPACTACAO",
+      "BALANCEADO_CAPACITADO",
+      "ROBUSTO_PICO"
+    ],
+    "dispatch_variants": [
+      "DEDICATED",
+      "DYNAMIC_POOL",
+      "DYNAMIC_POOL_WITH_RESERVE"
+    ],
+    "mandatory_stress_cases": [
+      "NOMINAL_P50",
+      "HIGH_YIELD_P90",
+      "WET_OR_DEGRADED_ROAD",
+      "ONE_EQUIPMENT_FAILURE",
+      "ONE_ACCESS_BLOCKED"
+    ],
+    "mandatory_metrics": [
+      "loaded_empty_and_total_transshipment_km_per_tonne",
+      "p50_p95_and_maximum_load_event_to_poa_route",
+      "harvester_transshipment_and_truck_waiting_time",
+      "poa_throughput_queue_and_bay_utilization",
+      "hourly_mill_delivery_deviation_and_cut_to_mill_time",
+      "traffic_intensity_unique_tracked_area_and_repeated_passes",
+      "crop_and_ratoon_swept_envelope_overlap",
+      "diesel_hours_cost_and_emissions_per_tonne",
+      "poa_and_access_area_earthwork_and_drainage",
+      "robustness_under_yield_speed_failure_and_weather_uncertainty"
+    ]
+  },
+  "common_hard_gates": [
+    "terrain_quality_and_vertical_reference",
+    "complete_contributing_area_and_downstream_condition",
+    "soil_infiltration_erodibility_and_compaction",
+    "design_rainfall_and_antecedent_condition",
+    "roads_carriers_culverts_existing_structures_and_receivers",
+    "full_machine_fleet_and_headland_envelope",
+    "row_spacing_curvature_grade_and_coverage",
+    "mass_conservation_capacity_and_failure_path",
+    "field_review_and_professional_approval",
+    "classified_farm_field_and_legal_boundaries",
+    "verified_transit_work_earthwork_and_water_permissions",
+    "complete_terrain_coverage_of_every_portal_and_machine_envelope",
+    "validated_portal_geometry_profile_and_drainage",
+    "independent_operational_and_hydraulic_continuity",
+    "public_road_environmental_and_third_party_authorizations",
+    "complete_interference_declaration_and_operation_specific_effects",
+    "power_axis_barrier_applied_or_declared_none",
+    "full_lifecycle_fleet_profiles",
+    "poa_site_access_soil_drainage_and_permissions",
+    "harvest_transshipment_poa_truck_capacity_and_queue_stability",
+    "no_feasible_candidate_is_never_released_as_best"
+  ],
+  "macros": [
+    {
+      "id": "C1_CURVA_EMBUTIDA",
+      "client_label": "Curva embutida",
+      "system_family": "TERRACEADO",
+      "required_in_comparison": true,
+      "internal_variants": [
+        "EMBUTIDA_TI",
+        "EMBUTIDA_TD"
+      ],
+      "terrace": {
+        "section": "EMBUTIDA",
+        "construction_reference": "NICHOLS",
+        "hydraulic_function": "DECIDED_BY_PCE_PCX",
+        "trafficability": "NON_PASSANTE_BY_DEFAULT",
+        "surface_effect": "narrower_and_deeper_earthwork_strip"
+      },
+      "row_relationship": {
+        "generation_unit": "strip_between_terraces",
+        "operational_continuity": "INTERRUPTED_AT_TERRACE_UNLESS_A_CROSSING_IS_DESIGNED",
+        "hydraulic_continuity": "INTERRUPTED_OR_TRANSFERRED_ONLY_BY_A_DESIGNED_STRUCTURE",
+        "preferred_geometry": "near_contour_with_machine_steerability"
+      },
+      "generation_sequence": [
+        "calculate_vertical_spacing_candidates_from_soil_slope_use_and_management",
+        "generate_contour_or_graded_terrace_alignments",
+        "choose_TI_or_TD_and_connect_every_TD_to_an_approved_receiver",
+        "apply_the_embedded_section_to_the_proposed_surface",
+        "split_the_operable_area_into_interterrace_strips",
+        "generate_and_validate_a_complete_row_family_inside_each_strip",
+        "simulate_storage_or_conveyance_erosion_area_loss_and_operations"
+      ],
+      "mandatory_metrics": [
+        "terrace_length_and_vertical_spacing",
+        "storage_or_conveyance_margin",
+        "earthwork_and_affected_area",
+        "lost_plantable_area",
+        "worked_segment_length_distribution",
+        "internal_endpoints_and_maneuvers",
+        "row_grade_curvature_and_spacing",
+        "overflow_destination_and_consequence"
+      ],
+      "maximum_release_with_polygon_and_laz_only": "E0_CONCEPT_ALIGNMENT_NOT_DIMENSIONED"
+    },
+    {
+      "id": "C2_BASE_LARGA_PASSANTE",
+      "client_label": "Base larga / passante",
+      "system_family": "TERRACEADO_PASSANTE",
+      "required_in_comparison": true,
+      "internal_variants": [
+        "BASE_LARGA_TI_PASSANTE",
+        "BASE_LARGA_TD_PASSANTE"
+      ],
+      "terrace": {
+        "section": "BASE_LARGA",
+        "construction_reference": "MANGUM",
+        "hydraulic_function": "DECIDED_BY_PCE_PCX",
+        "trafficability": "PASSANTE_ONLY_AFTER_SECTION_AND_FLEET_CHECK",
+        "surface_effect": "wide_shallow_channel_and_smooth_ridge"
+      },
+      "row_relationship": {
+        "generation_unit": "zones_and_crossing_corridors",
+        "operational_continuity": "MAY_CROSS_AT_EXPLICIT_APPROVED_CROSSING_NODES",
+        "hydraulic_continuity": "ROW_REACH_STOPS_AT_THE_TERRACE_EVEN_WHEN_GUIDANCE_CONTINUES",
+        "preferred_geometry": "cuts_runoff_and_crosses_the_terrace_with_a_valid_3d_profile"
+      },
+      "generation_sequence": [
+        "calculate_vertical_spacing_candidates_from_soil_slope_use_and_management",
+        "generate_contour_or_graded_terrace_alignments",
+        "choose_TI_or_TD_and_connect_every_TD_to_an_approved_receiver",
+        "design_the_broad_base_section_and_rebuild_the_proposed_surface",
+        "generate_row_families_and_candidate_crossing_nodes",
+        "simulate_machine_and_implement_swept_envelopes_at_every_crossing",
+        "simulate_nominal_and_traffic_degraded_terrace_sections",
+        "recalculate_hydraulics_erosion_coverage_and_operations"
+      ],
+      "mandatory_metrics": [
+        "terrace_length_and_vertical_spacing",
+        "nominal_and_degraded_section_capacity",
+        "earthwork_and_affected_area",
+        "plantable_area_over_the_structure",
+        "crossing_count_angle_grade_and_vertical_break",
+        "ratoon_and_crop_row_swept_envelope_overlap",
+        "row_grade_curvature_spacing_and_maneuvers",
+        "overflow_destination_and_consequence"
+      ],
+      "maximum_release_with_polygon_and_laz_only": "E0_CONCEPT_ALIGNMENT_NOT_DIMENSIONED"
+    },
+    {
+      "id": "C3_ESD",
+      "client_label": "ESD",
+      "system_family": "ESCOAMENTO_SUPERFICIAL_DIFUSO",
+      "required_in_comparison": true,
+      "internal_variants": [
+        "ESD_SETORIAL",
+        "ESD_COMPLEMENTADO"
+      ],
+      "terrace": {
+        "section": "NONE_BY_DEFAULT",
+        "construction_reference": "NOT_APPLICABLE",
+        "hydraulic_function": "DISTRIBUTED_CONVEYANCE_BY_MANY_ROW_REACHES",
+        "trafficability": "DEFINED_BY_ROW_AND_ROAD_PLAN",
+        "surface_effect": "rows_and_roughness_are_explicit_hydraulic_elements"
+      },
+      "row_relationship": {
+        "generation_unit": "esd_zone_with_one_or_more_approved_receivers",
+        "operational_continuity": "MAY_CONNECT_GUIDANCE_ACROSS_ZONES_WITH_LIFT_AND_CROSS_STATES",
+        "hydraulic_continuity": "EVERY_ROW_REACH_HAS_CONTRIBUTION_CAPACITY_AND_A_STABLE_DESTINATION",
+        "preferred_geometry": "small_controlled_grade_without_unresolved_convergence_or_countergrade"
+      },
+      "generation_sequence": [
+        "close_upstream_and_downstream_hydrologic_context",
+        "partition_the_area_into_esd_zones_by_flow_terrain_roads_and_receivers",
+        "generate_controlled_grade_hybrid_seed_curves",
+        "generate_and_validate_every_parallel_row_not_only_the_seed",
+        "route_excess_water_through_explicit_row_reaches_and_receivers",
+        "design_road_drainage_separately",
+        "add_TD_CEV_dissipation_or_vegetated_strips_where_ESD_alone_fails",
+        "simulate_nominal_and_adverse_events_and_the_implementation_sequence"
+      ],
+      "mandatory_metrics": [
+        "row_reach_grade_length_and_reversals",
+        "contributing_area_and_peak_flow_per_reach",
+        "depth_velocity_shear_capacity_and_margin",
+        "flow_concentration_between_rows",
+        "unprotected_endpoints_and_receivers",
+        "road_and_carrier_inflows_and_outflows",
+        "row_spacing_curvature_and_machine_envelope",
+        "failure_destination_and_consequence"
+      ],
+      "maximum_release_with_polygon_and_laz_only": "E0_TOPOGRAPHIC_ROW_CANDIDATE_NOT_AN_ESD_PROJECT"
+    },
+    {
+      "id": "C4_MISTO_POR_ZONA",
+      "client_label": "Misto por zonas",
+      "system_family": "MIXED",
+      "required_in_comparison": "WHEN_MORE_THAN_ONE_SYSTEM_IS_ELIGIBLE_IN_DIFFERENT_ZONES",
+      "internal_variants": [
+        "EMBUTIDA_PLUS_PASSANTE",
+        "TERRACEADO_PLUS_ESD",
+        "EMBUTIDA_PLUS_PASSANTE_PLUS_ESD"
+      ],
+      "terrace": {
+        "section": "BY_ZONE",
+        "construction_reference": "BY_COMPONENT",
+        "hydraulic_function": "BY_ZONE_WITH_EXPLICIT_TRANSFERS",
+        "trafficability": "BY_COMPONENT_AND_CROSSING",
+        "surface_effect": "ONE_PROPOSED_SURFACE_FOR_THE_COMPLETE_COMBINATION"
+      },
+      "row_relationship": {
+        "generation_unit": "topographic_operational_and_hydraulic_zone",
+        "operational_continuity": "SHARED_GUIDANCE_ALLOWED_WITH_EXPLICIT_IMPLEMENT_STATES",
+        "hydraulic_continuity": "EVERY_TRANSITION_IS_A_DIMENSIONED_NETWORK_NODE",
+        "preferred_geometry": "best_eligible_local_system_with_minimum_transition_cost"
+      },
+      "generation_sequence": [
+        "evaluate_C1_C2_and_C3_eligibility_per_zone",
+        "optimize_system_assignment_and_transition_nodes",
+        "generate_row_families_jointly_to_avoid_dead_rows",
+        "rebuild_one_complete_proposed_surface",
+        "simulate_the_complete_hydraulic_and_operational_network",
+        "compare_against_each_pure_macro"
+      ],
+      "mandatory_metrics": [
+        "area_by_system",
+        "transition_count_cost_and_failure_mode",
+        "complete_network_mass_balance",
+        "area_coverage_and_operational_continuity",
+        "earthwork_intervention_and_maintenance",
+        "worst_zone_and_worst_case_margin"
+      ],
+      "maximum_release_with_polygon_and_laz_only": "E0_ZONE_HYPOTHESIS_NOT_A_MIXED_PROJECT"
+    }
+  ]
+}

@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/embedded-terrace-screening-stage.schema.json",
+  "title": "TerraFlux C1 embedded-terrace E0 screening result",
+  "description": "Geometric sensitivity contract only. It cannot claim PCE, PCX, a designed embedded section, TI/TD approval, earthwork, guidance, or project release.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_type",
+    "release",
+    "generated_at",
+    "project_request_ref",
+    "sensitivity_request_ref",
+    "stage_status",
+    "crs",
+    "inputs",
+    "assumptions",
+    "variant_status",
+    "release_limitations",
+    "candidates",
+    "td_not_generated",
+    "qa",
+    "layer_counts",
+    "outputs"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "manifest_type": {"const": "EMBEDDED_TERRACE_SCREENING_STAGE_RESULT"},
+    "release": {"const": "C1_E0_CONCEPT_ALIGNMENT_NOT_DIMENSIONED"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "project_request_ref": {"$ref": "#/$defs/requestRef"},
+    "sensitivity_request_ref": {"$ref": "#/$defs/requestRef"},
+    "stage_status": {
+      "enum": ["SCREENING_ONLY_PCE_PCX_UNCONFIRMED", "NO_GEOMETRIC_PRECURSOR"]
+    },
+    "crs": {"$ref": "#/$defs/crs"},
+    "inputs": {
+      "type": "object",
+      "required": ["terrain_dtm", "field_boundary", "cf0_manifest", "cf0_geopackage"],
+      "properties": {
+        "terrain_dtm": {"$ref": "#/$defs/fileRecord"},
+        "field_boundary": {"$ref": "#/$defs/fileRecord"},
+        "cf0_manifest": {"$ref": "#/$defs/fileRecord"},
+        "cf0_geopackage": {"$ref": "#/$defs/fileRecord"}
+      },
+      "additionalProperties": false
+    },
+    "assumptions": {
+      "type": "object",
+      "required": [
+        "parameter_class",
+        "selection_meaning",
+        "selection_rule",
+        "interval_role",
+        "vertical_accuracy_status",
+        "vertical_interval_candidates_m",
+        "offset_fractions",
+        "topology_gap_half_width_m",
+        "topology_gap_role",
+        "row_source_candidate_id",
+        "row_source_method"
+      ],
+      "properties": {
+        "parameter_class": {"const": "E0_ASSUMPTION"},
+        "selection_meaning": {"const": "GEOMETRIC_SENSITIVITY_GRID_ONLY"},
+        "selection_rule": {"const": "DATASET_RELIEF_LEGIBILITY_GRID_V1"},
+        "interval_role": {"const": "ELEVATION_ISOLINE_SAMPLING_NOT_PCE_SPACING"},
+        "vertical_accuracy_status": {"const": "NOT_VALIDATED"},
+        "vertical_interval_candidates_m": {"const": [2.0, 4.0, 6.0]},
+        "offset_fractions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "number", "minimum": 0, "exclusiveMaximum": 1}
+        },
+        "topology_gap_half_width_m": {"type": "number", "exclusiveMinimum": 0},
+        "topology_gap_role": {"const": "NUMERICAL_PARTITION_SUPPORT_NOT_SECTION_WIDTH"},
+        "row_source_candidate_id": {"const": "CF0C_OPERACAO"},
+        "row_source_method": {
+          "const": "CLIP_EXISTING_CF0C_ROWS_BY_TOPOLOGY_ONLY_INTERTERRACE_STRIPS"
+        }
+      },
+      "additionalProperties": false
+    },
+    "variant_status": {
+      "type": "object",
+      "required": ["EMBUTIDA_TI", "EMBUTIDA_TD"],
+      "properties": {
+        "EMBUTIDA_TI": {
+          "type": "object",
+          "required": ["status", "geometry_role", "pce_status", "pcx_status", "hydraulic_status"],
+          "properties": {
+            "status": {"const": "GENERATED_SCREENING_ONLY_NOT_DIMENSIONED"},
+            "geometry_role": {"const": "TERRAIN_ISOLINE_SENSITIVITY_NOT_APPROVED_TI"},
+            "pce_status": {"const": "NOT_EVALUATED"},
+            "pcx_status": {"const": "NOT_EVALUATED"},
+            "hydraulic_status": {"const": "HYDRAULIC_UNCONFIRMED"}
+          },
+          "additionalProperties": false
+        },
+        "EMBUTIDA_TD": {
+          "type": "object",
+          "required": ["status", "reason", "geometry_count", "pce_status", "pcx_status", "hydraulic_status"],
+          "properties": {
+            "status": {"const": "NOT_GENERATED_RECEIVER_MISSING"},
+            "reason": {"const": "VERIFIED_RECEIVER_AND_LONGITUDINAL_GRADE_RULE_REQUIRED"},
+            "geometry_count": {"const": 0},
+            "pce_status": {"const": "NOT_EVALUATED"},
+            "pcx_status": {"const": "NOT_EVALUATED"},
+            "hydraulic_status": {"const": "HYDRAULIC_UNCONFIRMED"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "release_limitations": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "NOT_A_C1_PROJECT",
+          "NOT_PCE_SPACING",
+          "NOT_PCX_DIMENSIONING",
+          "NOT_TI_APPROVAL",
+          "TD_NOT_GENERATED",
+          "EMBEDDED_SECTION_NOT_APPLIED",
+          "NO_PROPOSED_DTM_OR_EARTHWORK",
+          "ROWS_ARE_CF0C_DIAGNOSTIC_CLIPS_NOT_STRIP_SOLUTIONS",
+          "NOT_FOR_GUIDANCE",
+          "VERTICAL_ACCURACY_NOT_VALIDATED",
+          "FIELD_AND_PROFESSIONAL_VALIDATION_REQUIRED"
+        ]
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "td_not_generated": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/tdRecord"}
+    },
+    "qa": {
+      "type": "object",
+      "required": [
+        "field_count",
+        "ti_candidate_count",
+        "td_not_generated_count",
+        "axis_count",
+        "strip_count",
+        "diagnostic_row_segment_count",
+        "invalid_geometry_count",
+        "non_3d_line_count",
+        "forbidden_td_geometry_count",
+        "hydraulic_pass_claim_count",
+        "guidance_authorized_claim_count",
+        "general_constraint_inventory_status",
+        "power_inventory_status",
+        "power_constraint_effect"
+      ],
+      "properties": {
+        "field_count": {"type": "integer", "minimum": 1},
+        "ti_candidate_count": {"type": "integer", "minimum": 0},
+        "td_not_generated_count": {"type": "integer", "minimum": 1},
+        "axis_count": {"type": "integer", "minimum": 0},
+        "strip_count": {"type": "integer", "minimum": 0},
+        "diagnostic_row_segment_count": {"type": "integer", "minimum": 0},
+        "invalid_geometry_count": {"const": 0},
+        "non_3d_line_count": {"const": 0},
+        "forbidden_td_geometry_count": {"const": 0},
+        "hydraulic_pass_claim_count": {"const": 0},
+        "guidance_authorized_claim_count": {"const": 0},
+        "general_constraint_inventory_status": {"enum": ["COMPLETE", "PARTIAL", "NOT_REVIEWED"]},
+        "power_inventory_status": {"enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]},
+        "power_constraint_effect": {
+          "enum": ["NOT_APPLICABLE_DECLARED_NONE", "BLOCKED_REQUIRES_BARRIER_STAGE", "PENDING_NOT_REVIEWED"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "layer_counts": {
+      "type": "object",
+      "required": ["terrace_alignment_candidates", "interterrace_strips", "row_candidates", "candidate_summary"],
+      "properties": {
+        "terrace_alignment_candidates": {"type": "integer", "minimum": 0},
+        "interterrace_strips": {"type": "integer", "minimum": 0},
+        "row_candidates": {"type": "integer", "minimum": 0},
+        "candidate_summary": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["geopackage", "map"],
+      "properties": {
+        "geopackage": {"$ref": "#/$defs/fileRecord"},
+        "map": {"$ref": "#/$defs/fileRecord"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "requestRef": {
+      "type": "object",
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "fileRecord": {
+      "type": "object",
+      "required": ["path", "size_bytes", "sha256", "role"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "role": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "crs": {
+      "type": "object",
+      "required": ["type", "authority", "code", "horizontal_unit", "wkt", "wkt_sha256"],
+      "properties": {
+        "type": {"const": "PROJECTED"},
+        "authority": {"const": "EPSG"},
+        "code": {"type": "integer", "minimum": 1},
+        "horizontal_unit": {"const": "m"},
+        "wkt": {"type": "string", "minLength": 1},
+        "wkt_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "metricSet": {
+      "type": "object",
+      "required": [
+        "terrace_total_length_m",
+        "topology_gap_area_m2",
+        "partitioned_area_m2",
+        "source_cf0c_row_count",
+        "source_cf0c_total_length_m",
+        "diagnostic_segment_count",
+        "diagnostic_total_length_m",
+        "diagnostic_length_p05_m",
+        "diagnostic_length_p50_m",
+        "diagnostic_length_p95_m",
+        "diagnostic_length_max_m",
+        "split_source_row_count"
+      ],
+      "properties": {
+        "terrace_total_length_m": {"type": "number", "minimum": 0},
+        "topology_gap_area_m2": {"type": "number", "minimum": 0},
+        "partitioned_area_m2": {"type": "number", "minimum": 0},
+        "source_cf0c_row_count": {"type": "integer", "minimum": 0},
+        "source_cf0c_total_length_m": {"type": "number", "minimum": 0},
+        "diagnostic_segment_count": {"type": "integer", "minimum": 0},
+        "diagnostic_total_length_m": {"type": "number", "minimum": 0},
+        "diagnostic_length_p05_m": {"type": ["number", "null"], "minimum": 0},
+        "diagnostic_length_p50_m": {"type": ["number", "null"], "minimum": 0},
+        "diagnostic_length_p95_m": {"type": ["number", "null"], "minimum": 0},
+        "diagnostic_length_max_m": {"type": ["number", "null"], "minimum": 0},
+        "split_source_row_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "partitionQa": {
+      "type": "object",
+      "required": [
+        "method",
+        "topology_gap_half_width_m",
+        "topology_gap_area_m2",
+        "retained_strip_count",
+        "excluded_small_component_count",
+        "excluded_small_component_area_m2",
+        "partitioned_area_m2",
+        "scope_note"
+      ],
+      "properties": {
+        "method": {"const": "AXIS_BUFFER_TOPOLOGY_GAP_NOT_CROSS_SECTION"},
+        "topology_gap_half_width_m": {"type": "number", "exclusiveMinimum": 0},
+        "topology_gap_area_m2": {"type": "number", "minimum": 0},
+        "retained_strip_count": {"type": "integer", "minimum": 0},
+        "excluded_small_component_count": {"type": "integer", "minimum": 0},
+        "excluded_small_component_area_m2": {"type": "number", "minimum": 0},
+        "partitioned_area_m2": {"type": "number", "minimum": 0},
+        "scope_note": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "field_id",
+        "variant",
+        "vertical_interval_m",
+        "offset_fraction",
+        "screening_status",
+        "eligibility_status",
+        "axis_count",
+        "strip_count",
+        "diagnostic_row_segment_count",
+        "partition_qa",
+        "metrics",
+        "pce_status",
+        "pcx_status",
+        "hydraulic_status",
+        "construction_status",
+        "operational_status",
+        "guidance_status",
+        "blocker_codes"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "field_id": {"type": "string", "minLength": 1},
+        "variant": {"const": "EMBUTIDA_TI"},
+        "vertical_interval_m": {"type": "number", "exclusiveMinimum": 0},
+        "offset_fraction": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "screening_status": {"enum": ["GEOMETRIC_PRECURSOR", "NO_GEOMETRIC_PRECURSOR"]},
+        "eligibility_status": {"const": "GEOMETRIC_PRECURSOR"},
+        "axis_count": {"type": "integer", "minimum": 0},
+        "strip_count": {"type": "integer", "minimum": 0},
+        "diagnostic_row_segment_count": {"type": "integer", "minimum": 0},
+        "partition_qa": {"$ref": "#/$defs/partitionQa"},
+        "metrics": {"$ref": "#/$defs/metricSet"},
+        "pce_status": {"const": "NOT_EVALUATED"},
+        "pcx_status": {"const": "NOT_EVALUATED"},
+        "hydraulic_status": {"const": "HYDRAULIC_UNCONFIRMED"},
+        "construction_status": {"const": "NOT_EVALUATED"},
+        "operational_status": {"const": "DIAGNOSTIC_ONLY_NOT_ROUTED"},
+        "guidance_status": {"const": "NOT_AUTHORIZED"},
+        "blocker_codes": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "contains": {"const": "ROW_CANDIDATES_DERIVED_FROM_CF0C_NOT_RESOLVED_PER_STRIP"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "tdRecord": {
+      "type": "object",
+      "required": ["candidate_id", "field_id", "variant", "status", "geometry_count", "blocker_codes"],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "field_id": {"type": "string", "minLength": 1},
+        "variant": {"const": "EMBUTIDA_TD"},
+        "status": {"const": "NOT_GENERATED_RECEIVER_MISSING"},
+        "geometry_count": {"const": 0},
+        "blocker_codes": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "contains": {"const": "TD_RECEIVER_MISSING"},
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

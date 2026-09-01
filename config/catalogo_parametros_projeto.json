@@ -1,0 +1,2199 @@
+{
+  "schema_version": "1.2.0",
+  "catalog_id": "terraflux-project-parameter-catalog",
+  "purpose": "Contrato de parametros para gerar, comparar e liberar cenarios de sistematizacao, sulcacao e logistica de colheita.",
+  "delivery_levels": [
+    "E0_TRIAGEM",
+    "E1_OPERACIONAL",
+    "E2_CONSERVACIONISTA",
+    "E3_EXECUTIVO"
+  ],
+  "parameter_classes": [
+    {
+      "id": "USER_FACT",
+      "meaning": "Fato declarado, medido ou enviado pelo cliente; o motor nao pode inventa-lo.",
+      "allowed_origins": ["DECLARED", "UPLOADED", "MEASURED", "IMPORTED"]
+    },
+    {
+      "id": "CALCULATED",
+      "meaning": "Resultado reproduzivel calculado a partir de datasets e parametros versionados.",
+      "allowed_origins": ["CALCULATED"]
+    },
+    {
+      "id": "RULE_PACK",
+      "meaning": "Limite tecnico, agronomico, hidraulico, ambiental ou de seguranca aprovado para a regiao e o projeto.",
+      "allowed_origins": ["RULE_PACK", "PROFESSIONAL_CALIBRATION"]
+    },
+    {
+      "id": "OPTIMIZER",
+      "meaning": "Preferencia de busca, custo ou selecao entre alternativas que ja passaram pelas restricoes duras.",
+      "allowed_origins": ["DECLARED", "OPTIMIZER"]
+    },
+    {
+      "id": "E0_ASSUMPTION",
+      "meaning": "Hipotese explicita usada apenas em triagem E0; nunca libera projeto operacional, conservacionista ou executivo.",
+      "allowed_origins": ["E0_ASSUMPTION"]
+    }
+  ],
+  "provenance_contract": {
+    "required_fields": [
+      "origin",
+      "source_ref",
+      "captured_at",
+      "responsible",
+      "confidence",
+      "revision",
+      "applicability"
+    ],
+    "confidence_values": ["LOW", "MEDIUM", "HIGH", "VERIFIED"],
+    "applicability_values": ["PROJECT", "PROPERTY", "FIELD", "ZONE", "FLEET", "SCENARIO"],
+    "rules": [
+      "every_parameter_value_has_a_traceable_source",
+      "units_are_explicit_and_match_the_catalog",
+      "declared_values_identify_the_responsible_person_or_organization",
+      "calculated_values_reference_the_run_or_artifact_that_produced_them",
+      "rule_pack_values_reference_the_rule_pack_revision_and_approver",
+      "e0_assumptions_are_visibly_labeled_and_cannot_raise_the_delivery_level"
+    ]
+  },
+  "default_policy": {
+    "allowed_policies": ["NO_DEFAULT", "FAIL_CLOSED", "E0_ONLY"],
+    "rules": [
+      "safety_critical_numeric_limits_have_no_implicit_default",
+      "a_safety_critical_default_is_allowed_only_when_it_blocks_or_restricts_the_operation",
+      "e0_defaults_are_never_reused_in_E1_E2_or_E3",
+      "missing_user_facts_remain_missing_instead_of_being_silently_imputed",
+      "an_override_cannot_bypass_a_hard_gate"
+    ]
+  },
+  "categories": [
+    "scope",
+    "terrain",
+    "agronomy",
+    "conservation",
+    "fleet",
+    "constraints",
+    "connections",
+    "poa",
+    "logistics",
+    "objectives",
+    "qa",
+    "e0"
+  ],
+  "parameters": [
+    {
+      "id": "scope.target_field_ids",
+      "category": "scope",
+      "parameter_class": "USER_FACT",
+      "label": "Talhoes no escopo",
+      "value_schema": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "scope.target_property_ids",
+      "category": "scope",
+      "parameter_class": "USER_FACT",
+      "label": "Imoveis no escopo",
+      "value_schema": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "scope.allow_cross_field_work",
+      "category": "scope",
+      "parameter_class": "USER_FACT",
+      "label": "Permitir continuidade entre talhoes",
+      "value_schema": {"type": "boolean"},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "FAIL_CLOSED", "value": false, "default_is_fail_closed": true}
+    },
+    {
+      "id": "scope.allow_cross_property_work",
+      "category": "scope",
+      "parameter_class": "USER_FACT",
+      "label": "Permitir continuidade entre imoveis",
+      "value_schema": {"type": "boolean"},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "FAIL_CLOSED", "value": false, "default_is_fail_closed": true}
+    },
+    {
+      "id": "scope.cross_property_permission_status",
+      "category": "scope",
+      "parameter_class": "USER_FACT",
+      "label": "Autorizacao para cruzar imoveis",
+      "value_schema": {"type": "string", "enum": ["APPROVED", "DENIED", "NOT_REVIEWED", "NOT_APPLICABLE"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_CROSS_PROPERTY_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "terrain.dtm_dataset_ref",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Referencia do MDT",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.horizontal_crs",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "CRS horizontal projetado",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.vertical_reference",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Referencia vertical",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.vertical_accuracy_m",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Acuracia vertical declarada",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.coverage_status",
+      "category": "terrain",
+      "parameter_class": "CALCULATED",
+      "label": "Cobertura do terreno no envelope de analise",
+      "value_schema": {"type": "string", "enum": ["COMPLETE", "PARTIAL", "FAILED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.slope_raster_ref",
+      "category": "terrain",
+      "parameter_class": "CALCULATED",
+      "label": "Raster de declividade",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.hydrologic_conditioning_status",
+      "category": "terrain",
+      "parameter_class": "CALCULATED",
+      "label": "Estado do condicionamento hidrologico",
+      "value_schema": {"type": "string", "enum": ["NOT_STARTED", "PRELIMINARY", "REVIEWED", "APPROVED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E2_E3",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_STARTED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "agronomy.row_spacing_m",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Espacamento entre linhas",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "AGRONOMIST",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.crop_variety_by_zone",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Variedade e ciclo por zona",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["zone_id", "variety_id", "maturity_group", "crop_cycle_stage"],
+          "properties": {
+            "zone_id": {"type": "string", "minLength": 1},
+            "variety_id": {"type": "string", "minLength": 1},
+            "maturity_group": {"type": "string", "enum": ["EARLY", "MEDIUM", "LATE", "NOT_REVIEWED"]},
+            "crop_cycle_stage": {"type": "string", "enum": ["PLANT_CANE", "RATOON", "REFORM", "NOT_REVIEWED"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": false,
+      "authority": "AGRONOMIST",
+      "requirement": "E1_E2_E3",
+      "allowed_origins": ["DECLARED", "UPLOADED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.row_pattern_by_zone",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Padrao de linhas e faixas de trafego por zona",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["zone_id", "valid_from", "valid_to", "row_pattern", "interval_sequence", "compatible_track_gauges_m", "traffic_band_mode", "traffic_band_source"],
+          "properties": {
+            "zone_id": {"type": "string", "minLength": 1},
+            "valid_from": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+            "valid_to": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+            "row_pattern": {"type": "string", "enum": ["SINGLE", "DOUBLE", "ALTERNATING"]},
+            "interval_sequence": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["interval_m", "role"],
+                "properties": {
+                  "interval_m": {"type": "number", "exclusiveMinimum": 0},
+                  "role": {"type": "string", "enum": ["CROP_TO_CROP", "CROP_TO_TRAFFIC", "TRAFFIC_TO_CROP", "TRAFFIC_TO_TRAFFIC"]}
+                },
+                "additionalProperties": false
+              }
+            },
+            "compatible_track_gauges_m": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"type": "number", "exclusiveMinimum": 0}
+            },
+            "traffic_band_mode": {"type": "string", "enum": ["NONE", "DEDICATED", "ALTERNATING"]},
+            "traffic_band_source": {"type": "string", "enum": ["TO_GENERATE", "EXISTING_GEOMETRY", "NOT_APPLICABLE"]},
+            "traffic_band_geometry_dataset_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "WHEN_OPERATIONAL_SCENARIO_REQUESTED",
+      "allowed_origins": ["DECLARED", "UPLOADED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.expected_yield_t_ha",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Produtividade esperada",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "t/ha",
+      "safety_critical": false,
+      "authority": "AGRONOMIST",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.soil_zones_dataset_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Zonas de solo",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.soil_wetness_and_trafficability_status",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Condicao de trafegabilidade do solo",
+      "value_schema": {"type": "string", "enum": ["SURVEYED", "DECLARED", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "agronomy.correlated_environmental_measurements",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Conjuntos de medicoes ambientais correlacionadas a operacao",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["observation_set_id", "environmental_condition_set_id", "dataset_ref", "correlation_keys", "measured_variables", "variable_units", "variable_method_refs", "water_content_basis", "qa_status"],
+          "properties": {
+            "observation_set_id": {"type": "string", "minLength": 1},
+            "environmental_condition_set_id": {"type": "string", "minLength": 1},
+            "dataset_ref": {"type": "string", "minLength": 1},
+            "correlation_keys": {
+              "type": "array",
+              "minItems": 4,
+              "uniqueItems": true,
+              "items": {"type": "string", "enum": ["FIELD_ID", "ZONE_ID", "TIMESTAMP", "OPERATION", "OPERATIONAL_STATE"]}
+            },
+            "measured_variables": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"type": "string", "enum": ["SOIL_WATER_CONTENT", "SOIL_BEARING_CAPACITY", "RAINFALL", "SURFACE_ROUGHNESS", "SLOPE", "AIR_TEMPERATURE", "WIND"]}
+            },
+            "variable_units": {
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": {"enum": ["SOIL_WATER_CONTENT", "SOIL_BEARING_CAPACITY", "RAINFALL", "SURFACE_ROUGHNESS", "SLOPE", "AIR_TEMPERATURE", "WIND"]},
+              "additionalProperties": {"type": "string", "minLength": 1}
+            },
+            "variable_method_refs": {
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": {"enum": ["SOIL_WATER_CONTENT", "SOIL_BEARING_CAPACITY", "RAINFALL", "SURFACE_ROUGHNESS", "SLOPE", "AIR_TEMPERATURE", "WIND"]},
+              "additionalProperties": {"type": "string", "minLength": 1}
+            },
+            "water_content_basis": {"type": "string", "enum": ["VOLUMETRIC", "GRAVIMETRIC", "NOT_APPLICABLE"]},
+            "qa_status": {"type": "string", "enum": ["PRELIMINARY", "REVIEWED", "VERIFIED"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "WHEN_ENVIRONMENT_CORRELATED_SIMULATION_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.design_rainfall_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Chuva de projeto",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.max_furrow_grade_pct",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Greide maximo do sulco",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.min_conveyance_grade_pct",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Greide minimo para conducao quando aplicavel",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_TD_OR_ESD_CONVEYANCE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.max_hydraulic_reach_m",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Alcance hidraulico maximo",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.terrace_spacing_rule_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Regra de espacamento de terracos",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_TERRACE_SCENARIO_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.receiver_inventory_status",
+      "category": "conservation",
+      "parameter_class": "USER_FACT",
+      "label": "Inventario de receptores e saidas",
+      "value_schema": {"type": "string", "enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "conservation.receiver_dataset_ref",
+      "category": "conservation",
+      "parameter_class": "USER_FACT",
+      "label": "Receptores e estruturas de descarga",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_RECEIVERS_PROVIDED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.hydraulic_graph_ref",
+      "category": "conservation",
+      "parameter_class": "CALCULATED",
+      "label": "Grafo hidraulico calculado",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.profile_dataset_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Perfis da frota por operacao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.operations_in_scope",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Operacoes mecanizadas no ciclo",
+      "value_schema": {"type": "array", "items": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "minItems": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.maximum_operating_height_m",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Altura maxima por configuracao operacional",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "exclusiveMinimum": 0}},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.minimum_turn_radius_m",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Raio minimo de giro por conjunto",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "exclusiveMinimum": 0}},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.minimum_work_path_radius_m",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Raio minimo da trajetoria durante trabalho por conjunto",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "exclusiveMinimum": 0}},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.curvature_transition_limit_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Limite de transicao de curvatura por conjunto",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.swept_envelope_dataset_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Envelope varrido dos conjuntos",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.operational_state_measurements",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Medicoes da frota nos estados carregado e vazio",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["operation", "operational_state", "configuration_id", "gross_mass_t", "unit_axis_loads", "measurement_ref"],
+          "properties": {
+            "operation": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]},
+            "operational_state": {"type": "string", "enum": ["LOADED", "EMPTY"]},
+            "configuration_id": {"type": "string", "minLength": 1},
+            "gross_mass_t": {"type": "number", "exclusiveMinimum": 0},
+            "unit_axis_loads": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["unit_id", "axis_id", "load_t", "track_gauge_m"],
+                "properties": {
+                  "unit_id": {"type": "string", "minLength": 1},
+                  "axis_id": {"type": "string", "minLength": 1},
+                  "load_t": {"type": "number", "exclusiveMinimum": 0},
+                  "track_gauge_m": {"type": "number", "exclusiveMinimum": 0}
+                },
+                "additionalProperties": false
+              }
+            },
+            "measurement_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "WHEN_OPERATIONAL_STATE_SIMULATION_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.control_execution_envelope_measurements",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Envelope medido de controle e execucao por estado operacional",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["operation", "operational_state", "configuration_id", "environmental_observation_set_id", "controller_gnss_measurements", "unit_geometries", "articulation_links", "measurement_ref"],
+          "properties": {
+            "operation": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]},
+            "operational_state": {"type": "string", "enum": ["LOADED", "EMPTY"]},
+            "configuration_id": {"type": "string", "minLength": 1},
+            "environmental_observation_set_id": {"type": "string", "minLength": 1},
+            "controller_gnss_measurements": {
+              "type": "object",
+              "required": ["controller_id", "firmware_revision", "correction_mode", "cross_track_error_p95_m", "cross_track_error_max_m", "heading_error_max_deg", "latency_p95_s", "test_ref"],
+              "properties": {
+                "controller_id": {"type": "string", "minLength": 1},
+                "firmware_revision": {"type": "string", "minLength": 1},
+                "correction_mode": {"type": "string", "enum": ["RTK_FIXED", "RTK_FLOAT", "SBAS", "AUTONOMOUS", "OTHER"]},
+                "cross_track_error_p95_m": {"type": "number", "minimum": 0},
+                "cross_track_error_max_m": {"type": "number", "minimum": 0},
+                "heading_error_max_deg": {"type": "number", "minimum": 0, "maximum": 180},
+                "latency_p95_s": {"type": "number", "minimum": 0},
+                "test_ref": {"type": "string", "minLength": 1}
+              },
+              "additionalProperties": false
+            },
+            "unit_geometries": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["unit_id", "unit_role", "body_length_m", "body_width_m", "execution_height_m", "reference_point", "axes"],
+                "properties": {
+                  "unit_id": {"type": "string", "minLength": 1},
+                  "unit_role": {"type": "string", "enum": ["POWER_UNIT", "IMPLEMENT", "TRAILER", "WAGON"]},
+                  "body_length_m": {"type": "number", "exclusiveMinimum": 0},
+                  "body_width_m": {"type": "number", "exclusiveMinimum": 0},
+                  "execution_height_m": {"type": "number", "exclusiveMinimum": 0},
+                  "reference_point": {"type": "string", "enum": ["CENTER", "FRONT_COUPLING", "REAR_COUPLING", "OEM_DATUM"]},
+                  "axes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["axis_id", "axis_offset_from_unit_reference_m", "track_gauge_m", "wheel_or_track_width_m", "control_half_width_m", "execution_half_width_m"],
+                      "properties": {
+                        "axis_id": {"type": "string", "minLength": 1},
+                        "axis_offset_from_unit_reference_m": {"type": "number"},
+                        "track_gauge_m": {"type": "number", "exclusiveMinimum": 0},
+                        "wheel_or_track_width_m": {"type": "number", "exclusiveMinimum": 0},
+                        "control_half_width_m": {"type": "number", "minimum": 0},
+                        "execution_half_width_m": {"type": "number", "exclusiveMinimum": 0}
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "articulation_links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["link_id", "upstream_unit_id", "downstream_unit_id", "upstream_coupling_offset_m", "downstream_coupling_offset_m", "observed_articulation_angle_max_deg"],
+                "properties": {
+                  "link_id": {"type": "string", "minLength": 1},
+                  "upstream_unit_id": {"type": "string", "minLength": 1},
+                  "downstream_unit_id": {"type": "string", "minLength": 1},
+                  "upstream_coupling_offset_m": {"type": "number"},
+                  "downstream_coupling_offset_m": {"type": "number"},
+                  "observed_articulation_angle_max_deg": {"type": "number", "minimum": 0, "maximum": 180}
+                },
+                "additionalProperties": false
+              }
+            },
+            "measurement_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "WHEN_CONTROL_EXECUTION_ENVELOPE_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.approved_control_execution_envelope_rules",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Folgas aprovadas para o envelope de controle e execucao",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["operation", "operational_state", "configuration_id", "maximum_allowed_cross_track_error_m", "maximum_allowed_heading_error_deg", "maximum_allowed_latency_s", "minimum_lateral_clearance_m", "minimum_vertical_clearance_m", "articulation_limits", "rule_ref"],
+          "properties": {
+            "operation": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]},
+            "operational_state": {"type": "string", "enum": ["LOADED", "EMPTY"]},
+            "configuration_id": {"type": "string", "minLength": 1},
+            "maximum_allowed_cross_track_error_m": {"type": "number", "minimum": 0},
+            "maximum_allowed_heading_error_deg": {"type": "number", "minimum": 0, "maximum": 180},
+            "maximum_allowed_latency_s": {"type": "number", "minimum": 0},
+            "minimum_lateral_clearance_m": {"type": "number", "minimum": 0},
+            "minimum_vertical_clearance_m": {"type": "number", "minimum": 0},
+            "articulation_limits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["link_id", "maximum_allowed_articulation_angle_deg"],
+                "properties": {
+                  "link_id": {"type": "string", "minLength": 1},
+                  "maximum_allowed_articulation_angle_deg": {"type": "number", "minimum": 0, "maximum": 180}
+                },
+                "additionalProperties": false
+              }
+            },
+            "rule_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_CONTROL_EXECUTION_ENVELOPE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.approved_track_gauge_compatibility_rules",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Compatibilidade aprovada entre bitola e padrao de linhas",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["zone_id", "operation", "operational_state", "configuration_id", "maximum_gauge_mismatch_m", "rule_ref"],
+          "properties": {
+            "zone_id": {"type": "string", "minLength": 1},
+            "operation": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]},
+            "operational_state": {"type": "string", "enum": ["LOADED", "EMPTY"]},
+            "configuration_id": {"type": "string", "minLength": 1},
+            "maximum_gauge_mismatch_m": {"type": "number", "minimum": 0},
+            "rule_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OPERATIONAL_SCENARIO_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.approved_operating_rules_by_state_and_environment",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Permissao operacional aprovada por estado e condicao ambiental",
+      "value_schema": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["operation", "operational_state", "configuration_id", "environmental_condition_set_id", "condition_criteria", "permission", "rule_ref"],
+          "properties": {
+            "operation": {"type": "string", "enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]},
+            "operational_state": {"type": "string", "enum": ["LOADED", "EMPTY"]},
+            "configuration_id": {"type": "string", "minLength": 1},
+            "environmental_condition_set_id": {"type": "string", "minLength": 1},
+            "condition_criteria": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["variable", "unit", "minimum_inclusive", "maximum_inclusive"],
+                "properties": {
+                  "variable": {"type": "string", "enum": ["SOIL_WATER_CONTENT", "SOIL_BEARING_CAPACITY", "RAINFALL", "SURFACE_ROUGHNESS", "SLOPE", "AIR_TEMPERATURE", "WIND"]},
+                  "unit": {"type": "string", "minLength": 1},
+                  "minimum_inclusive": {"type": ["number", "null"]},
+                  "maximum_inclusive": {"type": ["number", "null"]}
+                },
+                "additionalProperties": false
+              }
+            },
+            "permission": {"type": "string", "enum": ["ALLOWED", "CONDITIONAL", "PROHIBITED"]},
+            "rule_ref": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_ENVIRONMENT_CORRELATED_SIMULATION_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.required_headland_width_m",
+      "category": "fleet",
+      "parameter_class": "CALCULATED",
+      "label": "Largura de manobra requerida",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "minimum": 0}},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.max_cross_slope_pct",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Declividade transversal maxima por conjunto",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "minimum": 0}},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.max_longitudinal_grade_pct",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Declividade longitudinal maxima por conjunto",
+      "value_schema": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["FURROW", "PLANT", "HARVEST", "TRANSSHIPMENT", "TRUCK", "MAINTENANCE"]}, "additionalProperties": {"type": "number", "minimum": 0}},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.inventory_review_status",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Revisao geral de interferencias",
+      "value_schema": {"type": "string", "enum": ["COMPLETE", "PARTIAL", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "constraints.overhead_power_line_inventory_status",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Presenca de rede eletrica aerea",
+      "value_schema": {"type": "string", "enum": ["PROVIDED", "DECLARED_NONE", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "constraints.overhead_power_line_axis_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Linha 2D pelo centro dos postes",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.overhead_power_line_exclusion_half_width_m",
+      "category": "constraints",
+      "parameter_class": "RULE_PACK",
+      "label": "Meia largura da faixa de exclusao da rede eletrica",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.overhead_power_line_work_behavior",
+      "category": "constraints",
+      "parameter_class": "RULE_PACK",
+      "label": "Comportamento da linha de trabalho na faixa eletrica",
+      "value_schema": {"type": "string", "enum": ["SPLIT_AND_EXCLUDE"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "FAIL_CLOSED", "value": "SPLIT_AND_EXCLUDE", "default_is_fail_closed": true}
+    },
+    {
+      "id": "constraints.overhead_power_line_transit_policy",
+      "category": "constraints",
+      "parameter_class": "RULE_PACK",
+      "label": "Politica V1 de travessia na faixa eletrica",
+      "value_schema": {"type": "string", "enum": ["PROHIBITED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "FAIL_CLOSED", "value": "PROHIBITED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "constraints.power_barrier_geometry_ref",
+      "category": "constraints",
+      "parameter_class": "CALCULATED",
+      "label": "Barreira calculada a partir do eixo da rede",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.roads_and_carriers_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Estradas e carreadores",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.operational_surfaces_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Superficies autorizadas de termino e manobra",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.internal_work_stop_policy",
+      "category": "constraints",
+      "parameter_class": "RULE_PACK",
+      "label": "Politica de parada interna da linha de trabalho",
+      "value_schema": {"type": "string", "enum": ["ONLY_ON_APPROVED_OPERATIONAL_SURFACE"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {
+        "policy": "FAIL_CLOSED",
+        "value": "ONLY_ON_APPROVED_OPERATIONAL_SURFACE",
+        "default_is_fail_closed": true
+      }
+    },
+    {
+      "id": "constraints.water_environment_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Agua, APP e exclusoes ambientais",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.linear_utilities_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Ferrovias, dutos e utilidades lineares",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_PRESENT",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.irrigation_and_structures_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Irrigacao, edificacoes, cercas e estruturas",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_PRESENT",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.soft_soil_flood_and_erosion_dataset_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Solo mole, inundacao e erosoes",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_PRESENT",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.allowed_boundary_ids",
+      "category": "connections",
+      "parameter_class": "USER_FACT",
+      "label": "Divisas autorizadas para conexao",
+      "value_schema": {"type": "array", "items": {"type": "string"}},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_CONNECTION_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": [], "default_is_fail_closed": true}
+    },
+    {
+      "id": "connections.portal_dataset_ref",
+      "category": "connections",
+      "parameter_class": "USER_FACT",
+      "label": "Portais e travessias levantados",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_OC2_OR_OC3_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.portal_min_width_m",
+      "category": "connections",
+      "parameter_class": "RULE_PACK",
+      "label": "Largura minima do portal",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OC2_OR_OC3_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.max_gap_grade_pct",
+      "category": "connections",
+      "parameter_class": "RULE_PACK",
+      "label": "Greide maximo da travessia",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_OC2_OR_OC3_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.max_nonworking_gap_m",
+      "category": "connections",
+      "parameter_class": "OPTIMIZER",
+      "label": "Vao sem trabalho preferido",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_CONNECTION_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.minimum_preferred_shot_length_m",
+      "category": "connections",
+      "parameter_class": "OPTIMIZER",
+      "label": "Tiro minimo preferido",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.maximum_operational_shot_length_m",
+      "category": "connections",
+      "parameter_class": "RULE_PACK",
+      "label": "Tiro operacional maximo por operacao",
+      "value_schema": {"type": "object"},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "AGRONOMIST",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "connections.operational_graph_ref",
+      "category": "connections",
+      "parameter_class": "CALCULATED",
+      "label": "Grafo operacional calculado",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.existing_sites_dataset_ref",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "POAs existentes",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_EXISTING_POA_MODE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.candidate_areas_dataset_ref",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "Areas permitidas para POA",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_NEW_POA_MODE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.site_permission_status",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "Permissao de implantacao e uso dos POAs",
+      "value_schema": {"type": "string", "enum": ["APPROVED", "DENIED", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "poa.maximum_site_count",
+      "category": "poa",
+      "parameter_class": "OPTIMIZER",
+      "label": "Numero maximo de POAs",
+      "value_schema": {"type": "integer", "minimum": 1},
+      "unit": "count",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.minimum_platform_area_m2",
+      "category": "poa",
+      "parameter_class": "RULE_PACK",
+      "label": "Area minima da plataforma",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m2",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_NEW_POA_MODE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.maximum_platform_slope_pct",
+      "category": "poa",
+      "parameter_class": "RULE_PACK",
+      "label": "Declividade maxima da plataforma",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "%",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.minimum_soil_bearing_kpa",
+      "category": "poa",
+      "parameter_class": "RULE_PACK",
+      "label": "Capacidade de suporte minima do piso",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "kPa",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.drainage_approval_status",
+      "category": "poa",
+      "parameter_class": "RULE_PACK",
+      "label": "Verificacao da drenagem do POA",
+      "value_schema": {"type": "string", "enum": ["APPROVED", "FAILED", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3_WHEN_POA_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "poa.truck_queue_capacity",
+      "category": "poa",
+      "parameter_class": "RULE_PACK",
+      "label": "Capacidade de fila por POA",
+      "value_schema": {"type": "object"},
+      "unit": "truck",
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.selected_sites_ref",
+      "category": "poa",
+      "parameter_class": "CALCULATED",
+      "label": "POAs selecionados e dimensionados",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.road_network_dataset_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Rede roteavel de carreadores e estradas",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.harvest_window",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Janela de colheita",
+      "value_schema": {"type": "object"},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.shift_duration_h",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Duracao do turno",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.harvester_capacity_t_h",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Capacidade efetiva da colhedora",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "t/h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.transshipment_capacity_t",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Capacidade util por transbordo",
+      "value_schema": {"type": "object"},
+      "unit": "t",
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.transshipment_unit_count",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Quantidade de conjuntos de transbordo",
+      "value_schema": {"type": "integer", "minimum": 1},
+      "unit": "count",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.truck_payload_t",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Carga util do caminhao",
+      "value_schema": {"type": "object"},
+      "unit": "t",
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.truck_unit_count",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Quantidade de caminhoes disponiveis",
+      "value_schema": {"type": "integer", "minimum": 1},
+      "unit": "count",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.transshipment_loaded_speed_kmh",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Velocidade carregada do transbordo",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "km/h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.transshipment_empty_speed_kmh",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Velocidade vazia do transbordo",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "km/h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.truck_speed_profile_kmh",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Velocidade do caminhao por classe de via",
+      "value_schema": {"type": "object"},
+      "unit": "km/h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.transfer_service_time_min",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Tempo de transferencia no POA",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "min",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.mill_delivery_target_t_h",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Meta de entrega na usina",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "t/h",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.road_and_bridge_capacity_status",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Capacidade de vias, bueiros e pontes",
+      "value_schema": {"type": "string", "enum": ["VERIFIED", "PARTIAL", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "logistics.maximum_preferred_transshipment_distance_m",
+      "category": "logistics",
+      "parameter_class": "OPTIMIZER",
+      "label": "Distancia preferida maxima de transbordo",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.traffic_intensity_ref",
+      "category": "logistics",
+      "parameter_class": "CALCULATED",
+      "label": "Mapa de intensidade de trafego",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.logistics_graph_ref",
+      "category": "logistics",
+      "parameter_class": "CALCULATED",
+      "label": "Grafo logistico calculado",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "objectives.selection_mode",
+      "category": "objectives",
+      "parameter_class": "OPTIMIZER",
+      "label": "Modo de selecao",
+      "value_schema": {"type": "string", "enum": ["PARETO", "WEIGHTED_AFTER_GATES", "LEXICOGRAPHIC_AFTER_GATES"]},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "objectives.weights",
+      "category": "objectives",
+      "parameter_class": "OPTIMIZER",
+      "label": "Pesos de conservacao, operacao, logistica e intervencao",
+      "value_schema": {"type": "object"},
+      "unit": "fraction",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_WEIGHTED_MODE_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "objectives.pareto_representative_count",
+      "category": "objectives",
+      "parameter_class": "OPTIMIZER",
+      "label": "Quantidade de representantes de Pareto",
+      "value_schema": {"type": "integer", "minimum": 1},
+      "unit": "count",
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_PARETO_MODE_REQUESTED",
+      "default": {"policy": "E0_ONLY", "value": 3}
+    },
+    {
+      "id": "qa.rule_pack_revision",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Revisao do pacote de regras",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.constraint_revision",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Revisao consolidada das interferencias",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "ALWAYS",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.field_review_status",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Revisao de campo",
+      "value_schema": {"type": "string", "enum": ["APPROVED", "PARTIAL", "FAILED", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "qa.professional_approval_status",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Aprovacao profissional",
+      "value_schema": {"type": "string", "enum": ["APPROVED", "REJECTED", "NOT_REVIEWED"]},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "FAIL_CLOSED", "value": "NOT_REVIEWED", "default_is_fail_closed": true}
+    },
+    {
+      "id": "qa.release_block_on_unreviewed_constraints",
+      "category": "qa",
+      "parameter_class": "RULE_PACK",
+      "label": "Bloquear liberacao com interferencias nao revisadas",
+      "value_schema": {"type": "boolean", "const": true},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "ALWAYS",
+      "default": {"policy": "FAIL_CLOSED", "value": true, "default_is_fail_closed": true}
+    },
+    {
+      "id": "qa.uncertainty_set_ref",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Conjunto de incertezas para simulacao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "e0.nominal_field_speed_kmh",
+      "category": "e0",
+      "parameter_class": "E0_ASSUMPTION",
+      "label": "Velocidade nominal para comparacao E0",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0},
+      "unit": "km/h",
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "OPTIONAL_E0",
+      "default": {"policy": "E0_ONLY", "value": 5.0}
+    },
+    {
+      "id": "e0.maneuver_time_s",
+      "category": "e0",
+      "parameter_class": "E0_ASSUMPTION",
+      "label": "Tempo de manobra para proxy E0",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "s",
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "OPTIONAL_E0",
+      "default": {"policy": "E0_ONLY", "value": 22.0}
+    },
+    {
+      "id": "e0.yield_proxy_t_ha",
+      "category": "e0",
+      "parameter_class": "E0_ASSUMPTION",
+      "label": "Produtividade apenas para sensibilidade E0",
+      "value_schema": {"type": "number", "minimum": 0},
+      "unit": "t/ha",
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "OPTIONAL_E0",
+      "default": {"policy": "E0_ONLY", "value": 80.0}
+    },
+    {
+      "id": "terrain.survey_evidence_ref",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Manifesto do levantamento e da referencia vertical",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.checkpoint_set_ref",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Conjunto de checkpoints independentes",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.terrain_uncertainty_ref",
+      "category": "terrain",
+      "parameter_class": "CALCULATED",
+      "label": "Superficie de incerteza do terreno",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.analysis_envelope_ref",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Envelope topografico de analise incluindo montante e jusante",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "terrain.breakline_inventory_ref",
+      "category": "terrain",
+      "parameter_class": "USER_FACT",
+      "label": "Breaklines e feicoes condicionantes do terreno",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.soil_profile_set_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Perfis e horizontes de solo por zona",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.soil_hydraulic_test_set_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Ensaios locais de infiltracao e propriedades hidraulicas",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.soil_load_bearing_set_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Suporte, precompressao e umidade correlacionada do solo",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "WHEN_OPERATIONAL_OR_POA_SCENARIO_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.field_erosion_inventory_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Inventario de erosoes e sinais de concentracao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "agronomy.yield_surface_ref",
+      "category": "agronomy",
+      "parameter_class": "USER_FACT",
+      "label": "Produtividade espacial e distribuicoes P10 P50 P90",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.idf_model_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Modelo IDF local com dominio e revisao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.design_event_set_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Eventos de projeto e adversos com hietogramas",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.catchment_graph_ref",
+      "category": "conservation",
+      "parameter_class": "CALCULATED",
+      "label": "Grafo de bacias contribuicoes transferencias e receptores",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SYSTEM",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.drainage_asset_inventory_ref",
+      "category": "conservation",
+      "parameter_class": "USER_FACT",
+      "label": "Inventario censitario de drenagem e receptores",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.hydraulic_section_set_ref",
+      "category": "conservation",
+      "parameter_class": "USER_FACT",
+      "label": "Secoes hidraulicas existentes novas e degradadas",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.pce_calibration_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Calibracao regional do PCE",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "AGRONOMIST",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.pcx_calibration_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Calibracao regional do PCX",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.regional_method_pack_ref",
+      "category": "conservation",
+      "parameter_class": "RULE_PACK",
+      "label": "Pacote regional aprovado para C1 C2 e C3",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "conservation.subsurface_assessment_ref",
+      "category": "conservation",
+      "parameter_class": "USER_FACT",
+      "label": "Diagnostico de drenagem subsuperficial",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_SUBSURFACE_DRAINAGE_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.environment_legal_evidence_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Evidencia ambiental e legal espacializada",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.permission_records_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Permissoes por geometria acao autoridade e validade",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.power_asset_survey_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Levantamento de postes rede estais e completude",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_OVERHEAD_POWER_LINE_PROVIDED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "constraints.complete_feature_inventory_ref",
+      "category": "constraints",
+      "parameter_class": "USER_FACT",
+      "label": "Inventario completo de interferencias por operacao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.configuration_registry_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Registro de configuracoes reais da frota",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.geometry_3d_set_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Geometria 3D de todas as unidades do conjunto",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "E1_E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.axle_hitch_tire_set_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Eixos engates pneus esteiras e pressoes",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "E1_E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.mass_cg_axis_load_set_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Massa centro de gravidade e carga por eixo por estado",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "E1_E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.work_turn_trial_set_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Ensaios WORK TURN offtracking e envelope varrido",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "E1_E2_E3",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.grade_stability_braking_rule_ref",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Envelope aprovado de rampa estabilidade e frenagem",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "E1_E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.controller_configuration_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Controlador GNSS display firmware e correcao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_GUIDANCE_EXPORT_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.guidance_performance_trial_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Ensaio de desempenho GNSS e seguimento",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "WHEN_GUIDANCE_EXPORT_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.guidance_export_contract_ref",
+      "category": "fleet",
+      "parameter_class": "RULE_PACK",
+      "label": "Contrato de importacao exportacao e round trip",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "FLEET_ENGINEER",
+      "requirement": "WHEN_GUIDANCE_EXPORT_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.performance_distribution_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Distribuicoes de velocidade capacidade ciclo e consumo",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_OPERATIONAL_SCENARIO_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "fleet.reliability_cost_profile_ref",
+      "category": "fleet",
+      "parameter_class": "USER_FACT",
+      "label": "Confiabilidade manutencao disponibilidade e custos",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.site_observation_set_ref",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "Levantamento geotecnico ambiental e de acesso dos POAs",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_POA_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.layout_geometry_ref",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "Layout de patio baias fila giro e acessos",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_POA_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "poa.service_capacity_measurements_ref",
+      "category": "poa",
+      "parameter_class": "USER_FACT",
+      "label": "Medicoes de servico e capacidade do POA",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.road_edge_state_profile_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Estado geometria e capacidade de cada arco viario",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_POA_OR_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.legal_route_permit_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Permissoes e AET por rota e composicao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "CLIENT",
+      "requirement": "WHEN_PUBLIC_ROAD_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.event_stream_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Eventos sincronizados da operacao CTT",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_LOGISTICS_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.dispatch_queue_model_ref",
+      "category": "logistics",
+      "parameter_class": "RULE_PACK",
+      "label": "Modelo calibrado de despacho filas falhas e turnos",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.mill_receiving_profile_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Capacidade turnos filas e SLA de recebimento da usina",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_LOGISTICS_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.cut_to_mill_chain_ref",
+      "category": "logistics",
+      "parameter_class": "USER_FACT",
+      "label": "Cadeia temporal e de massa do corte a moagem",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "CLIENT",
+      "requirement": "WHEN_CUT_TO_MILL_REQUESTED",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "logistics.cut_to_mill_sla_rule_ref",
+      "category": "logistics",
+      "parameter_class": "RULE_PACK",
+      "label": "SLA local de corte entrega descarga e moagem",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": false,
+      "authority": "ENGINEER",
+      "requirement": "WHEN_CUT_TO_MILL_REQUESTED",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.domain_approvals_ref",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Aprovacoes por dominio cenario geometria e validade",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.pilot_and_field_acceptance_ref",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Plano piloto e aceite de campo",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E3_EXECUTIVO",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.as_built_ref",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Levantamento as built e desvios de implantacao",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "SURVEY",
+      "requirement": "E3_EXECUTIVO_AFTER_CONSTRUCTION",
+      "allowed_origins": ["MEASURED", "IMPORTED"],
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
+      "id": "qa.lifecycle_and_maintenance_ref",
+      "category": "qa",
+      "parameter_class": "USER_FACT",
+      "label": "Ciclo de cortes degradacao inspecao reparo e custo",
+      "value_schema": {"type": "string", "minLength": 1},
+      "unit": null,
+      "safety_critical": true,
+      "authority": "ENGINEER",
+      "requirement": "E2_E3",
+      "default": {"policy": "NO_DEFAULT"}
+    }
+  ]
+}

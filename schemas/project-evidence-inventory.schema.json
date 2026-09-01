@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/project-evidence-inventory.schema.json",
+  "title": "TerraFlux project evidence inventory",
+  "type": "object",
+  "required": ["schema_version", "inventory_id", "project_id", "assessed_at", "catalog_revision", "entries", "capability_assessments"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "inventory_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "assessed_at": {"type": "string", "format": "date-time"},
+    "catalog_revision": {"type": "string", "minLength": 1},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/evidenceEntry"}
+    },
+    "capability_assessments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/capabilityAssessment"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "evidenceEntry": {
+      "type": "object",
+      "required": ["package_id", "status", "gap_class", "evidence_refs", "resolved_parameter_ids", "notes", "next_actions"],
+      "properties": {
+        "package_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["AVAILABLE_VERIFIED", "AVAILABLE_SCREENING", "PARTIAL", "MISSING", "NOT_APPLICABLE"]},
+        "gap_class": {"enum": ["NONE", "PROJECT_INPUT_MISSING", "CALIBRATION_MISSING", "FIELD_VALIDATION_MISSING", "LEGAL_APPROVAL_MISSING"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "resolved_parameter_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "notes": {"type": "string", "minLength": 1},
+        "next_actions": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    },
+    "capabilityAssessment": {
+      "type": "object",
+      "required": ["capability_id", "status", "evidence_refs", "notes"],
+      "properties": {
+        "capability_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["IMPLEMENTED_VERIFIED", "IMPLEMENTED_LIMITED", "SPECIFIED_NOT_IMPLEMENTED", "NOT_IMPLEMENTED", "BLOCKED_BY_EVIDENCE"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "notes": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,770 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/conservation-scenario.schema.json",
+  "title": "TerraFlux conservation scenario",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scenario_id",
+    "client_archetype",
+    "delivery_level",
+    "context",
+    "technical_axes",
+    "optimization_scope",
+    "guidance_groups",
+    "connection_plan",
+    "interference_plan",
+    "poa_logistics_plan",
+    "zones",
+    "eligibility"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.1.0"
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "client_archetype": {
+      "$ref": "#/$defs/archetype"
+    },
+    "delivery_level": {
+      "enum": [
+        "E0_TRIAGEM",
+        "E1_OPERACIONAL",
+        "E2_CONSERVACIONISTA",
+        "E3_EXECUTIVO"
+      ]
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "generation_request_revision",
+        "terrain_revision",
+        "rule_pack_revision",
+        "fleet_revision",
+        "interference_catalog_revision",
+        "logistics_input_revision"
+      ],
+      "properties": {
+        "generation_request_revision": { "type": "string", "minLength": 1 },
+        "terrain_revision": { "type": "string" },
+        "hydrology_revision": { "type": ["string", "null"] },
+        "rule_pack_revision": { "type": "string" },
+        "fleet_revision": { "type": "string" },
+        "interference_catalog_revision": { "type": "string", "minLength": 1 },
+        "logistics_input_revision": { "type": ["string", "null"] },
+        "uncertainty_set_revision": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "technical_axes": {
+      "type": "object",
+      "required": [
+        "system_topology",
+        "row_geometry",
+        "intervention",
+        "operational_connection"
+      ],
+      "properties": {
+        "system_topology": {
+          "enum": [
+            "RETENCAO_TERRACEADA",
+            "DRENAGEM_CONTROLADA",
+            "ESD_DISTRIBUIDO",
+            "MISTO_POR_ZONA"
+          ]
+        },
+        "row_geometry": {
+          "enum": [
+            "PROXIMA_CONTORNO",
+            "GREIDE_CONTROLADO",
+            "RETAS_ELEGIVEIS",
+            "CAMPO_DIRECIONAL_SUAVE"
+          ]
+        },
+        "intervention": {
+          "enum": [
+            "MANTER_INFRA",
+            "ADAPTACAO_LOCAL",
+            "REDESENHO_INTEGRADO"
+          ]
+        },
+        "operational_connection": {
+          "enum": [
+            "ISOLADO_POR_TALHAO",
+            "EIXO_COMUM",
+            "GUIA_CONTINUA",
+            "TRABALHO_CONTINUO"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "optimization_scope": {
+      "$ref": "#/$defs/optimizationScope"
+    },
+    "guidance_groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/guidanceGroup"
+      }
+    },
+    "connection_plan": {
+      "$ref": "#/$defs/connectionPlan"
+    },
+    "interference_plan": {
+      "$ref": "#/$defs/interferencePlan"
+    },
+    "poa_logistics_plan": {
+      "$ref": "#/$defs/poaLogisticsPlan"
+    },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/zone"
+      }
+    },
+    "hydraulic_graph_ref": {
+      "type": ["string", "null"]
+    },
+    "operational_graph_ref": {
+      "type": ["string", "null"]
+    },
+    "constraint_graph_ref": {
+      "type": ["string", "null"]
+    },
+    "logistics_graph_ref": {
+      "type": ["string", "null"]
+    },
+    "traffic_intensity_ref": {
+      "type": ["string", "null"]
+    },
+    "metrics_ref": {
+      "type": ["string", "null"]
+    },
+    "eligibility": {
+      "type": "object",
+      "required": ["status", "failed_gates", "pending_inputs"],
+      "properties": {
+        "status": {
+          "enum": [
+            "GEOMETRIC_PRECURSOR",
+            "CONDITIONAL",
+            "ELIGIBLE",
+            "INELIGIBLE",
+            "APPROVED"
+          ]
+        },
+        "failed_gates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "pending_inputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "delivery_level": { "const": "E0_TRIAGEM" }
+        }
+      },
+      "then": {
+        "properties": {
+          "eligibility": {
+            "properties": {
+              "status": { "const": "GEOMETRIC_PRECURSOR" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "client_archetype": { "const": "CURVA_EMBUTIDA" }
+        }
+      },
+      "then": {
+        "properties": {
+          "zones": {
+            "items": {
+              "properties": {
+                "terrace_policy": {
+                  "type": "object",
+                  "properties": {
+                    "cross_section": { "const": "EMBUTIDA" }
+                  }
+                }
+              },
+              "required": ["terrace_policy"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "client_archetype": { "const": "BASE_LARGA_PASSANTE" }
+        }
+      },
+      "then": {
+        "properties": {
+          "zones": {
+            "items": {
+              "properties": {
+                "terrace_policy": {
+                  "type": "object",
+                  "properties": {
+                    "cross_section": { "const": "BASE_LARGA" },
+                    "operability": { "const": "PASSANTE_CONDICIONAL" }
+                  }
+                }
+              },
+              "required": ["terrace_policy"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "client_archetype": { "const": "ESD" }
+        }
+      },
+      "then": {
+        "properties": {
+          "zones": {
+            "items": {
+              "properties": {
+                "esd_policy": {
+                  "type": "object"
+                },
+                "row_policy": {
+                  "properties": {
+                    "hydraulic_role": { "const": "CARRIER" }
+                  }
+                }
+              },
+              "required": ["esd_policy"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "technical_axes": {
+            "properties": {
+              "operational_connection": { "const": "ISOLADO_POR_TALHAO" }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "guidance_groups": {
+            "items": {
+              "properties": {
+                "member_field_ids": { "maxItems": 1 }
+              }
+            }
+          },
+          "connection_plan": {
+            "properties": {
+              "mode": { "const": "ISOLADO_POR_TALHAO" },
+              "portal_uses": { "maxItems": 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "technical_axes": {
+            "properties": {
+              "operational_connection": { "const": "EIXO_COMUM" }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "connection_plan": {
+            "properties": {
+              "mode": { "const": "EIXO_COMUM" },
+              "portal_uses": { "maxItems": 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "technical_axes": {
+            "properties": {
+              "operational_connection": { "const": "GUIA_CONTINUA" }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "connection_plan": {
+            "properties": {
+              "mode": { "const": "GUIA_CONTINUA" },
+              "portal_uses": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "operational_state": { "const": "LIFT_CROSS" },
+                    "required_permission_scopes": {
+                      "contains": { "const": "TRANSIT" }
+                    }
+                  },
+                  "required": ["operational_state", "required_permission_scopes"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "technical_axes": {
+            "properties": {
+              "operational_connection": { "const": "TRABALHO_CONTINUO" }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "connection_plan": {
+            "properties": {
+              "mode": { "const": "TRABALHO_CONTINUO" },
+              "portal_uses": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "operational_state": { "const": "WORK_THROUGH" },
+                    "required_permission_scopes": {
+                      "allOf": [
+                        { "contains": { "const": "TRANSIT" } },
+                        { "contains": { "const": "WORK" } }
+                      ]
+                    }
+                  },
+                  "required": ["operational_state", "required_permission_scopes"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "optimizationScope": {
+      "type": "object",
+      "required": [
+        "scope_id",
+        "farm_ids",
+        "legal_land_unit_ids",
+        "field_ids",
+        "boundary_revision",
+        "terrain_revision",
+        "authorization_revision",
+        "portal_catalog_ref"
+      ],
+      "properties": {
+        "scope_id": { "type": "string", "minLength": 1 },
+        "farm_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "legal_land_unit_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "field_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "boundary_revision": { "type": "string", "minLength": 1 },
+        "terrain_revision": { "type": "string", "minLength": 1 },
+        "authorization_revision": { "type": ["string", "null"] },
+        "portal_catalog_ref": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "guidanceGroup": {
+      "type": "object",
+      "required": [
+        "guidance_group_id",
+        "member_farm_ids",
+        "member_field_ids",
+        "member_zone_ids",
+        "alignment_mode",
+        "direction_model_ref",
+        "phase_anchor_ref",
+        "nominal_spacing_m",
+        "machine_profile_id",
+        "guidance_lines_ref"
+      ],
+      "properties": {
+        "guidance_group_id": { "type": "string", "minLength": 1 },
+        "member_farm_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "member_field_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "member_zone_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "alignment_mode": {
+          "enum": ["INDEPENDENT", "COMMON_AXIS", "PHASE_LOCKED", "CONTINUOUS_PATH"]
+        },
+        "direction_model_ref": { "type": ["string", "null"] },
+        "phase_anchor_ref": { "type": ["string", "null"] },
+        "nominal_spacing_m": { "type": "number", "exclusiveMinimum": 0 },
+        "machine_profile_id": { "type": "string", "minLength": 1 },
+        "guidance_lines_ref": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "connectionPlan": {
+      "type": "object",
+      "required": [
+        "mode",
+        "worked_segments_ref",
+        "movement_segments_ref",
+        "hydraulic_reaches_ref",
+        "portal_uses"
+      ],
+      "properties": {
+        "mode": {
+          "enum": ["ISOLADO_POR_TALHAO", "EIXO_COMUM", "GUIA_CONTINUA", "TRABALHO_CONTINUO"]
+        },
+        "worked_segments_ref": { "type": ["string", "null"] },
+        "movement_segments_ref": { "type": ["string", "null"] },
+        "hydraulic_reaches_ref": { "type": ["string", "null"] },
+        "constraint_checks_ref": { "type": ["string", "null"] },
+        "portal_uses": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/portalUse" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "interferencePlan": {
+      "type": "object",
+      "required": [
+        "completeness_status",
+        "catalog_ref",
+        "power_line_axis_policy",
+        "exclusion_areas_ref",
+        "work_breaks_ref",
+        "constraint_checks_ref",
+        "qa_status"
+      ],
+      "properties": {
+        "completeness_status": {
+          "enum": ["COMPLETE", "PARTIAL", "NOT_REVIEWED"]
+        },
+        "catalog_ref": { "type": ["string", "null"] },
+        "power_line_axis_policy": {
+          "enum": ["V1_ABSOLUTE_BARRIER", "DECLARED_NONE", "NOT_EVALUATED"]
+        },
+        "exclusion_areas_ref": { "type": ["string", "null"] },
+        "work_breaks_ref": { "type": ["string", "null"] },
+        "constraint_checks_ref": { "type": ["string", "null"] },
+        "qa_status": {
+          "enum": ["UNCONFIRMED", "BLOCKED", "CONDITIONAL", "VERIFIED", "APPROVED"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "power_line_axis_policy": { "const": "V1_ABSOLUTE_BARRIER" } },
+            "required": ["power_line_axis_policy"]
+          },
+          "then": {
+            "properties": {
+              "catalog_ref": { "type": "string", "minLength": 1 },
+              "exclusion_areas_ref": { "type": "string", "minLength": 1 },
+              "work_breaks_ref": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "poaLogisticsPlan": {
+      "type": "object",
+      "required": [
+        "mode",
+        "status",
+        "poa_sites_ref",
+        "load_events_ref",
+        "routes_ref",
+        "traffic_intensity_ref",
+        "logistics_metrics_ref",
+        "failed_gates",
+        "pending_inputs"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "NOT_REQUESTED",
+            "P0_POA_EXISTENTE",
+            "P1_SEM_NOVA_OBRA",
+            "P2_NOVOS_POAS",
+            "P3_INTEGRADO"
+          ]
+        },
+        "status": {
+          "enum": ["NOT_REQUESTED", "GEOMETRIC_SCREENING", "CONDITIONAL", "ELIGIBLE", "INELIGIBLE", "APPROVED"]
+        },
+        "poa_sites_ref": { "type": ["string", "null"] },
+        "load_events_ref": { "type": ["string", "null"] },
+        "routes_ref": { "type": ["string", "null"] },
+        "traffic_intensity_ref": { "type": ["string", "null"] },
+        "logistics_metrics_ref": { "type": ["string", "null"] },
+        "failed_gates": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "pending_inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "mode": { "const": "NOT_REQUESTED" } },
+            "required": ["mode"]
+          },
+          "then": {
+            "properties": { "status": { "const": "NOT_REQUESTED" } }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "portalUse": {
+      "type": "object",
+      "required": [
+        "portal_id",
+        "crossing_id",
+        "from_field_id",
+        "to_field_id",
+        "from_farm_id",
+        "to_farm_id",
+        "boundary_class",
+        "geometry_ref",
+        "profile_ref",
+        "operational_state",
+        "hydraulic_state",
+        "required_permission_scopes",
+        "authorization_refs",
+        "qa_status"
+      ],
+      "properties": {
+        "portal_id": { "type": "string", "minLength": 1 },
+        "crossing_id": { "type": "string", "minLength": 1 },
+        "from_field_id": { "type": "string", "minLength": 1 },
+        "to_field_id": { "type": "string", "minLength": 1 },
+        "from_farm_id": { "type": "string", "minLength": 1 },
+        "to_farm_id": { "type": "string", "minLength": 1 },
+        "boundary_class": {
+          "enum": [
+            "INTERNAL_FIELD",
+            "PRIVATE_CARRIER",
+            "LEGAL_BOUNDARY",
+            "PUBLIC_ROAD",
+            "WATERCOURSE",
+            "APP",
+            "UNKNOWN"
+          ]
+        },
+        "geometry_ref": { "type": ["string", "null"] },
+        "profile_ref": { "type": ["string", "null"] },
+        "operational_state": { "enum": ["BLOCKED", "LIFT_CROSS", "WORK_THROUGH"] },
+        "hydraulic_state": {
+          "enum": ["INTERRUPTED", "CONTROLLED_TRANSFER", "CONTINUOUS_VERIFIED", "UNRESOLVED"]
+        },
+        "required_permission_scopes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/permissionScope" },
+          "uniqueItems": true
+        },
+        "authorization_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "qa_status": { "enum": ["UNCONFIRMED", "BLOCKED", "CONDITIONAL", "VERIFIED", "APPROVED"] },
+        "interference_status": {
+          "enum": ["NOT_REVIEWED", "BLOCKED", "BARRIER_CLEAR", "VERIFIED"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "qa_status": { "enum": ["VERIFIED", "APPROVED"] } },
+            "required": ["qa_status"]
+          },
+          "then": {
+            "properties": {
+              "boundary_class": { "not": { "const": "UNKNOWN" } },
+              "geometry_ref": { "type": "string", "minLength": 1 },
+              "profile_ref": { "type": "string", "minLength": 1 },
+              "hydraulic_state": { "not": { "const": "UNRESOLVED" } },
+              "authorization_refs": { "minItems": 1 },
+              "interference_status": { "const": "VERIFIED" }
+            },
+            "required": ["interference_status"]
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "permissionScope": {
+      "enum": ["SURVEY", "DESIGN", "TRANSIT", "WORK", "EARTHWORK", "WATER_TRANSFER"]
+    },
+    "archetype": {
+      "enum": [
+        "CURVA_EMBUTIDA",
+        "BASE_LARGA_PASSANTE",
+        "ESD",
+        "MISTO_POR_ZONA"
+      ]
+    },
+    "zone": {
+      "type": "object",
+      "required": ["zone_id", "archetype", "row_policy"],
+      "properties": {
+        "zone_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "archetype": {
+          "$ref": "#/$defs/archetype"
+        },
+        "row_policy": {
+          "type": "object",
+          "required": ["geometry", "hydraulic_role", "physical_continuity"],
+          "properties": {
+            "geometry": {
+              "enum": [
+                "PROXIMA_CONTORNO",
+                "GREIDE_CONTROLADO",
+                "RETAS_ELEGIVEIS",
+                "CAMPO_DIRECIONAL_SUAVE"
+              ]
+            },
+            "hydraulic_role": {
+              "enum": ["NONE", "BARRIER", "CARRIER"]
+            },
+            "physical_continuity": {
+              "enum": [
+                "INTERRUPTED_AT_STRUCTURE",
+                "CROSSING_AT_VALIDATED_STATIONS",
+                "CONTINUOUS_INSIDE_ZONE"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "terrace_policy": {
+          "type": ["object", "null"],
+          "required": [
+            "hydraulic_function",
+            "cross_section",
+            "longitudinal_control",
+            "operability",
+            "crossing_policy"
+          ],
+          "properties": {
+            "hydraulic_function": { "enum": ["TI", "TD"] },
+            "cross_section": {
+              "enum": ["EMBUTIDA", "BASE_LARGA", "BASE_MEDIA", "ESTREITA", "INVERTIDA"]
+            },
+            "longitudinal_control": {
+              "enum": ["NIVEL_FECHADO", "NIVEL_ABERTO", "GREIDE_CONTROLADO"]
+            },
+            "operability": {
+              "enum": ["NAO_PASSANTE", "PASSANTE_CONDICIONAL", "TRAVESSIA_LOCAL"]
+            },
+            "crossing_policy": {
+              "enum": ["NONE", "VALIDATED_STATIONS"]
+            },
+            "degraded_section_evaluation_ref": {
+              "type": ["string", "null"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "esd_policy": {
+          "type": ["object", "null"],
+          "required": ["variant", "receiver_policy"],
+          "properties": {
+            "variant": {
+              "enum": ["ESD_SETORIAL", "ESD_COMPLEMENTADO"]
+            },
+            "receiver_policy": {
+              "const": "EVERY_REACH_HAS_A_VERIFIED_STABLE_DESTINATION"
+            },
+            "complementary_components": {
+              "type": "array",
+              "items": {
+                "enum": ["TD", "CEV", "DISSIPADOR", "FAIXA_VEGETADA", "DRENAGEM_NATURAL_PROTEGIDA"]
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

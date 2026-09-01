@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/poa-static-stage-manifest.schema.json",
+  "title": "TerraFlux POA static stage manifest",
+  "description": "Contrato consumido por scripts/optimize_static_poa.py. E' um manifesto de estagio, preparado por um pipeline a montante a partir de sulcos ja cortados por barreira; nao e o project-generation-request central e este schema nao substitui project-generation-request.schema.json. A traducao do pedido central para este manifesto e uma etapa separada e explicita, nunca automatica. A funcao validate_request() em optimize_static_poa.py e a implementacao autoritativa; este schema documenta o mesmo contrato, incluindo as exigencias adicionais que se aplicam apenas quando mode=ROUTED_STATIC (inputs.road_network, productivity, e os campos de operation descritos abaixo), mas nao reimplementa cada regra condicional por modo.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_type",
+    "mode",
+    "inputs",
+    "constraints",
+    "outputs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_type": {
+      "const": "POA_STATIC_STAGE_MANIFEST"
+    },
+    "project_request_ref": {
+      "type": "object",
+      "description": "Rastreabilidade opcional ao project-generation-request que originou este manifesto. Pelo menos id ou hash deve estar presente quando o objeto existir.",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [
+        { "required": ["id"] },
+        { "required": ["hash"] }
+      ],
+      "additionalProperties": true
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["ROUTED_STATIC", "E0_EUCLIDEAN_SCREENING"],
+      "description": "ROUTED_STATIC usa grafo NetworkX roteado e pode publicar OPTIMIZED. E0_EUCLIDEAN_SCREENING usa distancia euclidiana e nunca produz uma alegacao de ganho operacional."
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["worked_lines", "poa_candidates"],
+      "properties": {
+        "worked_lines": {
+          "allOf": [{ "$ref": "#/$defs/vectorSpec" }],
+          "properties": {
+            "id_field": { "type": "string", "minLength": 1 },
+            "shot_id_field": {
+              "type": "string",
+              "description": "Em ROUTED_STATIC deve ser 'operational_run_id', gerado depois de todo corte por barreira absoluta (ex.: power_line_axis). Nunca acumula massa atraves de uma barreira."
+            },
+            "sequence_field": { "type": "string", "minLength": 1 }
+          }
+        },
+        "poa_candidates": {
+          "allOf": [{ "$ref": "#/$defs/vectorSpec" }],
+          "properties": {
+            "id_field": { "type": "string", "minLength": 1 },
+            "capacity_t_field": { "type": "string", "minLength": 1 }
+          },
+          "description": "Aceita Polygon (patio real, pode ser OPTIMIZED) ou Point (analise preliminar de sitio; qualquer Point selecionado rebaixa o resultado para GEOMETRIC_SCREENING)."
+        },
+        "road_network": {
+          "allOf": [{ "$ref": "#/$defs/vectorSpec" }],
+          "description": "Obrigatorio quando mode=ROUTED_STATIC."
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Ao menos um entre power_line_axis e power_absence_declaration deve estar presente; ausencia de ambos e rejeitada. Se os dois forem fornecidos, o validador imperativo em optimize_static_poa.py usa power_line_axis e ignora a declaracao.",
+      "anyOf": [
+        { "required": ["power_line_axis"] },
+        { "required": ["power_absence_declaration"] }
+      ],
+      "properties": {
+        "power_line_axis": {
+          "allOf": [{ "$ref": "#/$defs/vectorSpec" }],
+          "required": ["path", "buffer_m"],
+          "properties": {
+            "buffer_m": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Meia largura de exclusao com fonte registrada no pedido central; sem default universal."
+            }
+          },
+          "description": "LineString 2D pelo centro dos postes. Barreira absoluta V1: nenhum POA, rota, fila, carga ou descarga cruza esta faixa; nao existe travessia LIFT_CROSS automatica."
+        },
+        "power_absence_declaration": {
+          "type": "object",
+          "required": ["declaration_id", "responsible", "date", "scope_ids", "confirmed_absent"],
+          "properties": {
+            "declaration_id": { "type": "string", "minLength": 1 },
+            "responsible": { "type": "string", "minLength": 1 },
+            "date": { "type": "string", "format": "date" },
+            "scope_ids": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            },
+            "confirmed_absent": {
+              "const": true,
+              "description": "Ausencia de arquivo nao significa ausencia de rede; somente esta declaracao explicita tem essa semantica."
+            }
+          },
+          "additionalProperties": true
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "allOf": [{ "$ref": "#/$defs/vectorSpec" }],
+            "properties": {
+              "code": { "type": "string", "minLength": 1 },
+              "buffer_m": { "type": "number", "minimum": 0 }
+            }
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "productivity": {
+      "type": "object",
+      "description": "Obrigatorio quando mode=ROUTED_STATIC.",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["UNIFORM", "FIELD_ATTRIBUTE"] },
+        "tonnes_per_hectare": { "type": "number", "exclusiveMinimum": 0 },
+        "attribute": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "UNIFORM" } } },
+          "then": { "required": ["tonnes_per_hectare"] }
+        },
+        {
+          "if": { "properties": { "mode": { "const": "FIELD_ATTRIBUTE" } } },
+          "then": { "required": ["attribute"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "description": "Obrigatorio quando mode=ROUTED_STATIC: planning_horizon_id, harvest_width_m, transshipment_capacity_t, network_snap_tolerance_m e max_selected_sites sao exigidos nesse modo.",
+      "properties": {
+        "planning_horizon_id": { "type": "string", "minLength": 1 },
+        "harvest_width_m": { "type": "number", "exclusiveMinimum": 0 },
+        "transshipment_capacity_t": { "type": "number", "exclusiveMinimum": 0 },
+        "network_snap_tolerance_m": { "type": "number", "exclusiveMinimum": 0 },
+        "max_selected_sites": { "type": "integer", "minimum": 1 },
+        "exact_site_candidate_limit": { "type": "integer", "minimum": 1 },
+        "exact_assignment_event_limit": { "type": "integer", "minimum": 1 },
+        "max_exact_site_combinations": { "type": "integer", "minimum": 1 },
+        "poa_default_capacity_t": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Usado somente quando inputs.poa_candidates.capacity_t_field nao esta presente."
+        },
+        "poa_default_fixed_penalty_tonne_m": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["json", "gpkg"],
+      "properties": {
+        "json": { "type": "string", "minLength": 1 },
+        "gpkg": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "vectorSpec": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

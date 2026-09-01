@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/engine-capability-catalog.schema.json",
+  "title": "TerraFlux engine capability catalog",
+  "type": "object",
+  "required": ["schema_version", "catalog_id", "capabilities"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "catalog_id": {"const": "terraflux-engine-capability-catalog"},
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "domain", "declared_status", "required_evidence_packages", "required_capabilities", "outputs", "blocker_code", "next_implementation"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+          "title": {"type": "string", "minLength": 1},
+          "domain": {"type": "string", "minLength": 1},
+          "declared_status": {"enum": ["IMPLEMENTED_VERIFIED", "IMPLEMENTED_LIMITED", "SPECIFIED_NOT_IMPLEMENTED", "NOT_IMPLEMENTED", "BLOCKED_BY_EVIDENCE"]},
+          "required_evidence_packages": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "required_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "outputs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "blocker_code": {"type": ["string", "null"]},
+          "next_implementation": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

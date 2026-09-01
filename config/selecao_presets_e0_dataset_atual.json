@@ -1,0 +1,143 @@
+{
+  "schema_version": "1.0.0",
+  "selection_id": "presets-e0-exemplo-publico-v1",
+  "project_id": "projeto-demonstracao",
+  "created_at": "2026-08-24T13:00:00-03:00",
+  "project_context": {
+    "country": "BR",
+    "state": "SP",
+    "crop": "SUGARCANE"
+  },
+  "requested_delivery_level": "E0_TRIAGEM",
+  "use_system_defaults_for_unselected_packages": true,
+  "package_selections": [
+    {
+      "package_id": "AGRONOMIC_CONFIGURATION",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-CANA-ROW-SIMPLE-1P50-E0", "SYS-CANA-VARIETY-CENSUS-CS-2024-E0"],
+      "applicability_justification": "Sao Paulo integra o Centro-Sul; variedade permanece apenas como lista E0, nunca recomendacao zonal automatica."
+    },
+    {
+      "package_id": "CONSERVATION_RULE_PACK",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-GOV-SP-SAA-CONSERVATION", "SYS-CONSERVATION-IAC-BT216-SP-CANA", "SYS-CONSERVATION-ESD-PROCESS-CLOSED"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "ENVIRONMENT_LEGAL",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-ENV-LEGAL-OFFICIAL-DISCOVERY-E0", "SYS-GOV-SP-SAA-CONSERVATION"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "FLEET_IDENTITY_GEOMETRY",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["OEM-JD-CH570-TRACK-1ROW", "OEM-JD-6210M-TRACTOR", "OEM-CIVEMASA-TAC22000-REV08", "OEM-ANTONIOSI-PCP1102", "OEM-CIVEMASA-SATP-HD-2R"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "CONTROLLER_GUIDANCE",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["OEM-GUIDANCE-HEXAGON-TI10"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "PERFORMANCE_RELIABILITY",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-OP-SPEED-5KMH-E0", "SYS-OP-TURN-HARVESTER-38P5S-E0", "SYS-PERFORMANCE-TELEMETRY-TEMPLATE"],
+      "applicability_justification": null
+    },
+    {
+      "package_id": "POA_SITE_LAYOUT",
+      "mode": "SYSTEM_MODELS",
+      "model_ids": ["SYS-POA-DRIVE-THROUGH-1BAY-TEMPLATE"],
+      "applicability_justification": null
+    }
+  ],
+  "standalone_parameter_selections": [
+    {
+      "parameter_id": "e0.yield_proxy_t_ha",
+      "mode": "SYSTEM_MODEL",
+      "model_id": "SYS-YIELD-CONAB-SE-2026-27-E0"
+    },
+    {
+      "parameter_id": "e0.maneuver_time_s",
+      "mode": "SYSTEM_MODEL",
+      "model_id": "SYS-OP-TURN-HARVESTER-38P5S-E0"
+    }
+  ],
+  "custom_parameter_values": [
+    {
+      "parameter_id": "scope.target_field_ids",
+      "value": ["TALHAO-DEMO-A", "TALHAO-DEMO-B"],
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "dataset/example/field_boundaries.gpkg",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": "dataset-audit",
+        "revision": "example-boundary-v1"
+      }
+    },
+    {
+      "parameter_id": "scope.target_property_ids",
+      "value": ["IMOVEL-DEMO"],
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-audit-placeholder-property",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": "dataset-audit",
+        "revision": "e0-only"
+      }
+    },
+    {
+      "parameter_id": "terrain.dtm_dataset_ref",
+      "value": "dtm-1m-current",
+      "unit": null,
+      "provenance": {
+        "origin": "UPLOADED",
+        "source_ref": "dataset/example/dtm_1m.tif",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": "dataset-audit",
+        "revision": "dtm-1m-current"
+      }
+    },
+    {
+      "parameter_id": "terrain.horizontal_crs",
+      "value": "EPSG:31982",
+      "unit": null,
+      "provenance": {
+        "origin": "IMPORTED",
+        "source_ref": "dataset-spatial-reference",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": "dataset-audit",
+        "revision": "current"
+      }
+    },
+    {
+      "parameter_id": "agronomy.row_spacing_m",
+      "value": 1.5,
+      "unit": "m",
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "e0-illustrative-assumption-confirm-before-e1",
+        "captured_at": "2026-08-11T12:00:00-03:00",
+        "responsible": "dataset-audit",
+        "revision": "e0-only"
+      }
+    },
+    {
+      "parameter_id": "constraints.overhead_power_line_inventory_status",
+      "value": "DECLARED_NONE",
+      "unit": null,
+      "provenance": {
+        "origin": "DECLARED",
+        "source_ref": "example-declaration-no-power-v1",
+        "captured_at": "2026-08-24T10:31:41-03:00",
+        "responsible": "example-declarant",
+        "revision": "example-declared-no-power-v1"
+      }
+    }
+  ]
+}

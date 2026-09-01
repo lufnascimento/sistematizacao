@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/sugarcane-reference-model-catalog.schema.json",
+  "title": "TerraFlux sugarcane reference model catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "as_of",
+    "purpose",
+    "market_claim_policy",
+    "source_registry",
+    "models"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "catalog_id": {"const": "terraflux-sugarcane-reference-model-catalog"},
+    "as_of": {"type": "string", "format": "date"},
+    "purpose": {"type": "string", "minLength": 1},
+    "market_claim_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules"],
+      "properties": {
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "source_registry": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/source"}
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/model"}
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "publisher",
+        "source_kind",
+        "url",
+        "published_at",
+        "checked_at",
+        "locators",
+        "limitations"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "publisher": {"type": "string", "minLength": 1},
+        "source_kind": {
+          "enum": [
+            "OFFICIAL_DATA",
+            "OFFICIAL_METHOD",
+            "OFFICIAL_MARKET_CENSUS",
+            "OEM",
+            "LAW_OR_STANDARD",
+            "PRIMARY_RESEARCH",
+            "SYSTEM_CONTRACT"
+          ]
+        },
+        "url": {"type": "string", "pattern": "^(https://|config/|docs/)"},
+        "published_at": {"type": "string", "minLength": 4},
+        "checked_at": {"type": "string", "format": "date"},
+        "locators": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "parameter_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_id",
+        "resolution_mode",
+        "unit",
+        "confidence",
+        "evidence_state",
+        "requires_user_confirmation"
+      ],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "resolution_mode": {
+          "enum": [
+            "FIXED_E0_VALUE",
+            "FAIL_CLOSED_VALUE",
+            "REFERENCE_LOOKUP",
+            "MODEL_TEMPLATE",
+            "REFERENCE_ONLY",
+            "CATALOG_SELECTION",
+            "FORMULA_DERIVED"
+          ]
+        },
+        "value": {},
+        "unit": {"type": ["string", "null"]},
+        "confidence": {"enum": ["LOW", "MEDIUM", "HIGH", "VERIFIED"]},
+        "evidence_state": {
+          "enum": [
+            "ESTIMATED_PRIOR",
+            "PUBLISHED_REFERENCE",
+            "OEM_NOMINAL",
+            "FAIL_CLOSED",
+            "TEMPLATE_ONLY"
+          ]
+        },
+        "requires_user_confirmation": {"type": "boolean"},
+        "source_locator": {"type": "string", "minLength": 1},
+        "notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "category",
+        "status",
+        "market_position",
+        "release_ceiling",
+        "supported_package_ids",
+        "applicability",
+        "source_ids",
+        "parameter_candidates",
+        "model_data",
+        "local_confirmation_requirements",
+        "limitations"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "category": {"type": "string", "minLength": 1},
+        "status": {"enum": ["ACTIVE", "REFERENCE_ONLY", "VERIFICATION_REQUIRED", "LEGACY"]},
+        "market_position": {
+          "enum": [
+            "PUBLISHED_AS_COMMON",
+            "MARKET_CENSUS_RANKED",
+            "REPRESENTATIVE_MAJOR_OEM",
+            "OFFICIAL_METHOD",
+            "OFFICIAL_DATA_SOURCE",
+            "SYSTEM_TEMPLATE",
+            "FAIL_CLOSED_POLICY",
+            "FIELD_STUDY_PRIOR",
+            "REGULATORY_GOVERNANCE",
+            "RESEARCH_PROTOCOL",
+            "PROCESS_ONLY"
+          ]
+        },
+        "release_ceiling": {"enum": ["E0_TRIAGEM", "NO_PROJECT_RELEASE"]},
+        "supported_package_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "applicability": {
+          "type": "object",
+          "required": ["country", "crop", "jurisdiction", "conditions"],
+          "properties": {
+            "country": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "crop": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "jurisdiction": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "conditions": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        },
+        "source_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "parameter_candidates": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/parameter_candidate"}
+        },
+        "model_data": {"type": "object"},
+        "local_confirmation_requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

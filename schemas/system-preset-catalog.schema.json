@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/system-preset-catalog.schema.json",
+  "title": "TerraFlux system preset catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "purpose",
+    "contracts",
+    "selection_policy",
+    "package_profiles",
+    "standalone_parameter_profiles"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "catalog_id": {"const": "terraflux-system-preset-catalog"},
+    "purpose": {"type": "string", "minLength": 1},
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_catalog_revision",
+        "acquisition_catalog_revision",
+        "reference_model_catalog_revision",
+        "reference_model_catalog_ref"
+      ],
+      "properties": {
+        "parameter_catalog_revision": {"type": "string"},
+        "acquisition_catalog_revision": {"type": "string"},
+        "reference_model_catalog_revision": {"type": "string"},
+        "reference_model_catalog_ref": {"type": "string"}
+      }
+    },
+    "selection_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_application", "rules"],
+      "properties": {
+        "default_application": {"const": "E0_ONLY_UNLESS_REPLACED_BY_PROJECT_EVIDENCE"},
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "package_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/package_profile"}
+    },
+    "standalone_parameter_profiles": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/standalone_profile"}
+    }
+  },
+  "$defs": {
+    "custom_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "preserve_provenance", "validate_against_parameter_schema"],
+      "properties": {
+        "enabled": {"const": true},
+        "preserve_provenance": {"const": true},
+        "validate_against_parameter_schema": {"const": true}
+      }
+    },
+    "package_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_id",
+        "default_model_ids",
+        "selectable_model_ids",
+        "unbound_parameter_policy",
+        "custom_mode",
+        "default_reason",
+        "release_effect"
+      ],
+      "properties": {
+        "package_id": {"type": "string", "minLength": 1},
+        "default_model_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "selectable_model_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "unbound_parameter_policy": {
+          "enum": ["LOCAL_INPUT_TEMPLATE", "FAIL_CLOSED_OR_LOCAL_INPUT_TEMPLATE"]
+        },
+        "custom_mode": {"$ref": "#/$defs/custom_mode"},
+        "default_reason": {"type": "string", "minLength": 1},
+        "release_effect": {"const": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"}
+      }
+    },
+    "standalone_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter_id",
+        "default_model_id",
+        "selectable_model_ids",
+        "custom_mode",
+        "release_effect"
+      ],
+      "properties": {
+        "parameter_id": {"type": "string", "minLength": 1},
+        "default_model_id": {"type": "string", "minLength": 1},
+        "selectable_model_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "custom_mode": {"$ref": "#/$defs/custom_mode"},
+        "release_effect": {"const": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"}
+      }
+    }
+  }
+}
