@@ -808,6 +808,7 @@ const readinessAliases = {
   PCX1_RUNOFF_SCREENING: "PCX1_RUNOFF_SCREENING",
   PCX2_HYDROGRAPH_SCREENING: "PCX2_HYDROGRAPH_SCREENING",
   PCX3_REACH_ROUTING_SCREENING: "PCX3_REACH_ROUTING_SCREENING",
+  PCX4_SECTION_CAPACITY_SCREENING: "PCX4_SECTION_CAPACITY_SCREENING",
 };
 
 function productReadiness(readiness, product) {
@@ -826,7 +827,7 @@ function requestMatchesProducts(request, productIds) {
 }
 
 function executionEngineFor(productIds) {
-  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]);
+  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]);
   if (productIds.length > 0 && productIds.every((item) => hydrologyProducts.has(item)) && productIds.includes("PCX1_RUNOFF_SCREENING")) return "project_hydrology_screening";
   const supported = new Set(["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS"]);
   if (productIds.some((item) => !supported.has(item))) return null;
@@ -854,6 +855,8 @@ const blockerLabels = {
   HYDROGRAPH_DEPENDENCY_REQUIRED: "Selecione tambem o Hidrograma preliminar",
   ROUTING_CONFIGURATION_NOT_ENABLED: "Ative a propagacao da vazao pela rede",
   ROUTING_NETWORK_REQUIRED: "Informe o ponto de entrada e os trechos da rede",
+  ROUTING_DEPENDENCY_REQUIRED: "Selecione tambem a Propagacao preliminar na rede",
+  SECTION_CONFIGURATION_REQUIRED: "Informe as secoes e condicoes dos trechos",
   CF0_CONTINUOUS_DEPENDENCY_REQUIRED: "Gere primeiro a familia curva continua",
   PROJECT_SCOPE: "Limites e escopo do projeto",
   TERRAIN_SOURCE: "Fonte de elevacao do terreno",
@@ -869,6 +872,8 @@ const blockerLabels = {
   LOGISTICS: "Dados de logistica",
   HIDROGRAMA_PRELIMINAR: "Hidrograma preliminar",
   REDE_DE_ESCOAMENTO: "Trechos da rede de escoamento",
+  PROPAGACAO_NA_REDE: "Propagacao preliminar na rede",
+  SECOES_DOS_TRECHOS: "Secoes e condicoes dos trechos",
 };
 
 function blockerText(items = []) {
@@ -1080,7 +1085,13 @@ function renderHydrologyFocus(run) {
   const routingPending = summary.routed_reach_count != null
     ? "Atenuacao, remanso, capacidade das estruturas, caminho de falha e seguranca das saidas."
     : pending;
-  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}${routing}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${routingPending}</div></div></div></section>`;
+  const capacity = summary.capacity_within_count != null
+    ? `${statBlock("Trechos com folga", Number(summary.capacity_within_count).toLocaleString("pt-BR"), "circle-check", "Somente escoamento uniforme")}${statBlock("Trechos excedidos", Number(summary.capacity_exceeded_count).toLocaleString("pt-BR"), "triangle-alert", "Exigem revisao")}`
+    : "";
+  const capacityPending = summary.capacity_within_count != null
+    ? "Remanso, transicoes, perdas locais, erosao admissivel, degradacao, caminho de falha e seguranca das saidas."
+    : routingPending;
+  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}${routing}${capacity}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${capacityPending}</div></div></div></section>`;
 }
 
 function renderTopographyFocus(artifacts) {

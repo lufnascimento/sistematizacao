@@ -68,6 +68,15 @@ class RoutingReachConfiguration(StrictModel):
     travel_time_minutes: float = Field(ge=0.0, le=100_000.0)
 
 
+class ReachSectionConfiguration(StrictModel):
+    id: str = Field(min_length=1, max_length=100)
+    bottom_width_m: float = Field(ge=0.0, le=10_000.0)
+    side_slope_h_to_v: float = Field(ge=0.0, le=100.0)
+    slope_m_m: float = Field(gt=0.0, le=1.0)
+    manning_n: float = Field(gt=0.0, le=1.0)
+    maximum_flow_depth_m: float = Field(gt=0.0, le=1000.0)
+
+
 class HydrologyScreeningConfiguration(StrictModel):
     enabled: bool = False
     method: Literal["NRCS_CURVE_NUMBER_EVENT_SCREENING"] = "NRCS_CURVE_NUMBER_EVENT_SCREENING"
@@ -88,6 +97,8 @@ class HydrologyScreeningConfiguration(StrictModel):
     routing_enabled: bool = False
     routing_source_node_id: str | None = Field(default=None, max_length=100)
     routing_reaches: list[RoutingReachConfiguration] = Field(default_factory=list, max_length=10_000)
+    capacity_enabled: bool = False
+    reach_sections: list[ReachSectionConfiguration] = Field(default_factory=list, max_length=10_000)
 
     @model_validator(mode="after")
     def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
@@ -110,6 +121,11 @@ class HydrologyScreeningConfiguration(StrictModel):
                 raise ValueError("routing_source_node_id is required when routing is enabled")
             if not self.routing_reaches:
                 raise ValueError("routing_reaches are required when routing is enabled")
+        if self.capacity_enabled:
+            if not self.routing_enabled:
+                raise ValueError("routing must be enabled when capacity is enabled")
+            if not self.reach_sections:
+                raise ValueError("reach_sections are required when capacity is enabled")
         return self
 
 

@@ -61,6 +61,7 @@ O produto é tecnicamente viável como plataforma de diagnóstico, anteprojeto e
 - [Motor PCX1 de chuva-excesso](./docs/MOTOR_PCX1_CHUVA_EXCESSO.md): método NRCS-CN incremental, jornada do usuário, produtos JSON/CSV e integração limitada com a plataforma.
 - [Hidrograma preliminar](./docs/MOTOR_HIDROGRAMA_PRELIMINAR.md): vazao no tempo, pico preliminar, grafico, CSV/JSON e balanco de volume, ainda sem propagacao ou dimensionamento hidraulico.
 - [Propagacao preliminar na rede](./docs/PROPAGACAO_PRELIMINAR_NA_REDE.md): grafo aciclico, confluencias, atraso por trecho e balanco nas saidas, ainda sem atenuacao ou capacidade hidraulica.
+- [Verificacao preliminar de capacidade](./docs/VERIFICACAO_PRELIMINAR_CAPACIDADE.md): secao trapezoidal, Manning, profundidade normal, velocidade e tensao diagnostica por trecho.
 - [Schema do pedido de geração](./schemas/project-generation-request.schema.json): contrato dos insumos, parâmetros, interferências, objetivos e overrides de cada rodada.
 - [Schema de superfícies operacionais](./schemas/operational-surface-layer.schema.json): separa locais que apenas suportam término de trabalho daqueles realmente aprovados para manobra, por operação e perfil de frota.
 - [Pedido E0 de exemplo](./config/exemplo_pedido_e0_dataset_atual.json): instância pública anonimizada, válida e deliberadamente limitada a triagem.

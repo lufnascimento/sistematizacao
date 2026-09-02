@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/preliminary-section-capacity-stage.schema.json",
+  "title": "TerraFlux preliminary section capacity result",
+  "type": "object",
+  "required": ["schema_version", "manifest_type", "release", "project_id", "run_id", "request_ref", "source_routing_release", "method", "reach_count", "within_capacity_count", "exceeded_capacity_count", "reaches", "stage_status", "blocker_codes", "backwater_evaluated", "unsteady_flow_evaluated", "admissible_velocity_or_shear_evaluated", "receiver_approved", "project_executive_authorized", "guidance_authorized", "limitations"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_type": { "const": "PRELIMINARY_SECTION_CAPACITY_RESULT" },
+    "release": { "const": "PRELIMINARY_TRAPEZOIDAL_MANNING_CAPACITY_ONLY" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "request_ref": { "type": "object" },
+    "source_routing_release": { "const": "PRELIMINARY_DAG_LAG_ROUTING_ONLY" },
+    "method": { "const": "MANNING_UNIFORM_FLOW_TRAPEZOIDAL_SECTION" },
+    "reach_count": { "type": "integer", "minimum": 1 },
+    "within_capacity_count": { "type": "integer", "minimum": 0 },
+    "exceeded_capacity_count": { "type": "integer", "minimum": 0 },
+    "reaches": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "stage_status": { "const": "PRELIMINARY_CAPACITY_WITH_EXPLICIT_BLOCKERS" },
+    "blocker_codes": { "type": "array", "minItems": 6, "items": { "type": "string" }, "uniqueItems": true },
+    "backwater_evaluated": { "const": false },
+    "unsteady_flow_evaluated": { "const": false },
+    "admissible_velocity_or_shear_evaluated": { "const": false },
+    "receiver_approved": { "const": false },
+    "project_executive_authorized": { "const": false },
+    "guidance_authorized": { "const": false },
+    "limitations": { "type": "array", "minItems": 9, "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "additionalProperties": false
+}

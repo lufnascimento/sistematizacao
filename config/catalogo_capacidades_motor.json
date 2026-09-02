@@ -80,6 +80,17 @@
       "next_implementation": "Associar geometria, perfil, secao e rugosidade aos trechos e adotar propagacao fisicamente compativel com os dados."
     },
     {
+      "id": "PRELIMINARY_SECTION_CAPACITY_KERNEL",
+      "title": "Capacidade preliminar de secao trapezoidal por Manning",
+      "domain": "HYDRAULICS",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
+      "required_capabilities": ["PRELIMINARY_REACH_ROUTING_KERNEL"],
+      "outputs": ["REACH_CAPACITY_SCREENING", "NORMAL_DEPTH", "VELOCITY_AND_SHEAR_DIAGNOSTICS"],
+      "blocker_code": "BACKWATER_EROSION_AND_FAILURE_NOT_EVALUATED",
+      "next_implementation": "Adicionar secoes degradadas, limites erosivos aprovados, transicoes, jusante e caminhos de falha."
+    },
+    {
       "id": "PCE_ENGINE",
       "title": "Motor de controle de erosao PCE",
       "domain": "CONSERVATION",
@@ -107,7 +118,7 @@
       "domain": "HYDROLOGY",
       "declared_status": "NOT_IMPLEMENTED",
       "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
-      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL", "PCX1_RAINFALL_EXCESS_KERNEL", "PCX2_PRELIMINARY_HYDROGRAPH_KERNEL", "PRELIMINARY_REACH_ROUTING_KERNEL"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL", "PCX1_RAINFALL_EXCESS_KERNEL", "PCX2_PRELIMINARY_HYDROGRAPH_KERNEL", "PRELIMINARY_REACH_ROUTING_KERNEL", "PRELIMINARY_SECTION_CAPACITY_KERNEL"],
       "outputs": ["PCX_MASS_BALANCE", "HYDROGRAPH", "HYDRAULIC_GATES"],
       "blocker_code": "PCX_SOLVER_NOT_IMPLEMENTED",
       "next_implementation": "Implementar roteamento por alcance, secoes, receptores, excedencia e incerteza sobre os eventos e hidrogramas ja reproduziveis."

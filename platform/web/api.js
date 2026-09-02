@@ -815,6 +815,14 @@ export const systemCatalog = {
       available: true,
     },
     {
+      id: "PCX4_SECTION_CAPACITY_SCREENING",
+      name: "Verificacao preliminar de capacidade",
+      description: "Compara a vazao maxima com a profundidade disponivel em cada trecho declarado.",
+      level: "E0",
+      requires: ["PROPAGACAO_NA_REDE", "SECOES_DOS_TRECHOS"],
+      available: true,
+    },
+    {
       id: "C1_DIMENSIONED",
       name: "Curva embutida dimensionada",
       description: "TI/TD, seção, superfície proposta, volumes e verificação hidráulica conservacionista.",
@@ -929,6 +937,8 @@ export const systemCatalog = {
         { id: "hydrology.routing_enabled", name: "Propagar a vazao pela rede", type: "boolean", default: false, source: "Cliente" },
         { id: "hydrology.routing_source_node_id", name: "No onde a agua entra na rede", type: "text", unit: null, default: "ENTRADA", source: "Cliente" },
         { id: "hydrology.routing_reaches_json", name: "Trechos e tempos de viagem", type: "json", unit: null, default: "[]", source: "Cliente" },
+        { id: "hydrology.capacity_enabled", name: "Verificar capacidade dos trechos", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.reach_sections_json", name: "Secoes e condicoes dos trechos", type: "json", unit: null, default: "[]", source: "Cliente" },
       ],
     },
   ],
@@ -1053,6 +1063,8 @@ function liveConfiguration(configuration) {
       "hydrology.routing_enabled": configuration.hydrology_screening?.routing_enabled || false,
       "hydrology.routing_source_node_id": configuration.hydrology_screening?.routing_source_node_id || "ENTRADA",
       "hydrology.routing_reaches_json": JSON.stringify(configuration.hydrology_screening?.routing_reaches || [], null, 2),
+      "hydrology.capacity_enabled": configuration.hydrology_screening?.capacity_enabled || false,
+      "hydrology.reach_sections_json": JSON.stringify(configuration.hydrology_screening?.reach_sections || [], null, 2),
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1095,6 +1107,15 @@ function applyLiveConfiguration(current, payload) {
     }
     if (!Array.isArray(routingReaches)) throw new Error("A rede deve ser uma lista de trechos.");
   }
+  let reachSections = [];
+  if (values["hydrology.capacity_enabled"]) {
+    try {
+      reachSections = JSON.parse(String(values["hydrology.reach_sections_json"] || "[]"));
+    } catch {
+      throw new Error("A lista de secoes dos trechos nao e um JSON valido.");
+    }
+    if (!Array.isArray(reachSections)) throw new Error("As secoes devem formar uma lista.");
+  }
   current.hydrology_screening = {
     enabled: hydrologyEnabled,
     method: "NRCS_CURVE_NUMBER_EVENT_SCREENING",
@@ -1115,6 +1136,8 @@ function applyLiveConfiguration(current, payload) {
     routing_enabled: Boolean(values["hydrology.routing_enabled"]),
     routing_source_node_id: values["hydrology.routing_enabled"] ? String(values["hydrology.routing_source_node_id"] || "").trim() : null,
     routing_reaches: routingReaches,
+    capacity_enabled: Boolean(values["hydrology.capacity_enabled"]),
+    reach_sections: reachSections,
   };
   return current;
 }
@@ -1375,7 +1398,7 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]);
+    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]);
     const isHydrologyOnly = productIds.length > 0 && productIds.every((productId) => hydrologyProducts.has(productId));
     const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {

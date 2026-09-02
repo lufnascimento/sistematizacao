@@ -204,6 +204,7 @@ class ProductReadinessTests(unittest.TestCase):
             "PCX1_RUNOFF_SCREENING",
             "PCX2_HYDROGRAPH_SCREENING",
             "PCX3_REACH_ROUTING_SCREENING",
+            "PCX4_SECTION_CAPACITY_SCREENING",
             *unavailable,
             "COMPLETE_DOSSIER",
         }

@@ -214,10 +214,15 @@ class PlatformApiTests(unittest.TestCase):
                 {"id": "T1", "upstream_node_id": "ENTRADA", "downstream_node_id": "JUNCAO", "travel_time_minutes": 10},
                 {"id": "T2", "upstream_node_id": "JUNCAO", "downstream_node_id": "SAIDA", "travel_time_minutes": 20},
             ],
+            "capacity_enabled": True,
+            "reach_sections": [
+                {"id": "T1", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6},
+                {"id": "T2", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2},
+            ],
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
         self.assertEqual(response.status_code, 200, response.text)
-        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]
+        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]
         request_response = self.client.post(
             f"/api/projects/{project_id}/requests",
             json={"name": "Resposta da chuva", "product_ids": product_ids},
@@ -238,6 +243,11 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["hydrograph_mass_balance_status"], "PASS")
         self.assertEqual(run["result_summary"]["routing_mass_balance_status"], "PASS")
         self.assertEqual(run["result_summary"]["routed_reach_count"], 2)
+        self.assertEqual(run["result_summary"]["capacity_within_count"], 1)
+        self.assertEqual(run["result_summary"]["capacity_exceeded_count"], 1)
+        self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
+        logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
+        self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))
         artifacts = self.client.get(f"/api/runs/{run['id']}/artifacts").json()["items"]
         self.assertEqual(
             {item["filename"] for item in artifacts},
@@ -249,6 +259,8 @@ class PlatformApiTests(unittest.TestCase):
                 "grafico_hidrograma_preliminar.png",
                 "propagacao_preliminar_rede.json",
                 "picos_por_trecho.csv",
+                "verificacao_preliminar_capacidade.json",
+                "capacidade_por_trecho.csv",
             },
         )
         hydrograph_artifact = next(item for item in artifacts if item["filename"] == "hidrograma_preliminar.json")
@@ -381,6 +393,7 @@ class PlatformApiTests(unittest.TestCase):
                 "PCX1_RUNOFF_SCREENING",
                 "PCX2_HYDROGRAPH_SCREENING",
                 "PCX3_REACH_ROUTING_SCREENING",
+                "PCX4_SECTION_CAPACITY_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
@@ -392,7 +405,7 @@ class PlatformApiTests(unittest.TestCase):
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
-        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"])
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"])
         self.assertEqual(self.client.get("/api/openapi.json").status_code, 200)
         self.assertEqual(self.client.get("/api/docs").status_code, 200)
 

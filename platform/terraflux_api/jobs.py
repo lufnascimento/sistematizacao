@@ -290,6 +290,7 @@ class JobRunner:
             route_hydrographs_by_lag,
             validate_routing_release,
         )
+        from scripts.preliminary_section_capacity import check_reach_capacities, validate_capacity_release
 
         project = self.store.get("projects", run["project_id"])
         if project is None:
@@ -303,6 +304,7 @@ class JobRunner:
             {"PCX1_RUNOFF_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"},
         ):
             raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
 
@@ -373,6 +375,7 @@ class JobRunner:
         self._artifact(run, csv_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         hydrograph_result: dict[str, Any] | None = None
         routing_result: dict[str, Any] | None = None
+        capacity_result: dict[str, Any] | None = None
         if "PCX2_HYDROGRAPH_SCREENING" in requested_products:
             result["blocker_codes"] = [
                 code for code in result["blocker_codes"]
@@ -491,6 +494,48 @@ class JobRunner:
             )
             for path in (routing_json, routing_csv):
                 self._artifact(run, path, "PCX3_REACH_ROUTING_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        if "PCX4_SECTION_CAPACITY_SCREENING" in requested_products:
+            if routing_result is None:
+                raise ValueError("ROUTING_DEPENDENCY_REQUIRED")
+            if configuration.get("capacity_enabled") is not True:
+                raise ValueError("SECTION_CONFIGURATION_REQUIRED")
+            sections = {item["id"]: item for item in configuration.get("reach_sections") or []}
+            routed_ids = {item["id"] for item in routing_result["reaches"]}
+            if set(sections) != routed_ids:
+                raise ValueError("SECTION_IDS_MUST_MATCH_ROUTED_REACH_IDS")
+            capacity_inputs = []
+            for routed in routing_result["reaches"]:
+                section = sections[routed["id"]]
+                capacity_inputs.append({"id": routed["id"], "peak_flow_m3_s": routed["peak_flow_m3_s"], **{key: section[key] for key in ("bottom_width_m", "side_slope_h_to_v", "slope_m_m", "manning_n", "maximum_flow_depth_m")}})
+            capacity_result = check_reach_capacities(capacity_inputs)
+            validate_capacity_release(capacity_result)
+            result["blocker_codes"] = [
+                code for code in result["blocker_codes"]
+                if code != "PCX_SECTION_CAPACITY_NOT_EVALUATED"
+            ]
+            capacity_result.update({
+                "schema_version": "1.0.0",
+                "manifest_type": "PRELIMINARY_SECTION_CAPACITY_RESULT",
+                "project_id": project["id"],
+                "run_id": run["id"],
+                "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                "source_routing_release": routing_result["release"],
+                "stage_status": "PRELIMINARY_CAPACITY_WITH_EXPLICIT_BLOCKERS",
+                "blocker_codes": ["UNIFORM_FLOW_ASSUMPTION", "BACKWATER_NOT_EVALUATED", "TRANSITIONS_NOT_EVALUATED", "EROSION_LIMITS_NOT_APPROVED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
+            })
+            capacity_dir = run_dir / "products" / "preliminary_section_capacity"
+            capacity_dir.mkdir(parents=True, exist_ok=False)
+            capacity_json = capacity_dir / "verificacao_preliminar_capacidade.json"
+            capacity_json.write_text(json.dumps(capacity_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            capacity_csv = capacity_dir / "capacidade_por_trecho.csv"
+            capacity_csv.write_text(
+                "trecho,vazao_maxima_m3_s,capacidade_m3_s,ocupacao,profundidade_necessaria_m,folga_profundidade_m,velocidade_m_s,tensao_pa,estado\n"
+                + "\n".join(f"{item['id']},{item['peak_flow_m3_s']},{item['capacity_m3_s']},{item['capacity_ratio']},{item['required_normal_depth_m']},{item['depth_margin_m']},{item['velocity_at_peak_m_s']},{item['boundary_shear_at_peak_pa']},{item['preliminary_capacity_status']}" for item in capacity_result["reaches"])
+                + "\n",
+                encoding="utf-8",
+            )
+            for path in (capacity_json, capacity_csv):
+                self._artifact(run, path, "PCX4_SECTION_CAPACITY_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._set(
             run["id"],
             progress=95,
@@ -508,12 +553,18 @@ class JobRunner:
                 "routing_mass_balance_status": routing_result["mass_balance_status"] if routing_result else None,
                 "routed_reach_count": routing_result["reach_count"] if routing_result else None,
                 "routing_outlet_count": len(routing_result["outlet_node_ids"]) if routing_result else None,
+                "capacity_within_count": capacity_result["within_capacity_count"] if capacity_result else None,
+                "capacity_exceeded_count": capacity_result["exceeded_capacity_count"] if capacity_result else None,
                 "guidance_authorized": False,
             },
         )
-        message = "Resposta da chuva publicada como estudo preliminar; capacidade hidraulica nao avaliada."
+        message = "Resposta da chuva publicada como estudo preliminar."
         if hydrograph_result is None:
             message += " Hidrograma nao solicitado."
+        elif capacity_result is None:
+            message += " Capacidade das secoes nao avaliada."
+        else:
+            message += " Capacidade das secoes verificada somente por escoamento uniforme."
         self._log(run["id"], "WARN", message)
 
     @staticmethod
