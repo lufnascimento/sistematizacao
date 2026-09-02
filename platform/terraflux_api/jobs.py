@@ -286,6 +286,10 @@ class JobRunner:
             calculate_pcx2_triangular_hydrograph,
             validate_pcx2_release,
         )
+        from scripts.preliminary_reach_routing import (
+            route_hydrographs_by_lag,
+            validate_routing_release,
+        )
 
         project = self.store.get("projects", run["project_id"])
         if project is None:
@@ -298,6 +302,7 @@ class JobRunner:
         if requested_products not in (
             {"PCX1_RUNOFF_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
         ):
             raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
 
@@ -367,6 +372,7 @@ class JobRunner:
         self._artifact(run, manifest_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._artifact(run, csv_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         hydrograph_result: dict[str, Any] | None = None
+        routing_result: dict[str, Any] | None = None
         if "PCX2_HYDROGRAPH_SCREENING" in requested_products:
             result["blocker_codes"] = [
                 code for code in result["blocker_codes"]
@@ -423,6 +429,68 @@ class JobRunner:
             self._plot_hydrograph(hydrograph_result, plot_path)
             for path in (hydro_json, hydro_csv, plot_path):
                 self._artifact(run, path, "PCX2_HYDROGRAPH_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        if "PCX3_REACH_ROUTING_SCREENING" in requested_products:
+            if hydrograph_result is None:
+                raise ValueError("HYDROGRAPH_DEPENDENCY_REQUIRED")
+            if configuration.get("routing_enabled") is not True:
+                raise ValueError("ROUTING_CONFIGURATION_NOT_ENABLED")
+            source_node = str(configuration.get("routing_source_node_id") or "").strip()
+            reach_values = configuration.get("routing_reaches") or []
+            if not source_node or not reach_values:
+                raise ValueError("ROUTING_NETWORK_REQUIRED")
+            reaches = [
+                {
+                    "id": item["id"],
+                    "upstream_node_id": item["upstream_node_id"],
+                    "downstream_node_id": item["downstream_node_id"],
+                    "travel_time_s": float(item["travel_time_minutes"]) * 60.0,
+                }
+                for item in reach_values
+            ]
+            routing_result = route_hydrographs_by_lag(
+                reaches,
+                {source_node: hydrograph_result["hydrograph"]},
+            )
+            validate_routing_release(routing_result)
+            routing_result.update(
+                {
+                    "schema_version": "1.0.0",
+                    "manifest_type": "PRELIMINARY_REACH_ROUTING_RESULT",
+                    "project_id": project["id"],
+                    "run_id": run["id"],
+                    "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                    "source_hydrograph_release": hydrograph_result["release"],
+                    "source_node_id": source_node,
+                    "stage_status": "PRELIMINARY_ROUTING_WITH_EXPLICIT_BLOCKERS",
+                    "blocker_codes": [
+                        "TRAVEL_TIMES_REQUIRE_PROJECT_EVIDENCE",
+                        "ATTENUATION_NOT_EVALUATED",
+                        "BACKWATER_NOT_EVALUATED",
+                        "HYDRAULIC_CAPACITY_NOT_EVALUATED",
+                        "FAILURE_PATH_NOT_EVALUATED",
+                        "RECEIVER_NOT_APPROVED",
+                        "GUIDANCE_NOT_AUTHORIZED",
+                    ],
+                }
+            )
+            routing_dir = run_dir / "products" / "preliminary_reach_routing"
+            routing_dir.mkdir(parents=True, exist_ok=False)
+            routing_json = routing_dir / "propagacao_preliminar_rede.json"
+            routing_json.write_text(json.dumps(routing_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            routing_csv = routing_dir / "picos_por_trecho.csv"
+            routing_csv.write_text(
+                "trecho,no_entrada,no_saida,tempo_viagem_min,vazao_maxima_m3_s,tempo_ate_pico_min,status\n"
+                + "\n".join(
+                    f"{item['id']},{item['upstream_node_id']},{item['downstream_node_id']},"
+                    f"{item['travel_time_s'] / 60.0},{item['peak_flow_m3_s']},"
+                    f"{item['time_to_peak_s'] / 60.0},{item['status']}"
+                    for item in routing_result["reaches"]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            for path in (routing_json, routing_csv):
+                self._artifact(run, path, "PCX3_REACH_ROUTING_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._set(
             run["id"],
             progress=95,
@@ -437,6 +505,9 @@ class JobRunner:
                 "peak_flow_m3_s": hydrograph_result["peak_flow_m3_s"] if hydrograph_result else None,
                 "time_to_peak_minutes": hydrograph_result["time_to_peak_s"] / 60.0 if hydrograph_result else None,
                 "hydrograph_mass_balance_status": hydrograph_result["mass_balance_status"] if hydrograph_result else None,
+                "routing_mass_balance_status": routing_result["mass_balance_status"] if routing_result else None,
+                "routed_reach_count": routing_result["reach_count"] if routing_result else None,
+                "routing_outlet_count": len(routing_result["outlet_node_ids"]) if routing_result else None,
                 "guidance_authorized": False,
             },
         )

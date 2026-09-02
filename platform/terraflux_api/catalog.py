@@ -157,6 +157,22 @@ PRODUCTS: dict[str, dict] = {
             "GUIDANCE_NOT_AUTHORIZED",
         ],
     },
+    "PCX3_REACH_ROUTING_SCREENING": {
+        "label": "Propagacao preliminar na rede",
+        "description": "Mostra quando e com que vazao a onda chega a cada trecho e saida final.",
+        "stage": "E0_TRIAGEM",
+        "implementation": "ENGINE_AVAILABLE_LIMITED",
+        "client_engine": "project_hydrology_screening",
+        "depends_on_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
+        "required_asset_groups": [],
+        "limitations": [
+            "TRAVEL_TIMES_REQUIRE_PROJECT_EVIDENCE",
+            "NO_ATTENUATION",
+            "NO_BACKWATER",
+            "NO_CHANNEL_OR_STRUCTURE_CAPACITY",
+            "GUIDANCE_NOT_AUTHORIZED",
+        ],
+    },
     "C2_BROAD_BASE": {
         "label": "Base larga ou passante C2",
         "description": "Produto conservacionista dimensionado.",
@@ -218,8 +234,8 @@ ENGINE_CATALOG: dict[str, dict] = {
         "label": "Simular escoamento da chuva",
         "mode": "CLIENT_DATA",
         "executes_external_process": False,
-        "supported_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
-        "description": "Calcula a parcela da chuva que escoa e, quando solicitado, o hidrograma preliminar do evento.",
+        "supported_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"],
+        "description": "Calcula a parcela da chuva que escoa, o hidrograma e sua propagacao preliminar em uma rede declarada.",
         "delivery_boundary": "HYDROLOGY_SCREENING_ONLY_NOT_HYDRAULIC_DESIGN",
     },
     "demo_current_dataset": {

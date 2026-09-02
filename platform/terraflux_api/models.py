@@ -61,6 +61,13 @@ class RainfallIntervalConfiguration(StrictModel):
     rainfall_mm: float = Field(ge=0.0, le=1000.0)
 
 
+class RoutingReachConfiguration(StrictModel):
+    id: str = Field(min_length=1, max_length=100)
+    upstream_node_id: str = Field(min_length=1, max_length=100)
+    downstream_node_id: str = Field(min_length=1, max_length=100)
+    travel_time_minutes: float = Field(ge=0.0, le=100_000.0)
+
+
 class HydrologyScreeningConfiguration(StrictModel):
     enabled: bool = False
     method: Literal["NRCS_CURVE_NUMBER_EVENT_SCREENING"] = "NRCS_CURVE_NUMBER_EVENT_SCREENING"
@@ -78,6 +85,9 @@ class HydrologyScreeningConfiguration(StrictModel):
     catchment_lag_minutes: float | None = Field(default=None, gt=0.0, le=100_000.0)
     hydrograph_step_minutes: float = Field(default=1.0, gt=0.0, le=10_000.0)
     triangle_base_to_peak_ratio: float = Field(default=2.67, gt=1.0, le=20.0)
+    routing_enabled: bool = False
+    routing_source_node_id: str | None = Field(default=None, max_length=100)
+    routing_reaches: list[RoutingReachConfiguration] = Field(default_factory=list, max_length=10_000)
 
     @model_validator(mode="after")
     def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
@@ -93,6 +103,13 @@ class HydrologyScreeningConfiguration(StrictModel):
             raise ValueError("parameter_source_id is required when hydrology screening is enabled")
         if self.hydrograph_enabled and self.catchment_lag_minutes is None:
             raise ValueError("catchment_lag_minutes is required when hydrograph is enabled")
+        if self.routing_enabled:
+            if not self.hydrograph_enabled:
+                raise ValueError("hydrograph must be enabled when routing is enabled")
+            if not self.routing_source_node_id:
+                raise ValueError("routing_source_node_id is required when routing is enabled")
+            if not self.routing_reaches:
+                raise ValueError("routing_reaches are required when routing is enabled")
         return self
 
 

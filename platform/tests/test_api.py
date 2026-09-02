@@ -208,10 +208,16 @@ class PlatformApiTests(unittest.TestCase):
             "catchment_lag_minutes": 30,
             "hydrograph_step_minutes": 1,
             "triangle_base_to_peak_ratio": 2.67,
+            "routing_enabled": True,
+            "routing_source_node_id": "ENTRADA",
+            "routing_reaches": [
+                {"id": "T1", "upstream_node_id": "ENTRADA", "downstream_node_id": "JUNCAO", "travel_time_minutes": 10},
+                {"id": "T2", "upstream_node_id": "JUNCAO", "downstream_node_id": "SAIDA", "travel_time_minutes": 20},
+            ],
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
         self.assertEqual(response.status_code, 200, response.text)
-        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]
+        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]
         request_response = self.client.post(
             f"/api/projects/{project_id}/requests",
             json={"name": "Resposta da chuva", "product_ids": product_ids},
@@ -230,6 +236,8 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["status"], "SUCCEEDED", run)
         self.assertGreater(run["result_summary"]["peak_flow_m3_s"], 0)
         self.assertEqual(run["result_summary"]["hydrograph_mass_balance_status"], "PASS")
+        self.assertEqual(run["result_summary"]["routing_mass_balance_status"], "PASS")
+        self.assertEqual(run["result_summary"]["routed_reach_count"], 2)
         artifacts = self.client.get(f"/api/runs/{run['id']}/artifacts").json()["items"]
         self.assertEqual(
             {item["filename"] for item in artifacts},
@@ -239,6 +247,8 @@ class PlatformApiTests(unittest.TestCase):
                 "hidrograma_preliminar.json",
                 "hidrograma_preliminar.csv",
                 "grafico_hidrograma_preliminar.png",
+                "propagacao_preliminar_rede.json",
+                "picos_por_trecho.csv",
             },
         )
         hydrograph_artifact = next(item for item in artifacts if item["filename"] == "hidrograma_preliminar.json")
@@ -370,6 +380,7 @@ class PlatformApiTests(unittest.TestCase):
                 "C1_EMBEDDED_SCREENING",
                 "PCX1_RUNOFF_SCREENING",
                 "PCX2_HYDROGRAPH_SCREENING",
+                "PCX3_REACH_ROUTING_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
@@ -381,7 +392,7 @@ class PlatformApiTests(unittest.TestCase):
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
-        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"])
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"])
         self.assertEqual(self.client.get("/api/openapi.json").status_code, 200)
         self.assertEqual(self.client.get("/api/docs").status_code, 200)
 

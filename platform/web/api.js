@@ -807,6 +807,14 @@ export const systemCatalog = {
       available: true,
     },
     {
+      id: "PCX3_REACH_ROUTING_SCREENING",
+      name: "Propagacao preliminar na rede",
+      description: "Mostra quando e com que vazao a onda chega a cada trecho e a cada saida final.",
+      level: "E0",
+      requires: ["HIDROGRAMA_PRELIMINAR", "REDE_DE_ESCOAMENTO"],
+      available: true,
+    },
+    {
       id: "C1_DIMENSIONED",
       name: "Curva embutida dimensionada",
       description: "TI/TD, seção, superfície proposta, volumes e verificação hidráulica conservacionista.",
@@ -918,6 +926,9 @@ export const systemCatalog = {
         { id: "hydrology.catchment_lag_minutes", name: "Tempo de resposta da area", type: "number", unit: "min", min: 1, max: 10080, step: 1, default: 30, source: "Cliente" },
         { id: "hydrology.hydrograph_step_minutes", name: "Intervalo do grafico", type: "number", unit: "min", min: 0.1, max: 1440, step: 0.1, default: 1, source: "Sistema" },
         { id: "hydrology.triangle_base_to_peak_ratio", name: "Duracao relativa da resposta", type: "number", unit: null, min: 1.01, max: 20, step: 0.01, default: 2.67, source: "Sistema" },
+        { id: "hydrology.routing_enabled", name: "Propagar a vazao pela rede", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.routing_source_node_id", name: "No onde a agua entra na rede", type: "text", unit: null, default: "ENTRADA", source: "Cliente" },
+        { id: "hydrology.routing_reaches_json", name: "Trechos e tempos de viagem", type: "json", unit: null, default: "[]", source: "Cliente" },
       ],
     },
   ],
@@ -1039,6 +1050,9 @@ function liveConfiguration(configuration) {
       "hydrology.catchment_lag_minutes": configuration.hydrology_screening?.catchment_lag_minutes || 30,
       "hydrology.hydrograph_step_minutes": configuration.hydrology_screening?.hydrograph_step_minutes || 1,
       "hydrology.triangle_base_to_peak_ratio": configuration.hydrology_screening?.triangle_base_to_peak_ratio || 2.67,
+      "hydrology.routing_enabled": configuration.hydrology_screening?.routing_enabled || false,
+      "hydrology.routing_source_node_id": configuration.hydrology_screening?.routing_source_node_id || "ENTRADA",
+      "hydrology.routing_reaches_json": JSON.stringify(configuration.hydrology_screening?.routing_reaches || [], null, 2),
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1072,6 +1086,15 @@ function applyLiveConfiguration(current, payload) {
     .split(/[;,\s]+/)
     .filter(Boolean)
     .map(Number);
+  let routingReaches = [];
+  if (values["hydrology.routing_enabled"]) {
+    try {
+      routingReaches = JSON.parse(String(values["hydrology.routing_reaches_json"] || "[]"));
+    } catch {
+      throw new Error("A lista de trechos da rede nao e um JSON valido.");
+    }
+    if (!Array.isArray(routingReaches)) throw new Error("A rede deve ser uma lista de trechos.");
+  }
   current.hydrology_screening = {
     enabled: hydrologyEnabled,
     method: "NRCS_CURVE_NUMBER_EVENT_SCREENING",
@@ -1089,6 +1112,9 @@ function applyLiveConfiguration(current, payload) {
       : null,
     hydrograph_step_minutes: Number(values["hydrology.hydrograph_step_minutes"] || 1),
     triangle_base_to_peak_ratio: Number(values["hydrology.triangle_base_to_peak_ratio"] || 2.67),
+    routing_enabled: Boolean(values["hydrology.routing_enabled"]),
+    routing_source_node_id: values["hydrology.routing_enabled"] ? String(values["hydrology.routing_source_node_id"] || "").trim() : null,
+    routing_reaches: routingReaches,
   };
   return current;
 }
@@ -1349,7 +1375,7 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]);
+    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]);
     const isHydrologyOnly = productIds.length > 0 && productIds.every((productId) => hydrologyProducts.has(productId));
     const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {

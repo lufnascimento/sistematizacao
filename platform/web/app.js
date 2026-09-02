@@ -764,6 +764,7 @@ function parameterInput(parameter, value) {
   if (parameter.type === "boolean") return `<label class="toggle"><input data-parameter-id="${parameter.id}" type="checkbox" ${value ? "checked" : ""}><span></span></label>`;
   if (parameter.type === "select") return `<select data-parameter-id="${parameter.id}">${parameter.options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(value) === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}</select>`;
   if (parameter.type === "text") return `<input data-parameter-id="${parameter.id}" type="text" value="${escapeHtml(value || "")}" />`;
+  if (parameter.type === "json") return `<textarea data-parameter-id="${parameter.id}" rows="6">${escapeHtml(value || "[]")}</textarea>`;
   return `<input data-parameter-id="${parameter.id}" type="number" value="${escapeHtml(value)}" min="${parameter.min}" max="${parameter.max}" step="${parameter.step}" />`;
 }
 
@@ -806,6 +807,7 @@ const readinessAliases = {
   POA_STATIC: "POA",
   PCX1_RUNOFF_SCREENING: "PCX1_RUNOFF_SCREENING",
   PCX2_HYDROGRAPH_SCREENING: "PCX2_HYDROGRAPH_SCREENING",
+  PCX3_REACH_ROUTING_SCREENING: "PCX3_REACH_ROUTING_SCREENING",
 };
 
 function productReadiness(readiness, product) {
@@ -824,7 +826,7 @@ function requestMatchesProducts(request, productIds) {
 }
 
 function executionEngineFor(productIds) {
-  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]);
+  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"]);
   if (productIds.length > 0 && productIds.every((item) => hydrologyProducts.has(item)) && productIds.includes("PCX1_RUNOFF_SCREENING")) return "project_hydrology_screening";
   const supported = new Set(["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS"]);
   if (productIds.some((item) => !supported.has(item))) return null;
@@ -849,6 +851,9 @@ const blockerLabels = {
   PCX1_RUNOFF_DEPENDENCY_REQUIRED: "Selecione tambem Chuva que vira escoamento",
   HYDROGRAPH_CONFIGURATION_NOT_ENABLED: "Ative o calculo da vazao ao longo do tempo",
   CATCHMENT_LAG_REQUIRED: "Informe o tempo de resposta da area",
+  HYDROGRAPH_DEPENDENCY_REQUIRED: "Selecione tambem o Hidrograma preliminar",
+  ROUTING_CONFIGURATION_NOT_ENABLED: "Ative a propagacao da vazao pela rede",
+  ROUTING_NETWORK_REQUIRED: "Informe o ponto de entrada e os trechos da rede",
   CF0_CONTINUOUS_DEPENDENCY_REQUIRED: "Gere primeiro a familia curva continua",
   PROJECT_SCOPE: "Limites e escopo do projeto",
   TERRAIN_SOURCE: "Fonte de elevacao do terreno",
@@ -862,6 +867,8 @@ const blockerLabels = {
   PORTALS: "Pontos autorizados de passagem",
   ROADS: "Carreadores e estradas",
   LOGISTICS: "Dados de logistica",
+  HIDROGRAMA_PRELIMINAR: "Hidrograma preliminar",
+  REDE_DE_ESCOAMENTO: "Trechos da rede de escoamento",
 };
 
 function blockerText(items = []) {
@@ -1067,7 +1074,13 @@ function renderHydrologyFocus(run) {
   const pending = summary.peak_flow_m3_s == null
     ? "Vazao ao longo do tempo, percurso da agua, capacidade das estruturas e seguranca da saida."
     : "Percurso da agua, propagacao em canais, capacidade das estruturas e seguranca da saida.";
-  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${pending}</div></div></div></section>`;
+  const routing = summary.routed_reach_count != null
+    ? `${statBlock("Trechos percorridos", Number(summary.routed_reach_count).toLocaleString("pt-BR"), "route", "Rede declarada")}${statBlock("Saidas finais", Number(summary.routing_outlet_count).toLocaleString("pt-BR"), "signpost", "Sem validar o receptor")}`
+    : "";
+  const routingPending = summary.routed_reach_count != null
+    ? "Atenuacao, remanso, capacidade das estruturas, caminho de falha e seguranca das saidas."
+    : pending;
+  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}${routing}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${routingPending}</div></div></div></section>`;
 }
 
 function renderTopographyFocus(artifacts) {

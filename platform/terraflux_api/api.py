@@ -95,6 +95,7 @@ def create_app(
                 "C1_EMBEDDED_SCREENING",
                 "PCX1_RUNOFF_SCREENING",
                 "PCX2_HYDROGRAPH_SCREENING",
+                "PCX3_REACH_ROUTING_SCREENING",
             ],
         }
 
@@ -596,7 +597,12 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
             )
     if engine_id == "project_hydrology_screening":
         requested = set(product_ids)
-        if requested not in ({"PCX1_RUNOFF_SCREENING"}, {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"}):
+        combinations = (
+            {"PCX1_RUNOFF_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
+        )
+        if requested not in combinations:
             raise HTTPException(
                 status_code=409,
                 detail={
@@ -604,6 +610,7 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
                     "supported_product_combinations": [
                         ["PCX1_RUNOFF_SCREENING"],
                         ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
+                        ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"],
                     ],
                 },
             )
@@ -629,6 +636,18 @@ def _validate_product_dependencies(product_ids: list[str]) -> None:
                 "product_id": "PCX2_HYDROGRAPH_SCREENING",
                 "required_product_ids": ["PCX1_RUNOFF_SCREENING"],
                 "message": "O hidrograma preliminar exige a chuva que vira escoamento na mesma rodada.",
+            },
+        )
+    if "PCX3_REACH_ROUTING_SCREENING" in requested and not {
+        "PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"
+    }.issubset(requested):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PRODUCT_DEPENDENCY_MISSING",
+                "product_id": "PCX3_REACH_ROUTING_SCREENING",
+                "required_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
+                "message": "A propagacao preliminar exige a chuva que escoa e o hidrograma na mesma rodada.",
             },
         )
 

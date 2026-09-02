@@ -56,3 +56,6 @@ jobs:
 
       - name: Run preliminary hydrograph tests
         run: python -m unittest -v tests.test_pcx2_hydrograph
+
+      - name: Run preliminary network-routing tests
+        run: python -m unittest -v tests.test_preliminary_reach_routing

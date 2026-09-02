@@ -41,8 +41,9 @@ Configurar, habilite **Calcular a parcela que escoa**, informe area contribuinte
 CN, `Ia/S`, intervalo, serie de chuva e fonte. Para obter vazao no tempo,
 habilite tambem **Calcular vazao ao longo do tempo** e informe o tempo de
 resposta da area. Em Produtos, escolha **Chuva que vira escoamento** e,
-opcionalmente, **Hidrograma preliminar**. Resultados mostra chuva, excesso,
-volume, pico, grafico e downloads. Esses produtos nao exigem LAZ, mas tambem
+opcionalmente, **Hidrograma preliminar** e **Propagacao preliminar na rede**.
+O terceiro produto exige no de entrada, conectividade e tempo de viagem de
+cada trecho. Resultados mostra chuva, excesso, volume, pico, rede e downloads. Esses produtos nao exigem LAZ, mas tambem
 nao espacializam alcances nem dimensionam estruturas.
 
 ## Motores habilitados
@@ -56,7 +57,8 @@ nao espacializam alcances nem dimensionam estruturas.
   pesquisavel.
 - `project_hydrology_screening`: transforma o hietograma declarado em
   chuva que vira escoamento e, quando solicitado, em hidrograma preliminar com
-  pico e conservacao de volume. Propagacao, secoes e receptores permanecem
+  pico e conservacao de volume e, quando configurado, desloca e acumula a onda
+  em uma rede aciclica. Atenuacao, remanso, secoes e receptores permanecem
   explicitamente bloqueados.
 - `demo_current_dataset`: publica somente artefatos demonstrativos presentes em
   uma lista fechada no workspace local. Esses dados nao acompanham o repositorio
