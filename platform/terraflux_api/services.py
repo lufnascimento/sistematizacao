@@ -177,7 +177,7 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                 product_blockers.append("HYDRAULIC_RECEIVER_MISSING")
         implementation = definition["implementation"]
         client_engine = definition.get("client_engine")
-        if product_id in {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"}:
+        if product_id in {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
             hydrology = configuration.get("hydrology_screening", {})
             if hydrology.get("enabled") is not True:
                 product_blockers.append("PCX1_CONFIGURATION_NOT_ENABLED")
@@ -187,25 +187,34 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                     break
             if not hydrology.get("rainfall_intervals"):
                 product_blockers.append("PCX1_RAINFALL_INTERVALS_REQUIRED")
-            if product_id in {"PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"}:
+            if product_id in {"PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
                 if "PCX1_RUNOFF_SCREENING" not in selected_product_ids:
                     product_blockers.append("PCX1_RUNOFF_DEPENDENCY_REQUIRED")
                 if hydrology.get("hydrograph_enabled") is not True:
                     product_blockers.append("HYDROGRAPH_CONFIGURATION_NOT_ENABLED")
                 if hydrology.get("catchment_lag_minutes") in (None, ""):
                     product_blockers.append("CATCHMENT_LAG_REQUIRED")
-            if product_id in {"PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"}:
+            if product_id in {"PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
                 if "PCX2_HYDROGRAPH_SCREENING" not in selected_product_ids:
                     product_blockers.append("HYDROGRAPH_DEPENDENCY_REQUIRED")
                 if hydrology.get("routing_enabled") is not True:
                     product_blockers.append("ROUTING_CONFIGURATION_NOT_ENABLED")
                 if not hydrology.get("routing_source_node_id") or not hydrology.get("routing_reaches"):
                     product_blockers.append("ROUTING_NETWORK_REQUIRED")
-            if product_id == "PCX4_SECTION_CAPACITY_SCREENING":
+            if product_id in {"PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
                 if "PCX3_REACH_ROUTING_SCREENING" not in selected_product_ids:
                     product_blockers.append("ROUTING_DEPENDENCY_REQUIRED")
                 if hydrology.get("capacity_enabled") is not True or not hydrology.get("reach_sections"):
                     product_blockers.append("SECTION_CONFIGURATION_REQUIRED")
+            if product_id == "PCX5_WATER_SURFACE_PROFILE_SCREENING":
+                if "PCX4_SECTION_CAPACITY_SCREENING" not in selected_product_ids:
+                    product_blockers.append("SECTION_CAPACITY_DEPENDENCY_REQUIRED")
+                if hydrology.get("profile_enabled") is not True:
+                    product_blockers.append("PROFILE_CONFIGURATION_NOT_ENABLED")
+                if any(item.get("length_m") in (None, "") for item in hydrology.get("routing_reaches") or []):
+                    product_blockers.append("REACH_LENGTHS_REQUIRED")
+                if any(item.get("downstream_water_depth_m") is None for item in hydrology.get("reach_sections") or []):
+                    product_blockers.append("DOWNSTREAM_DEPTHS_REQUIRED")
         if product_id in {"SULCATION_E0", "CF0_CONTINUOUS", "C1_EMBEDDED_SCREENING"}:
             if not configuration["topography"].get("field_id_column"):
                 product_blockers.append("FIELD_ID_COLUMN_REQUIRED")
@@ -332,6 +341,10 @@ _BLOCKER_MESSAGES = {
     "ROUTING_NETWORK_REQUIRED": "Informe o no de entrada e ao menos um trecho da rede.",
     "ROUTING_DEPENDENCY_REQUIRED": "Selecione tambem a Propagacao preliminar na rede.",
     "SECTION_CONFIGURATION_REQUIRED": "Informe a secao, declividade, rugosidade e profundidade de cada trecho.",
+    "SECTION_CAPACITY_DEPENDENCY_REQUIRED": "Selecione tambem a Verificacao preliminar de capacidade.",
+    "PROFILE_CONFIGURATION_NOT_ENABLED": "Habilite o perfil preliminar na configuracao.",
+    "REACH_LENGTHS_REQUIRED": "Informe o comprimento de cada trecho da rede.",
+    "DOWNSTREAM_DEPTHS_REQUIRED": "Informe a lamina a jusante de cada estado de secao.",
 }
 
 

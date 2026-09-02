@@ -219,18 +219,20 @@ class PlatformApiTests(unittest.TestCase):
             "routing_enabled": True,
             "routing_source_node_id": "ENTRADA",
             "routing_reaches": [
-                {"id": "T1", "upstream_node_id": "ENTRADA", "downstream_node_id": "JUNCAO", "travel_time_minutes": 10},
-                {"id": "T2", "upstream_node_id": "JUNCAO", "downstream_node_id": "SAIDA", "travel_time_minutes": 20},
+                {"id": "T1", "upstream_node_id": "ENTRADA", "downstream_node_id": "JUNCAO", "travel_time_minutes": 10, "length_m": 500},
+                {"id": "T2", "upstream_node_id": "JUNCAO", "downstream_node_id": "SAIDA", "travel_time_minutes": 20, "length_m": 800},
             ],
             "capacity_enabled": True,
             "reach_sections": [
-                {"id": "T1", "condition_state": "CURRENT", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "bankfull_depth_m": 0.8, "required_freeboard_m": 0.15, "downstream_water_depth_m": 0, "downstream_boundary_source_id": "analytic-test", "downstream_boundary_evidence_state": "SYSTEM_REFERENCE", "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "SYSTEM_REFERENCE"},
+                {"id": "T1", "condition_state": "CURRENT", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "bankfull_depth_m": 0.8, "required_freeboard_m": 0.15, "downstream_water_depth_m": 0.55, "downstream_boundary_source_id": "analytic-test", "downstream_boundary_evidence_state": "SYSTEM_REFERENCE", "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "SYSTEM_REFERENCE"},
                 {"id": "T2", "condition_state": "DEGRADED", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2, "bankfull_depth_m": 0.4, "required_freeboard_m": 0.1, "overflow_path_state": "DECLARED_NOT_REVIEWED", "overflow_receiver_id": "SAIDA_CONTROLADA", "downstream_water_depth_m": 2, "downstream_velocity_m_s": 0.1, "transition_loss_coefficient": 0.3, "downstream_boundary_source_id": "analytic-test", "downstream_boundary_evidence_state": "PROJECT_EVIDENCE", "maximum_admissible_velocity_m_s": 0.01, "maximum_admissible_shear_pa": 0.01, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "PROJECT_EVIDENCE"},
             ],
+            "profile_enabled": True,
+            "profile_step_count": 10,
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
         self.assertEqual(response.status_code, 200, response.text)
-        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]
+        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"]
         request_response = self.client.post(
             f"/api/projects/{project_id}/requests",
             json={"name": "Resposta da chuva", "product_ids": product_ids},
@@ -260,7 +262,9 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["overtopping_count"], 1)
         self.assertEqual(run["result_summary"]["overflow_path_declared_count"], 1)
         self.assertEqual(run["result_summary"]["downstream_evaluated_count"], 2)
-        self.assertEqual(run["result_summary"]["downstream_controlled_count"], 1)
+        self.assertEqual(run["result_summary"]["downstream_controlled_count"], 2)
+        self.assertEqual(run["result_summary"]["water_profile_count"], 2)
+        self.assertGreater(run["result_summary"]["water_profile_maximum_depth_m"], 0)
         self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
         logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
         self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))
@@ -277,6 +281,9 @@ class PlatformApiTests(unittest.TestCase):
                 "picos_por_trecho.csv",
                 "verificacao_preliminar_capacidade.json",
                 "capacidade_por_trecho.csv",
+                "perfil_preliminar_lamina.json",
+                "perfil_preliminar_lamina.csv",
+                "grafico_perfil_preliminar_lamina.png",
             },
         )
         hydrograph_artifact = next(item for item in artifacts if item["filename"] == "hidrograma_preliminar.json")
@@ -410,6 +417,7 @@ class PlatformApiTests(unittest.TestCase):
                 "PCX2_HYDROGRAPH_SCREENING",
                 "PCX3_REACH_ROUTING_SCREENING",
                 "PCX4_SECTION_CAPACITY_SCREENING",
+                "PCX5_WATER_SURFACE_PROFILE_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
@@ -421,7 +429,7 @@ class PlatformApiTests(unittest.TestCase):
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
-        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"])
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"])
         stability_models = self.client.get("/api/catalog/hydraulic-stability-models").json()
         self.assertEqual(stability_models["default_model_id"], "NO_ASSUMED_LIMIT")
         self.assertTrue(all(item["requires_project_confirmation"] for item in stability_models["models"]))

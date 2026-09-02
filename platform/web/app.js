@@ -809,6 +809,7 @@ const readinessAliases = {
   PCX2_HYDROGRAPH_SCREENING: "PCX2_HYDROGRAPH_SCREENING",
   PCX3_REACH_ROUTING_SCREENING: "PCX3_REACH_ROUTING_SCREENING",
   PCX4_SECTION_CAPACITY_SCREENING: "PCX4_SECTION_CAPACITY_SCREENING",
+  PCX5_WATER_SURFACE_PROFILE_SCREENING: "PCX5_WATER_SURFACE_PROFILE_SCREENING",
 };
 
 function productReadiness(readiness, product) {
@@ -827,7 +828,7 @@ function requestMatchesProducts(request, productIds) {
 }
 
 function executionEngineFor(productIds) {
-  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]);
+  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"]);
   if (productIds.length > 0 && productIds.every((item) => hydrologyProducts.has(item)) && productIds.includes("PCX1_RUNOFF_SCREENING")) return "project_hydrology_screening";
   const supported = new Set(["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS"]);
   if (productIds.some((item) => !supported.has(item))) return null;
@@ -1097,10 +1098,13 @@ function renderHydrologyFocus(run) {
   const downstream = summary.downstream_evaluated_count != null
     ? `${statBlock("Estados com jusante informado", Number(summary.downstream_evaluated_count).toLocaleString("pt-BR"), "arrow-down-to-line", "Envelope preliminar")}${statBlock("Estados controlados pelo jusante", Number(summary.downstream_controlled_count).toLocaleString("pt-BR"), "move-up", "Pode elevar a lamina")}`
     : "";
+  const profiles = summary.water_profile_count != null
+    ? `${statBlock("Perfis calculados", Number(summary.water_profile_count).toLocaleString("pt-BR"), "chart-spline", "Passo padrao subcritico")}${statBlock("Maior profundidade do perfil", `${Number(summary.water_profile_maximum_depth_m).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} m`, "ruler", "Entre as secoes declaradas")}`
+    : "";
   const capacityPending = summary.capacity_within_count != null
     ? "Perfil de remanso, transicoes completas, validacao local dos limites erosivos, geometria do caminho excedente e seguranca das saidas."
     : routingPending;
-  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}${routing}${capacity}${stability}${freeboard}${downstream}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${capacityPending}</div></div></div></section>`;
+  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}${routing}${capacity}${stability}${freeboard}${downstream}${profiles}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${capacityPending}</div></div></div></section>`;
 }
 
 function renderTopographyFocus(artifacts) {

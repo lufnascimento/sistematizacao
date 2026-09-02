@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/preliminary-water-surface-profile.schema.json",
+  "title": "TerraFlux preliminary water surface profile",
+  "type": "object",
+  "required": ["schema_version", "manifest_type", "release", "project_id", "run_id", "request_ref", "source_capacity_release", "method", "profile_count", "profiles", "stage_status", "blocker_codes", "mixed_or_supercritical_flow_evaluated", "structures_evaluated", "unsteady_flow_evaluated", "receiver_approved", "project_executive_authorized", "guidance_authorized", "limitations"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_type": { "const": "PRELIMINARY_WATER_SURFACE_PROFILE_RESULT" },
+    "release": { "const": "PRELIMINARY_STEADY_SUBCRITICAL_STANDARD_STEP_ONLY" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "request_ref": { "type": "object" },
+    "source_capacity_release": { "const": "PRELIMINARY_TRAPEZOIDAL_MANNING_CAPACITY_ONLY" },
+    "method": { "const": "STANDARD_STEP_AVERAGE_FRICTION_SLOPE" },
+    "profile_count": { "type": "integer", "minimum": 1 },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "condition_state", "critical_depth_m", "maximum_water_depth_m", "maximum_froude_number", "profile", "profile_status"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "condition_state": { "enum": ["NEW", "CURRENT", "DEGRADED"] },
+          "profile_status": { "const": "PASS_PRELIMINARY_SUBCRITICAL_PROFILE" },
+          "profile": { "type": "array", "minItems": 3, "items": { "type": "object" } }
+        }
+      }
+    },
+    "stage_status": { "const": "PRELIMINARY_PROFILE_WITH_EXPLICIT_BLOCKERS" },
+    "blocker_codes": { "type": "array", "minItems": 6, "items": { "type": "string" }, "uniqueItems": true },
+    "mixed_or_supercritical_flow_evaluated": { "const": false },
+    "structures_evaluated": { "const": false },
+    "unsteady_flow_evaluated": { "const": false },
+    "receiver_approved": { "const": false },
+    "project_executive_authorized": { "const": false },
+    "guidance_authorized": { "const": false },
+    "limitations": { "type": "array", "minItems": 10, "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "additionalProperties": false
+}

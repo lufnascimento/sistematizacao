@@ -58,8 +58,9 @@ nao espacializam alcances nem dimensionam estruturas.
 - `project_hydrology_screening`: transforma o hietograma declarado em
   chuva que vira escoamento e, quando solicitado, em hidrograma preliminar com
   pico e conservacao de volume e, quando configurado, desloca e acumula a onda
-  em uma rede aciclica. Atenuacao, remanso, secoes e receptores permanecem
-  explicitamente bloqueados.
+  em uma rede aciclica, compara secoes e calcula perfis permanentes subcriticos
+  em trechos prismaticos. Atenuacao fisica, regime misto, estruturas e
+  receptores permanecem explicitamente bloqueados.
 - `demo_current_dataset`: publica somente artefatos demonstrativos presentes em
   uma lista fechada no workspace local. Esses dados nao acompanham o repositorio
   publico.

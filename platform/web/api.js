@@ -823,6 +823,14 @@ export const systemCatalog = {
       available: true,
     },
     {
+      id: "PCX5_WATER_SURFACE_PROFILE_SCREENING",
+      name: "Perfil preliminar da lamina",
+      description: "Mostra como a profundidade pode variar ao longo de cada trecho em regime subcritico.",
+      level: "E0",
+      requires: ["VERIFICACAO_DE_CAPACIDADE", "COMPRIMENTOS_DOS_TRECHOS", "LAMINAS_A_JUSANTE"],
+      available: true,
+    },
+    {
       id: "C1_DIMENSIONED",
       name: "Curva embutida dimensionada",
       description: "TI/TD, seção, superfície proposta, volumes e verificação hidráulica conservacionista.",
@@ -940,6 +948,8 @@ export const systemCatalog = {
         { id: "hydrology.capacity_enabled", name: "Verificar capacidade dos trechos", type: "boolean", default: false, source: "Cliente" },
         { id: "hydrology.stability_reference_model", name: "Referencia para limite de velocidade", type: "select", options: [{ value: "NO_ASSUMED_LIMIT", label: "Sem limite presumido" }, { value: "NRCS_GRASS_SPARSE_0P9_REFERENCE", label: "Vegetacao esparsa - 0,9 m/s" }, { value: "NRCS_GRASS_SEEDED_0P9_REFERENCE", label: "Vegetacao semeada - 0,9 m/s" }, { value: "NRCS_GOOD_SOD_1P5_REFERENCE", label: "Cobertura densa estabelecida - 1,5 m/s" }, { value: "CUSTOM_PROJECT_LIMITS", label: "Limites proprios por trecho" }], default: "NO_ASSUMED_LIMIT", source: "Sistema" },
         { id: "hydrology.reach_sections_json", name: "Secoes e condicoes dos trechos", type: "json", unit: null, default: "[]", source: "Cliente" },
+        { id: "hydrology.profile_enabled", name: "Calcular perfil da lamina nos trechos", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.profile_step_count", name: "Divisoes de calculo por trecho", type: "number", unit: null, min: 2, max: 1000, step: 1, default: 20, source: "Sistema" },
       ],
     },
   ],
@@ -1072,6 +1082,8 @@ function liveConfiguration(configuration) {
           : sources.length ? "CUSTOM_PROJECT_LIMITS" : "NO_ASSUMED_LIMIT";
       })(),
       "hydrology.reach_sections_json": JSON.stringify(configuration.hydrology_screening?.reach_sections || [], null, 2),
+      "hydrology.profile_enabled": configuration.hydrology_screening?.profile_enabled || false,
+      "hydrology.profile_step_count": configuration.hydrology_screening?.profile_step_count || 20,
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1156,6 +1168,8 @@ function applyLiveConfiguration(current, payload) {
     routing_reaches: routingReaches,
     capacity_enabled: Boolean(values["hydrology.capacity_enabled"]),
     reach_sections: reachSections,
+    profile_enabled: Boolean(values["hydrology.profile_enabled"]),
+    profile_step_count: Number(values["hydrology.profile_step_count"] || 20),
   };
   return current;
 }
@@ -1416,7 +1430,7 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"]);
+    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"]);
     const isHydrologyOnly = productIds.length > 0 && productIds.every((productId) => hydrologyProducts.has(productId));
     const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {

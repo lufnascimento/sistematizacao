@@ -62,3 +62,6 @@ jobs:
 
       - name: Run preliminary section-capacity tests
         run: python -m unittest -v tests.test_preliminary_section_capacity
+
+      - name: Run preliminary water-profile tests
+        run: python -m unittest -v tests.test_preliminary_backwater_profile

@@ -291,6 +291,7 @@ class JobRunner:
             validate_routing_release,
         )
         from scripts.preliminary_section_capacity import check_reach_capacities, validate_capacity_release
+        from scripts.preliminary_backwater_profile import calculate_standard_step_profiles, validate_profile_release
 
         project = self.store.get("projects", run["project_id"])
         if project is None:
@@ -305,6 +306,7 @@ class JobRunner:
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"},
         ):
             raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
 
@@ -376,6 +378,7 @@ class JobRunner:
         hydrograph_result: dict[str, Any] | None = None
         routing_result: dict[str, Any] | None = None
         capacity_result: dict[str, Any] | None = None
+        profile_result: dict[str, Any] | None = None
         if "PCX2_HYDROGRAPH_SCREENING" in requested_products:
             result["blocker_codes"] = [
                 code for code in result["blocker_codes"]
@@ -551,6 +554,60 @@ class JobRunner:
             )
             for path in (capacity_json, capacity_csv):
                 self._artifact(run, path, "PCX4_SECTION_CAPACITY_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        if "PCX5_WATER_SURFACE_PROFILE_SCREENING" in requested_products:
+            if capacity_result is None or routing_result is None:
+                raise ValueError("SECTION_CAPACITY_DEPENDENCY_REQUIRED")
+            if configuration.get("profile_enabled") is not True:
+                raise ValueError("PROFILE_CONFIGURATION_NOT_ENABLED")
+            routed_by_id = {item["id"]: item for item in routing_result["reaches"]}
+            configured_reaches = {item["id"]: item for item in configuration.get("routing_reaches") or []}
+            profile_inputs = []
+            for section in configuration.get("reach_sections") or []:
+                reach = configured_reaches.get(section["id"])
+                routed = routed_by_id.get(section["id"])
+                if not reach or reach.get("length_m") is None or not routed or section.get("downstream_water_depth_m") is None:
+                    raise ValueError("PROFILE_LENGTH_AND_DOWNSTREAM_DEPTH_REQUIRED")
+                profile_inputs.append({
+                    "id": section["id"],
+                    "condition_state": section.get("condition_state", "CURRENT"),
+                    "peak_flow_m3_s": routed["peak_flow_m3_s"],
+                    "length_m": reach["length_m"],
+                    "bottom_width_m": section["bottom_width_m"],
+                    "side_slope_h_to_v": section["side_slope_h_to_v"],
+                    "slope_m_m": section["slope_m_m"],
+                    "manning_n": section["manning_n"],
+                    "downstream_water_depth_m": section["downstream_water_depth_m"],
+                    "profile_step_count": configuration.get("profile_step_count", 20),
+                })
+            profile_result = calculate_standard_step_profiles(profile_inputs)
+            validate_profile_release(profile_result)
+            profile_result.update({
+                "schema_version": "1.0.0",
+                "manifest_type": "PRELIMINARY_WATER_SURFACE_PROFILE_RESULT",
+                "project_id": project["id"],
+                "run_id": run["id"],
+                "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                "source_capacity_release": capacity_result["release"],
+                "stage_status": "PRELIMINARY_PROFILE_WITH_EXPLICIT_BLOCKERS",
+                "blocker_codes": ["SUBCRITICAL_STEADY_ONLY", "PRISMATIC_SECTION_ONLY", "NO_STRUCTURES", "NO_UNSTEADY_FLOW", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
+            })
+            profile_dir = run_dir / "products" / "preliminary_water_surface_profile"
+            profile_dir.mkdir(parents=True, exist_ok=False)
+            profile_json = profile_dir / "perfil_preliminar_lamina.json"
+            profile_json.write_text(json.dumps(profile_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            profile_csv = profile_dir / "perfil_preliminar_lamina.csv"
+            profile_csv.write_text(
+                "trecho,estado_secao,distancia_a_montante_m,cota_fundo_relativa_m,profundidade_m,cota_lamina_relativa_m,velocidade_m_s,froude,declividade_atrito_m_m\n"
+                + "\n".join(
+                    f"{profile['id']},{profile['condition_state']},{point['station_from_downstream_m']},{point['bed_elevation_relative_m']},{point['water_depth_m']},{point['water_surface_elevation_relative_m']},{point['velocity_m_s']},{point['froude_number']},{point['friction_slope_m_m']}"
+                    for profile in profile_result["profiles"] for point in profile["profile"]
+                ) + "\n",
+                encoding="utf-8",
+            )
+            profile_plot = profile_dir / "grafico_perfil_preliminar_lamina.png"
+            self._plot_water_profiles(profile_result, profile_plot)
+            for path in (profile_json, profile_csv, profile_plot):
+                self._artifact(run, path, "PCX5_WATER_SURFACE_PROFILE_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._set(
             run["id"],
             progress=95,
@@ -579,6 +636,8 @@ class JobRunner:
                 "overflow_path_declared_count": capacity_result["overflow_path_declared_count"] if capacity_result else None,
                 "downstream_evaluated_count": capacity_result["downstream_evaluated_count"] if capacity_result else None,
                 "downstream_controlled_count": capacity_result["downstream_controlled_count"] if capacity_result else None,
+                "water_profile_count": profile_result["profile_count"] if profile_result else None,
+                "water_profile_maximum_depth_m": max((item["maximum_water_depth_m"] for item in profile_result["profiles"]), default=None) if profile_result else None,
                 "guidance_authorized": False,
             },
         )
@@ -589,6 +648,8 @@ class JobRunner:
             message += " Capacidade das secoes nao avaliada."
         else:
             message += " Capacidade das secoes verificada somente por escoamento uniforme."
+        if profile_result is not None:
+            message += " Perfil permanente subcritico calculado por passo padrao."
         self._log(run["id"], "WARN", message)
 
     @staticmethod
@@ -614,6 +675,38 @@ class JobRunner:
         axis.set_xlabel("Tempo (min)")
         axis.set_ylabel("Vazao estimada (m3/s)")
         axis.grid(True, color="#d8ded9", linewidth=0.7)
+        figure.tight_layout()
+        figure.savefig(output_path, bbox_inches="tight")
+        plt.close(figure)
+
+    @staticmethod
+    def _plot_water_profiles(result: dict[str, Any], output_path: Path) -> None:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        figure, axis = plt.subplots(figsize=(10, 5.2), dpi=150)
+        condition_labels = {"NEW": "Nova", "CURRENT": "Atual", "DEGRADED": "Degradada"}
+        plotted_beds = set()
+        for profile in result["profiles"]:
+            points = profile["profile"]
+            distances = [point["station_from_downstream_m"] for point in points]
+            water = [point["water_surface_elevation_relative_m"] for point in points]
+            reach_label = profile["id"].replace("_", " ")
+            axis.plot(distances, water, linewidth=2.0, label=f"{reach_label} - {condition_labels.get(profile['condition_state'], profile['condition_state'])}")
+            if profile["id"] not in plotted_beds:
+                axis.plot(
+                    distances,
+                    [point["bed_elevation_relative_m"] for point in points],
+                    linewidth=1.2, linestyle="--", label=f"Fundo {reach_label}",
+                )
+                plotted_beds.add(profile["id"])
+        axis.set_title("Perfil preliminar da lamina por passo padrao")
+        axis.set_xlabel("Distancia a montante da saida (m)")
+        axis.set_ylabel("Cota relativa (m)")
+        axis.grid(True, color="#d8ded9", linewidth=0.7)
+        axis.legend(fontsize=8)
         figure.tight_layout()
         figure.savefig(output_path, bbox_inches="tight")
         plt.close(figure)

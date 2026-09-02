@@ -66,6 +66,7 @@ class RoutingReachConfiguration(StrictModel):
     upstream_node_id: str = Field(min_length=1, max_length=100)
     downstream_node_id: str = Field(min_length=1, max_length=100)
     travel_time_minutes: float = Field(ge=0.0, le=100_000.0)
+    length_m: float | None = Field(default=None, gt=0.0, le=10_000_000.0)
 
 
 class ReachSectionConfiguration(StrictModel):
@@ -141,6 +142,8 @@ class HydrologyScreeningConfiguration(StrictModel):
     routing_reaches: list[RoutingReachConfiguration] = Field(default_factory=list, max_length=10_000)
     capacity_enabled: bool = False
     reach_sections: list[ReachSectionConfiguration] = Field(default_factory=list, max_length=10_000)
+    profile_enabled: bool = False
+    profile_step_count: int = Field(default=20, ge=2, le=1000)
 
     @model_validator(mode="after")
     def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
@@ -168,6 +171,13 @@ class HydrologyScreeningConfiguration(StrictModel):
                 raise ValueError("routing must be enabled when capacity is enabled")
             if not self.reach_sections:
                 raise ValueError("reach_sections are required when capacity is enabled")
+        if self.profile_enabled:
+            if not self.capacity_enabled:
+                raise ValueError("capacity must be enabled when profile is enabled")
+            if any(reach.length_m is None for reach in self.routing_reaches):
+                raise ValueError("every routed reach requires length when profile is enabled")
+            if any(section.downstream_water_depth_m is None or section.downstream_water_depth_m <= 0 for section in self.reach_sections):
+                raise ValueError("every section state requires downstream depth when profile is enabled")
         return self
 
 

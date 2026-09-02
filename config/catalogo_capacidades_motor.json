@@ -91,6 +91,17 @@
       "next_implementation": "Resolver perfil entre secoes, geometria espacial dos caminhos de falha e validacao profissional dos limites erosivos."
     },
     {
+      "id": "PRELIMINARY_WATER_SURFACE_PROFILE_KERNEL",
+      "title": "Perfil permanente subcritico por passo padrao",
+      "domain": "HYDRAULICS",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["DRAINAGE_NETWORK", "FULL_CATCHMENT"],
+      "required_capabilities": ["PRELIMINARY_SECTION_CAPACITY_KERNEL"],
+      "outputs": ["WATER_SURFACE_PROFILE_JSON", "WATER_SURFACE_PROFILE_CSV", "WATER_SURFACE_PROFILE_PLOT"],
+      "blocker_code": "MIXED_UNSTEADY_STRUCTURE_AND_RECEIVER_NOT_EVALUATED",
+      "next_implementation": "Adicionar secoes nao prismaticas, estruturas, confluencias por momento, regime misto e caminho espacial do excedente."
+    },
+    {
       "id": "PCE_ENGINE",
       "title": "Motor de controle de erosao PCE",
       "domain": "CONSERVATION",

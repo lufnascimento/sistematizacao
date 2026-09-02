@@ -97,6 +97,7 @@ def create_app(
                 "PCX2_HYDROGRAPH_SCREENING",
                 "PCX3_REACH_ROUTING_SCREENING",
                 "PCX4_SECTION_CAPACITY_SCREENING",
+                "PCX5_WATER_SURFACE_PROFILE_SCREENING",
             ],
         }
 
@@ -610,6 +611,7 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"},
         )
         if requested not in combinations:
             raise HTTPException(
@@ -621,6 +623,7 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
                         ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
                         ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"],
                         ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"],
+                        ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"],
                     ],
                 },
             )
@@ -670,6 +673,18 @@ def _validate_product_dependencies(product_ids: list[str]) -> None:
                 "product_id": "PCX4_SECTION_CAPACITY_SCREENING",
                 "required_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"],
                 "message": "A verificacao de capacidade exige a cadeia hidrologica e a rede na mesma rodada.",
+            },
+        )
+    if "PCX5_WATER_SURFACE_PROFILE_SCREENING" in requested and not {
+        "PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"
+    }.issubset(requested):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PRODUCT_DEPENDENCY_MISSING",
+                "product_id": "PCX5_WATER_SURFACE_PROFILE_SCREENING",
+                "required_product_ids": ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"],
+                "message": "O perfil preliminar exige chuva, hidrograma, rede e secoes na mesma rodada.",
             },
         )
 
