@@ -94,6 +94,7 @@ def create_app(
                 "CF0_CONTINUOUS",
                 "C1_EMBEDDED_SCREENING",
                 "PCX1_RUNOFF_SCREENING",
+                "PCX2_HYDROGRAPH_SCREENING",
             ],
         }
 
@@ -594,12 +595,16 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
                 },
             )
     if engine_id == "project_hydrology_screening":
-        if product_ids != ["PCX1_RUNOFF_SCREENING"]:
+        requested = set(product_ids)
+        if requested not in ({"PCX1_RUNOFF_SCREENING"}, {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"}):
             raise HTTPException(
                 status_code=409,
                 detail={
                     "code": "ENGINE_PRODUCT_MISMATCH",
-                    "required_product_ids": ["PCX1_RUNOFF_SCREENING"],
+                    "supported_product_combinations": [
+                        ["PCX1_RUNOFF_SCREENING"],
+                        ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"],
+                    ],
                 },
             )
 
@@ -614,6 +619,16 @@ def _validate_product_dependencies(product_ids: list[str]) -> None:
                 "product_id": "C1_EMBEDDED_SCREENING",
                 "required_product_ids": ["CF0_CONTINUOUS"],
                 "message": "A triagem conceitual C1 exige o CF0 da mesma rodada imutavel.",
+            },
+        )
+    if "PCX2_HYDROGRAPH_SCREENING" in requested and "PCX1_RUNOFF_SCREENING" not in requested:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PRODUCT_DEPENDENCY_MISSING",
+                "product_id": "PCX2_HYDROGRAPH_SCREENING",
+                "required_product_ids": ["PCX1_RUNOFF_SCREENING"],
+                "message": "O hidrograma preliminar exige a chuva que vira escoamento na mesma rodada.",
             },
         )
 
@@ -633,7 +648,7 @@ def _new_run(project_id: str, engine_id: str, product_ids: list[str], request_id
         "created_at": now,
         "updated_at": now,
         "delivery_boundary": (
-            "PCX1_RAINFALL_EXCESS_ONLY_NOT_HYDRAULIC_DESIGN"
+            "HYDROLOGY_SCREENING_ONLY_NOT_HYDRAULIC_DESIGN"
             if engine_id == "project_hydrology_screening"
             else "E0_TRIAGEM_NOT_GUIDANCE_AUTHORIZED"
         ),

@@ -1,4 +1,4 @@
-# Motor PCX1 de chuva-excesso
+# Chuva que vira escoamento
 
 ## 1. O que foi implementado
 
@@ -17,12 +17,12 @@ projeto; um Curve Number de preset nunca vira evidencia local automaticamente.
 1. Em **Dados**, o usuario envia solo, chuva e bacia quando disponiveis. Esses
    arquivos permanecem como evidencia; PCX1 tambem aceita digitacao manual de
    um evento para triagem.
-2. Em **Configurar > Chuva e escoamento PCX1**, habilita o calculo e informa:
+2. Em **Configurar > Chuva e resposta do terreno**, habilita o calculo e informa:
    area contribuinte, Curve Number, razao `Ia/S`, duracao do intervalo, chuva de
    cada intervalo e identificador da fonte.
 3. Escolhe o estado da evidencia: `PROJECT_EVIDENCE` ou `E0_ASSUMPTION`.
    Hipotese E0 calcula, mas mantem o blocker de evidencia.
-4. Em **Produtos**, seleciona exclusivamente **Chuva-excesso PCX1**. A
+4. Em **Produtos**, seleciona **Chuva que vira escoamento**. A
    plataforma bloqueia o cartao enquanto o evento estiver incompleto.
 5. Em **Executar**, compila o pedido imutavel. Area, parametros, hietograma,
    fonte e produtos recebem hash e nao podem mudar durante a rodada.
@@ -56,8 +56,8 @@ estado `E0_ASSUMPTION`. Ele nao e adotado como verdade do projeto. Alterar
 
 | Produto | Conteudo | Uso permitido |
 |---|---|---|
-| `pcx1_rainfall_excess.json` | entradas, fonte, linhagem, resumo, intervalos, limites e blockers | auditoria e integracao com o proximo motor |
-| `pcx1_rainfall_excess_intervals.csv` | chuva, intensidade, perdas e excesso por intervalo | grafico, conferencia e comparacao de eventos |
+| `resultado_chuva_escoamento.json` | entradas, fonte, linhagem, resumo, intervalos, limites e blockers | auditoria e integracao com o proximo motor |
+| `serie_chuva_escoamento.csv` | chuva, intensidade, perdas e excesso por intervalo | grafico, conferencia e comparacao de eventos |
 | resumo na plataforma | chuva, excesso, volume e coeficiente do evento | leitura rapida de triagem |
 
 O contrato de saida e `schemas/pcx1-rainfall-excess-stage.schema.json`.
@@ -76,9 +76,10 @@ O resultado sempre carrega:
 - `NOT_SECTION_DIMENSIONING` e `NOT_RECEIVER_APPROVAL`;
 - `NOT_PROJECT_EXECUTIVE` e `NOT_GUIDANCE_AUTHORIZED`.
 
-## 6. Proximo encadeamento
+## 6. Encadeamento atual
 
-O proximo motor deve receber os intervalos de PCX1 e gerar um hidrograma
-reproduzivel com tempo de concentracao/lag declarado. Depois entram propagacao
-por alcance, secoes novas e degradadas, receptores, excedencia e incerteza. So
-essa cadeia completa pode alimentar comparacoes dimensionadas C1, C2 e C3.
+O produto **Hidrograma preliminar** ja recebe estes intervalos e gera vazao no
+tempo com um tempo de resposta declarado. Depois entram propagacao por alcance,
+secoes novas e degradadas, receptores, excedencia e incerteza. So essa cadeia
+completa pode alimentar comparacoes dimensionadas de curva embutida, base
+larga/passante e ESD.

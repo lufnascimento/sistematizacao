@@ -274,13 +274,17 @@ class JobRunner:
         self._log(run["id"], "INFO", f"{len(selected)} artefatos demonstrativos publicados.")
 
     def _project_hydrology_screening(self, run: dict[str, Any]) -> None:
-        workspace_text = str(self.workspace_root)
-        if workspace_text not in sys.path:
-            sys.path.insert(0, workspace_text)
+        code_root = str(Path(__file__).resolve().parents[2])
+        if code_root not in sys.path:
+            sys.path.insert(0, code_root)
         from scripts.pcx1_runoff import (
             RainfallInterval,
             calculate_pcx1_rainfall_excess,
             validate_pcx1_release,
+        )
+        from scripts.pcx2_hydrograph import (
+            calculate_pcx2_triangular_hydrograph,
+            validate_pcx2_release,
         )
 
         project = self.store.get("projects", run["project_id"])
@@ -290,7 +294,11 @@ class JobRunner:
         if request is None or request["project_id"] != project["id"]:
             raise ValueError("project_hydrology_screening requires an immutable request from the same project")
         self._verify_request_snapshot(request)
-        if request.get("product_ids") != ["PCX1_RUNOFF_SCREENING"]:
+        requested_products = set(request.get("product_ids", []))
+        if requested_products not in (
+            {"PCX1_RUNOFF_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"},
+        ):
             raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
 
         configuration = request["configuration_snapshot"].get("hydrology_screening", {})
@@ -326,7 +334,7 @@ class JobRunner:
                 "stage_status": "SCREENING_ONLY_WITH_EXPLICIT_BLOCKERS",
                 "blocker_codes": [
                     "PCX1_METHOD_PROJECT_APPROVAL_REQUIRED",
-                    "PCX_HYDROGRAPH_NOT_IMPLEMENTED",
+                    "PCX_HYDROGRAPH_NOT_INCLUDED_IN_THIS_PRODUCT",
                     "PCX_HYDRAULIC_ROUTING_NOT_IMPLEMENTED",
                     "PCX_SECTION_CAPACITY_NOT_EVALUATED",
                     "PCX_RECEIVER_NOT_APPROVED",
@@ -340,9 +348,9 @@ class JobRunner:
         run_dir = self.store.project_dir(project["id"]) / "runs" / run["id"]
         output_dir = run_dir / "products" / "pcx1_runoff_screening"
         output_dir.mkdir(parents=True, exist_ok=False)
-        manifest_path = output_dir / "pcx1_rainfall_excess.json"
+        manifest_path = output_dir / "resultado_chuva_escoamento.json"
         manifest_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        csv_path = output_dir / "pcx1_rainfall_excess_intervals.csv"
+        csv_path = output_dir / "serie_chuva_escoamento.csv"
         columns = (
             "index,duration_s,elapsed_s,rainfall_mm,rainfall_intensity_mm_h,"
             "cumulative_rainfall_mm,rainfall_excess_mm,cumulative_rainfall_excess_mm,incremental_loss_mm\n"
@@ -358,21 +366,111 @@ class JobRunner:
         csv_path.write_text(columns + "\n".join(rows) + "\n", encoding="utf-8")
         self._artifact(run, manifest_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._artifact(run, csv_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        hydrograph_result: dict[str, Any] | None = None
+        if "PCX2_HYDROGRAPH_SCREENING" in requested_products:
+            result["blocker_codes"] = [
+                code for code in result["blocker_codes"]
+                if code != "PCX_HYDROGRAPH_NOT_INCLUDED_IN_THIS_PRODUCT"
+            ]
+            if configuration.get("hydrograph_enabled") is not True:
+                raise ValueError("HYDROGRAPH_CONFIGURATION_NOT_ENABLED")
+            lag_minutes = configuration.get("catchment_lag_minutes")
+            if lag_minutes is None:
+                raise ValueError("CATCHMENT_LAG_REQUIRED")
+            hydrograph_result = calculate_pcx2_triangular_hydrograph(
+                result["intervals"],
+                catchment_area_ha=result["catchment_area_ha"],
+                lag_time_s=float(lag_minutes) * 60.0,
+                output_step_s=float(configuration.get("hydrograph_step_minutes", 1.0)) * 60.0,
+                base_to_peak_time_ratio=float(configuration.get("triangle_base_to_peak_ratio", 2.67)),
+            )
+            validate_pcx2_release(hydrograph_result)
+            hydrograph_result.update(
+                {
+                    "schema_version": "1.0.0",
+                    "manifest_type": "PCX2_PRELIMINARY_HYDROGRAPH_RESULT",
+                    "project_id": project["id"],
+                    "run_id": run["id"],
+                    "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                    "source_rainfall_excess_release": result["release"],
+                    "stage_status": "PRELIMINARY_HYDROGRAPH_WITH_EXPLICIT_BLOCKERS",
+                    "blocker_codes": [
+                        "HYDROGRAPH_METHOD_PROJECT_APPROVAL_REQUIRED",
+                        "CATCHMENT_LAG_PROJECT_EVIDENCE_REQUIRED",
+                        "CHANNEL_ROUTING_NOT_IMPLEMENTED",
+                        "STRUCTURE_ROUTING_NOT_IMPLEMENTED",
+                        "HYDRAULIC_CAPACITY_NOT_EVALUATED",
+                        "RECEIVER_NOT_APPROVED",
+                        "GUIDANCE_NOT_AUTHORIZED",
+                    ],
+                }
+            )
+            if configuration.get("parameter_evidence_state") != "PROJECT_EVIDENCE":
+                hydrograph_result["blocker_codes"].append("HYDROLOGY_PROJECT_EVIDENCE_INCOMPLETE")
+            hydro_json = output_dir / "hidrograma_preliminar.json"
+            hydro_json.write_text(json.dumps(hydrograph_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            hydro_csv = output_dir / "hidrograma_preliminar.csv"
+            hydro_csv.write_text(
+                "tempo_min,vazao_m3_s,volume_acumulado_m3\n"
+                + "\n".join(
+                    f"{row['time_s'] / 60.0},{row['flow_m3_s']},{row['cumulative_volume_m3']}"
+                    for row in hydrograph_result["hydrograph"]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            plot_path = output_dir / "grafico_hidrograma_preliminar.png"
+            self._plot_hydrograph(hydrograph_result, plot_path)
+            for path in (hydro_json, hydro_csv, plot_path):
+                self._artifact(run, path, "PCX2_HYDROGRAPH_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._set(
             run["id"],
             progress=95,
-            stage="PUBLISHED_PCX1_SCREENING",
-            result="PASS_PCX1_RAINFALL_EXCESS_SCREENING_NOT_DESIGN",
+            stage="PUBLISHED_PRELIMINARY_RAINFALL_RESPONSE",
+            result="PASS_PRELIMINARY_RAINFALL_RESPONSE_NOT_DESIGN",
             result_summary={
                 "total_rainfall_mm": result["total_rainfall_mm"],
                 "total_rainfall_excess_mm": result["total_rainfall_excess_mm"],
                 "total_rainfall_excess_volume_m3": result["total_rainfall_excess_volume_m3"],
                 "runoff_coefficient_event": result["runoff_coefficient_event"],
                 "blocker_codes": result["blocker_codes"],
+                "peak_flow_m3_s": hydrograph_result["peak_flow_m3_s"] if hydrograph_result else None,
+                "time_to_peak_minutes": hydrograph_result["time_to_peak_s"] / 60.0 if hydrograph_result else None,
+                "hydrograph_mass_balance_status": hydrograph_result["mass_balance_status"] if hydrograph_result else None,
                 "guidance_authorized": False,
             },
         )
-        self._log(run["id"], "WARN", "PCX1 publicado como chuva-excesso de triagem; hidrograma e capacidade nao avaliados.")
+        message = "Resposta da chuva publicada como estudo preliminar; capacidade hidraulica nao avaliada."
+        if hydrograph_result is None:
+            message += " Hidrograma nao solicitado."
+        self._log(run["id"], "WARN", message)
+
+    @staticmethod
+    def _plot_hydrograph(result: dict[str, Any], output_path: Path) -> None:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        times = [row["time_s"] / 60.0 for row in result["hydrograph"]]
+        flows = [row["flow_m3_s"] for row in result["hydrograph"]]
+        figure, axis = plt.subplots(figsize=(10, 4.8), dpi=150)
+        axis.plot(times, flows, color="#176b4d", linewidth=2.2)
+        axis.fill_between(times, flows, color="#9dcdb5", alpha=0.45)
+        axis.scatter(
+            [result["time_to_peak_s"] / 60.0],
+            [result["peak_flow_m3_s"]],
+            color="#b45309",
+            s=35,
+            zorder=3,
+        )
+        axis.set_title("Hidrograma preliminar do evento")
+        axis.set_xlabel("Tempo (min)")
+        axis.set_ylabel("Vazao estimada (m3/s)")
+        axis.grid(True, color="#d8ded9", linewidth=0.7)
+        figure.tight_layout()
+        figure.savefig(output_path, bbox_inches="tight")
+        plt.close(figure)
 
     def _project_topography(self, run: dict[str, Any]) -> None:
         project = self.store.get("projects", run["project_id"])

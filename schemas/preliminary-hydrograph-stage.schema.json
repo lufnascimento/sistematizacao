@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/preliminary-hydrograph-stage.schema.json",
+  "title": "TerraFlux preliminary hydrograph result",
+  "type": "object",
+  "required": [
+    "schema_version", "manifest_type", "release", "project_id", "run_id",
+    "request_ref", "method", "catchment_area_ha", "lag_time_s",
+    "input_rainfall_excess_volume_m3", "hydrograph_volume_m3",
+    "mass_balance_status", "peak_flow_m3_s", "time_to_peak_s", "hydrograph",
+    "stage_status", "blocker_codes", "hydraulic_capacity_evaluated",
+    "receiver_approved", "guidance_authorized", "limitations"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_type": { "const": "PCX2_PRELIMINARY_HYDROGRAPH_RESULT" },
+    "release": { "const": "PCX2_TRIANGULAR_UNIT_HYDROGRAPH_SCREENING_ONLY" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "request_ref": {
+      "type": "object",
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "method": { "const": "TRIANGULAR_UNIT_HYDROGRAPH_SUPERPOSITION" },
+    "catchment_area_ha": { "type": "number", "exclusiveMinimum": 0 },
+    "lag_time_s": { "type": "number", "exclusiveMinimum": 0 },
+    "output_step_s": { "type": "number", "exclusiveMinimum": 0 },
+    "base_to_peak_time_ratio": { "type": "number", "exclusiveMinimum": 1 },
+    "input_rainfall_excess_volume_m3": { "type": "number", "minimum": 0 },
+    "hydrograph_volume_m3": { "type": "number", "minimum": 0 },
+    "mass_balance_residual_m3": { "type": "number" },
+    "relative_mass_balance_residual": { "type": "number", "minimum": 0 },
+    "mass_balance_status": { "const": "PASS" },
+    "peak_flow_m3_s": { "type": "number", "minimum": 0 },
+    "time_to_peak_s": { "type": "number", "minimum": 0 },
+    "hydrograph_duration_s": { "type": "number", "exclusiveMinimum": 0 },
+    "hydrograph": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["time_s", "flow_m3_s", "cumulative_volume_m3"],
+        "properties": {
+          "time_s": { "type": "number", "minimum": 0 },
+          "flow_m3_s": { "type": "number", "minimum": 0 },
+          "cumulative_volume_m3": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "source_rainfall_excess_release": { "const": "PCX1_NRCS_CN_RAINFALL_EXCESS_ONLY" },
+    "stage_status": { "const": "PRELIMINARY_HYDROGRAPH_WITH_EXPLICIT_BLOCKERS" },
+    "blocker_codes": { "type": "array", "minItems": 7, "items": { "type": "string" }, "uniqueItems": true },
+    "channel_routing_evaluated": { "const": false },
+    "structure_routing_evaluated": { "const": false },
+    "hydraulic_capacity_evaluated": { "const": false },
+    "receiver_approved": { "const": false },
+    "guidance_authorized": { "const": false },
+    "limitations": { "type": "array", "minItems": 8, "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "additionalProperties": false
+}

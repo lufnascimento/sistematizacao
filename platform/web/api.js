@@ -726,18 +726,18 @@ export const systemCatalog = {
   presets: [
     {
       id: "cana_sp_equilibrio_e0",
-      name: "Cana SP — equilíbrio E0",
+      name: "Cana SP — equilíbrio inicial",
       description: "Triagem geométrica equilibrando conservação, colheitabilidade e rendimento operacional.",
       region: "São Paulo",
-      level: "E0",
+      level: "Estudo preliminar",
       source: "Sistema",
     },
     {
       id: "cana_sp_conservacao_e0",
-      name: "Cana SP — conservação E0",
+      name: "Cana SP — conservação inicial",
       description: "Prioriza menor alcance hidráulico e transversalidade ao escoamento, sem dimensionar estruturas.",
       region: "São Paulo",
-      level: "E0",
+      level: "Estudo preliminar",
       source: "Sistema",
     },
     {
@@ -745,7 +745,7 @@ export const systemCatalog = {
       name: "Tiros longos — operação",
       description: "Amplia continuidade e comprimento de tiro dentro de todos os gates disponíveis.",
       region: "Brasil",
-      level: "E0",
+      level: "Estudo preliminar",
       source: "Sistema",
     },
     {
@@ -760,7 +760,7 @@ export const systemCatalog = {
   products: [
     {
       id: "TOPOGRAPHY_E0",
-      name: "Topografia e curvas de nivel E0",
+      name: "Topografia e curvas de nivel",
       description: "MDT, declividade, relevo sombreado, curvas de nivel e densidade quando houver LAS/LAZ.",
       level: "E0",
       requires: ["FIELD_BOUNDARY", "ELEVATION_SOURCE"],
@@ -768,7 +768,7 @@ export const systemCatalog = {
     },
     {
       id: "SULCATION_E0",
-      name: "Cenários geométricos E0",
+      name: "Cenários iniciais de sulcação",
       description: "Famílias axial, contorno e híbrida, com métricas topográficas e operacionais de triagem.",
       level: "E0",
       requires: ["PROJECT_SCOPE", "TERRAIN_SOURCE"],
@@ -784,18 +784,26 @@ export const systemCatalog = {
     },
     {
       id: "C1_EMBEDDED_SCREENING",
-      name: "Curva embutida — precursor",
-      description: "Alternativas TI conceituais e faixas de trabalho; sem PCE, PCX ou dimensionamento hidráulico.",
+      name: "Estudo inicial de curva embutida",
+      description: "Alternativas conceituais de alinhamento e faixas de trabalho, ainda sem dimensionamento hidráulico.",
       level: "E0",
       requires: ["PROJECT_SCOPE", "TERRAIN_SOURCE", "CF0"],
       available: true,
     },
     {
       id: "PCX1_RUNOFF_SCREENING",
-      name: "Chuva-excesso PCX1",
-      description: "Converte o hietograma em chuva-excesso NRCS-CN; nao gera hidrograma, vazao de pico ou dimensionamento.",
+      name: "Chuva que vira escoamento",
+      description: "Mostra quanto da chuva informada pode escoar sobre o solo ao longo do evento.",
       level: "E0",
       requires: ["AREA_CONTRIBUINTE", "HIETOGRAMA", "CURVE_NUMBER_COM_FONTE"],
+      available: true,
+    },
+    {
+      id: "PCX2_HYDROGRAPH_SCREENING",
+      name: "Hidrograma preliminar",
+      description: "Estima como a vazao cresce e diminui ao longo do evento, com pico e tempo ate o pico.",
+      level: "E0",
+      requires: ["CHUVA_QUE_VIRA_ESCOAMENTO", "TEMPO_DE_RESPOSTA_DA_AREA"],
       available: true,
     },
     {
@@ -895,17 +903,21 @@ export const systemCatalog = {
     },
     {
       id: "hydrology-screening",
-      name: "Chuva e escoamento PCX1",
-      description: "Evento de triagem; os valores precisam de fonte e nao dimensionam estruturas",
+      name: "Chuva e resposta do terreno",
+      description: "Configure o evento e a capacidade do solo de reter agua",
       parameters: [
-        { id: "hydrology.enabled", name: "Habilitar chuva-excesso PCX1", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.enabled", name: "Calcular a parcela que escoa", type: "boolean", default: false, source: "Cliente" },
         { id: "hydrology.catchment_area_ha", name: "Area contribuinte", type: "number", unit: "ha", min: 0.01, max: 1000000, step: 0.01, default: 1, source: "Cliente" },
-        { id: "hydrology.curve_number", name: "Curve Number do evento", type: "number", unit: null, min: 1, max: 100, step: 0.1, default: 75, source: "Cliente" },
-        { id: "hydrology.initial_abstraction_ratio", name: "Razao de abstracao inicial", type: "number", unit: "Ia/S", min: 0, max: 0.3, step: 0.01, default: 0.2, source: "Cliente" },
+        { id: "hydrology.curve_number", name: "Resposta do solo e da cobertura (CN)", type: "number", unit: null, min: 1, max: 100, step: 0.1, default: 75, source: "Cliente" },
+        { id: "hydrology.initial_abstraction_ratio", name: "Retencao inicial da chuva (avancado)", type: "number", unit: null, min: 0, max: 0.3, step: 0.01, default: 0.2, source: "Cliente" },
         { id: "hydrology.interval_minutes", name: "Duracao de cada intervalo", type: "number", unit: "min", min: 1, max: 10080, step: 1, default: 10, source: "Cliente" },
         { id: "hydrology.rainfall_series_mm", name: "Chuva por intervalo", type: "text", unit: "mm", default: "", source: "Cliente" },
-        { id: "hydrology.parameter_source_id", name: "Fonte do CN e do evento", type: "text", unit: null, default: "", source: "Cliente" },
+        { id: "hydrology.parameter_source_id", name: "Fonte dos parametros e da chuva", type: "text", unit: null, default: "", source: "Cliente" },
         { id: "hydrology.evidence_state", name: "Estado da evidencia", type: "select", options: [{ value: "E0_ASSUMPTION", label: "Hipotese E0" }, { value: "PROJECT_EVIDENCE", label: "Evidencia do projeto" }], default: "E0_ASSUMPTION", source: "Cliente" },
+        { id: "hydrology.hydrograph_enabled", name: "Calcular vazao ao longo do tempo", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.catchment_lag_minutes", name: "Tempo de resposta da area", type: "number", unit: "min", min: 1, max: 10080, step: 1, default: 30, source: "Cliente" },
+        { id: "hydrology.hydrograph_step_minutes", name: "Intervalo do grafico", type: "number", unit: "min", min: 0.1, max: 1440, step: 0.1, default: 1, source: "Sistema" },
+        { id: "hydrology.triangle_base_to_peak_ratio", name: "Duracao relativa da resposta", type: "number", unit: null, min: 1.01, max: 20, step: 0.01, default: 2.67, source: "Sistema" },
       ],
     },
   ],
@@ -1023,6 +1035,10 @@ function liveConfiguration(configuration) {
       "hydrology.rainfall_series_mm": (configuration.hydrology_screening?.rainfall_intervals || []).map((item) => item.rainfall_mm).join(", "),
       "hydrology.parameter_source_id": configuration.hydrology_screening?.parameter_source_id || "",
       "hydrology.evidence_state": configuration.hydrology_screening?.parameter_evidence_state || "E0_ASSUMPTION",
+      "hydrology.hydrograph_enabled": configuration.hydrology_screening?.hydrograph_enabled || false,
+      "hydrology.catchment_lag_minutes": configuration.hydrology_screening?.catchment_lag_minutes || 30,
+      "hydrology.hydrograph_step_minutes": configuration.hydrology_screening?.hydrograph_step_minutes || 1,
+      "hydrology.triangle_base_to_peak_ratio": configuration.hydrology_screening?.triangle_base_to_peak_ratio || 2.67,
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1067,6 +1083,12 @@ function applyLiveConfiguration(current, payload) {
     rainfall_intervals: hydrologyEnabled && rainfallValues.every(Number.isFinite)
       ? rainfallValues.map((rainfall_mm) => ({ duration_s: intervalSeconds, rainfall_mm }))
       : [],
+    hydrograph_enabled: Boolean(values["hydrology.hydrograph_enabled"]),
+    catchment_lag_minutes: Boolean(values["hydrology.hydrograph_enabled"])
+      ? Number(values["hydrology.catchment_lag_minutes"])
+      : null,
+    hydrograph_step_minutes: Number(values["hydrology.hydrograph_step_minutes"] || 1),
+    triangle_base_to_peak_ratio: Number(values["hydrology.triangle_base_to_peak_ratio"] || 2.67),
   };
   return current;
 }
@@ -1090,7 +1112,7 @@ function liveRun(run, logs = [], artifactCount = 0) {
       : run.engine_id === "project_pipeline_e0"
         ? "Cenários E0 do projeto"
         : run.engine_id === "project_hydrology_screening"
-          ? "Chuva-excesso PCX1"
+          ? "Simulacao do escoamento da chuva"
         : run.engine_id === "validate_uploads"
           ? "Validação dos dados"
           : "Rodada de produtos",
@@ -1327,7 +1349,8 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const isHydrologyOnly = productIds.length === 1 && productIds[0] === "PCX1_RUNOFF_SCREENING";
+    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]);
+    const isHydrologyOnly = productIds.length > 0 && productIds.every((productId) => hydrologyProducts.has(productId));
     const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {
       throw new Error("O pedido não possui uma combinação de produtos executável pelos motores atuais.");

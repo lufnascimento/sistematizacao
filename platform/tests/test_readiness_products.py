@@ -202,6 +202,7 @@ class ProductReadinessTests(unittest.TestCase):
             "CF0_CONTINUOUS",
             "C1_EMBEDDED_SCREENING",
             "PCX1_RUNOFF_SCREENING",
+            "PCX2_HYDROGRAPH_SCREENING",
             *unavailable,
             "COMPLETE_DOSSIER",
         }

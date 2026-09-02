@@ -736,7 +736,11 @@ async function renderConfigureStep(project) {
     if (payload.parameters["hydrology.enabled"]) {
       const rainfall = String(payload.parameters["hydrology.rainfall_series_mm"] || "").split(/[;,\s]+/).filter(Boolean).map(Number);
       if (!rainfall.length || rainfall.some((value) => !Number.isFinite(value) || value < 0) || !String(payload.parameters["hydrology.parameter_source_id"] || "").trim()) {
-        showToast("Evento PCX1 incompleto", "Informe a chuva por intervalo com valores nao negativos e identifique a fonte dos parametros.", "error");
+        showToast("Dados da chuva incompletos", "Informe a chuva por intervalo com valores nao negativos e identifique a fonte dos parametros.", "error");
+        return;
+      }
+      if (payload.parameters["hydrology.hydrograph_enabled"] && !(Number(payload.parameters["hydrology.catchment_lag_minutes"]) > 0)) {
+        showToast("Tempo de resposta ausente", "Informe em quantos minutos a area responde ao evento de chuva.", "error");
         return;
       }
     }
@@ -801,6 +805,7 @@ const readinessAliases = {
   C3_ESD: "C3",
   POA_STATIC: "POA",
   PCX1_RUNOFF_SCREENING: "PCX1_RUNOFF_SCREENING",
+  PCX2_HYDROGRAPH_SCREENING: "PCX2_HYDROGRAPH_SCREENING",
 };
 
 function productReadiness(readiness, product) {
@@ -819,12 +824,52 @@ function requestMatchesProducts(request, productIds) {
 }
 
 function executionEngineFor(productIds) {
-  if (productIds.length === 1 && productIds[0] === "PCX1_RUNOFF_SCREENING") return "project_hydrology_screening";
+  const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]);
+  if (productIds.length > 0 && productIds.every((item) => hydrologyProducts.has(item)) && productIds.includes("PCX1_RUNOFF_SCREENING")) return "project_hydrology_screening";
   const supported = new Set(["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS"]);
   if (productIds.some((item) => !supported.has(item))) return null;
   if (productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0") return "project_topography";
   if (productIds.some((item) => ["SULCATION_E0", "CF0_CONTINUOUS"].includes(item))) return "project_pipeline_e0";
   return null;
+}
+
+const blockerLabels = {
+  FIELD_BOUNDARY_MISSING: "Poligonos dos talhoes ausentes",
+  FIELD_BOUNDARIES: "Poligonos dos talhoes",
+  ELEVATION_SOURCE_MISSING: "Nuvem de pontos ou modelo de elevacao ausente",
+  FIELD_ID_COLUMN_REQUIRED: "Campo identificador dos talhoes nao informado",
+  POWER_NETWORK_UNRESOLVED: "Rede eletrica ainda nao declarada",
+  SOIL_HYDROLOGY_MISSING: "Dados hidrologicos do solo ausentes",
+  ROADS_CARRIERS_MISSING: "Carreadores e estradas ausentes",
+  FLEET_CONFIGURATION_MISSING: "Configuracao da frota ausente",
+  HYDRAULIC_RECEIVER_MISSING: "Saida de agua ou receptor nao informado",
+  DESIGN_RAIN_MISSING: "Chuva de projeto ausente",
+  RECEIVERS_MISSING: "Saidas de agua e receptores ausentes",
+  CLIENT_ENGINE_NOT_AVAILABLE: "Motor deste produto ainda nao disponivel",
+  PCX1_RUNOFF_DEPENDENCY_REQUIRED: "Selecione tambem Chuva que vira escoamento",
+  HYDROGRAPH_CONFIGURATION_NOT_ENABLED: "Ative o calculo da vazao ao longo do tempo",
+  CATCHMENT_LAG_REQUIRED: "Informe o tempo de resposta da area",
+  CF0_CONTINUOUS_DEPENDENCY_REQUIRED: "Gere primeiro a familia curva continua",
+  PROJECT_SCOPE: "Limites e escopo do projeto",
+  TERRAIN_SOURCE: "Fonte de elevacao do terreno",
+  FIELD_BOUNDARY: "Poligonos dos talhoes",
+  ELEVATION_SOURCE: "Nuvem de pontos ou modelo de elevacao",
+  SOIL_HYDROLOGY: "Dados hidrologicos do solo",
+  DESIGN_RAIN: "Chuva de projeto",
+  RECEIVERS: "Saidas de agua e receptores",
+  FLEET_CONFIGURATION: "Configuracao da frota",
+  INTERFERENCES: "Interferencias",
+  PORTALS: "Pontos autorizados de passagem",
+  ROADS: "Carreadores e estradas",
+  LOGISTICS: "Dados de logistica",
+};
+
+function blockerText(items = []) {
+  return items.map((item) => blockerLabels[item] || String(item).toLowerCase().replaceAll("_", " ")).join("; ");
+}
+
+function deliveryLabel(level) {
+  return ({ E0: "Estudo preliminar", E1: "Anteprojeto", E2: "Projeto tecnico", "E0–E3": "Varias etapas" })[level] || level;
 }
 
 async function renderProductsStep(project) {
@@ -840,8 +885,8 @@ async function renderProductsStep(project) {
         const { gate, ready } = productReadiness(readiness, product);
         const blocked = !ready;
         const isSelected = selected.has(product.id) && !blocked;
-        const blockers = gate?.blockers?.length ? gate.blockers.join(", ") : product.requires.join(", ");
-        return `<article class="product-card ${isSelected ? "is-selected" : ""} ${blocked ? "is-disabled" : ""}" data-product-id="${product.id}" data-blocked="${blocked}" tabindex="${blocked ? "-1" : "0"}"><div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="selection-check">${isSelected ? icon("check") : blocked ? icon("lock") : ""}</span></div><p>${escapeHtml(product.description)}</p><div style="margin-top:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="badge is-info">${escapeHtml(product.level)}</span>${blocked ? `<span class="badge is-danger">Bloqueado</span>` : `<span class="badge is-success">Disponível</span>`}</div>${blocked && blockers ? `<p class="field-help">Pendências: ${escapeHtml(blockers)}</p>` : ""}</article>`;
+        const blockers = gate?.blockers?.length ? blockerText(gate.blockers) : blockerText(product.requires);
+        return `<article class="product-card ${isSelected ? "is-selected" : ""} ${blocked ? "is-disabled" : ""}" data-product-id="${product.id}" data-blocked="${blocked}" tabindex="${blocked ? "-1" : "0"}"><div class="card-title-row"><h3>${escapeHtml(product.name)}</h3><span class="selection-check">${isSelected ? icon("check") : blocked ? icon("lock") : ""}</span></div><p>${escapeHtml(product.description)}</p><div style="margin-top:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="badge is-info">${escapeHtml(deliveryLabel(product.level))}</span>${blocked ? `<span class="badge is-danger">Bloqueado</span>` : `<span class="badge is-success">Disponível</span>`}</div>${blocked && blockers ? `<p class="field-help">Pendências: ${escapeHtml(blockers)}</p>` : ""}</article>`;
       }).join("")}</div>
     </section>
     <div class="form-actions"><button class="button" data-go-step="configure" type="button">${icon("arrow-left")} Voltar</button><button class="button is-primary" id="continue-products" type="button">Revisar execução ${icon("arrow-right")}</button></div>`;
@@ -895,7 +940,7 @@ async function renderRunStep(project) {
               <div class="stat-block"><div class="stat-top"><span>Limite atual</span>${icon("shield-check")}</div><strong style="display:block;margin-top:9px;font-size:12px">${escapeHtml(readiness.maximum_delivery_level || "Não pronto")}</strong></div>
             </div>
             <div class="section-head" style="margin-top:20px"><div><h2>Produtos solicitados</h2></div></div>
-            <div class="readiness-list">${productStates.map(({ product, ready, gate }) => `<div class="readiness-row"><div class="readiness-copy"><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(ready ? product.description : gate?.blockers?.join(", ") || "Produto indisponível para os insumos atuais")}</small></div>${badge(ready ? "READY" : "BLOCKED", ready ? product.level : "Bloqueado")}</div>`).join("") || emptyCompact("Nenhum produto selecionado")}</div>
+            <div class="readiness-list">${productStates.map(({ product, ready, gate }) => `<div class="readiness-row"><div class="readiness-copy"><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(ready ? product.description : blockerText(gate?.blockers) || "Produto indisponível para os insumos atuais")}</small></div>${badge(ready ? "READY" : "BLOCKED", ready ? deliveryLabel(product.level) : "Bloqueado")}</div>`).join("") || emptyCompact("Nenhum produto selecionado")}</div>
             ${compiledRequest ? `<div class="callout is-success" style="margin-top:14px">${icon("fingerprint")}<div><strong>Pedido ${escapeHtml(compiledRequest.id)}</strong><span class="mono">SHA-256 ${escapeHtml(compiledRequest.hash)}</span></div></div>` : `<div class="callout is-warning" style="margin-top:14px">${icon("file-warning")}<div><strong>${latestRequest ? "O escopo mudou desde o último pedido." : "O pedido ainda será compilado."}</strong>Compile para congelar os dados, parâmetros, produtos e versões desta rodada.</div></div>`}
           </div>
         </section>
@@ -906,7 +951,7 @@ async function renderRunStep(project) {
       </div>
       <aside class="content-aside">
         <section class="panel"><div class="panel-header"><h3>Gates da execução</h3></div><div class="panel-body"><div class="checklist">
-          ${minimumDataCheck(engineId === "project_hydrology_screening" ? "Evento PCX1 completo" : "Dados mínimos E0", engineId === "project_hydrology_screening" || readiness.maximum_delivery_level !== "NOT_READY", engineId === "project_hydrology_screening" ? "Área, CN, fonte e hietograma" : readiness.maximum_delivery_level || "Não pronto")}
+          ${minimumDataCheck(engineId === "project_hydrology_screening" ? "Dados da chuva completos" : "Dados mínimos E0", engineId === "project_hydrology_screening" || readiness.maximum_delivery_level !== "NOT_READY", engineId === "project_hydrology_screening" ? "Área, comportamento do solo, fonte e chuva no tempo" : readiness.maximum_delivery_level || "Não pronto")}
           ${minimumDataCheck("Produtos selecionados", products.length > 0, `${products.length} produto(s)`) }
           ${minimumDataCheck("Configuração salva", Boolean(configuration.preset_id), configuration.preset_id || "Escolha um preset")}
           ${minimumDataCheck("Produtos liberados", productStates.length > 0 && productStates.every((item) => item.ready), productStates.every((item) => item.ready) ? "Readiness confirmado" : "Há produto bloqueado")}
@@ -1016,7 +1061,13 @@ function renderNoScenarioFocus(artifacts, run) {
 
 function renderHydrologyFocus(run) {
   const summary = run.result_summary || {};
-  return `<section class="panel"><div class="panel-header"><div><h2>Chuva-excesso PCX1</h2><p>Resultado do evento congelado no pedido; nao representa vazao de pico ou capacidade hidraulica.</p></div>${badge("LIMITED", "Triagem")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Chuva-excesso", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Metodo NRCS-CN")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes do roteamento")}${statBlock("Coeficiente do evento", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Nao e parametro universal")}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>Bloqueios preservados</strong>${escapeHtml((summary.blocker_codes || []).join(", ") || "Hidrograma, secoes e receptores ainda nao avaliados.")}</div></div></div></section>`;
+  const hydrograph = summary.peak_flow_m3_s != null
+    ? `${statBlock("Vazao maxima estimada", `${Number(summary.peak_flow_m3_s).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} m3/s`, "activity", "Hidrograma preliminar")}${statBlock("Tempo ate o pico", `${Number(summary.time_to_peak_minutes).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} min`, "clock-3", "Desde o inicio da chuva")}`
+    : "";
+  const pending = summary.peak_flow_m3_s == null
+    ? "Vazao ao longo do tempo, percurso da agua, capacidade das estruturas e seguranca da saida."
+    : "Percurso da agua, propagacao em canais, capacidade das estruturas e seguranca da saida.";
+  return `<section class="panel"><div class="panel-header"><div><h2>Resposta da area a chuva</h2><p>Resultado do evento congelado no pedido; ainda nao representa dimensionamento de canais ou estruturas.</p></div>${badge("LIMITED", "Estudo preliminar")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Parcela que escoa", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Estimativa pelo solo e cobertura")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes de percorrer a bacia")}${statBlock("Proporcao escoada", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Varia conforme o evento")}${hydrograph}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>O que ainda precisa ser calculado</strong>${pending}</div></div></div></section>`;
 }
 
 function renderTopographyFocus(artifacts) {

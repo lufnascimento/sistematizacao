@@ -53,3 +53,6 @@ jobs:
 
       - name: Run PCX1 rainfall-excess tests
         run: python -m unittest -v tests.test_pcx1_runoff
+
+      - name: Run preliminary hydrograph tests
+        run: python -m unittest -v tests.test_pcx2_hydrograph

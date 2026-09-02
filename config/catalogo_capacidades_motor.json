@@ -54,8 +54,19 @@
       "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT"],
       "required_capabilities": ["PCX0_MASS_BALANCE_KERNEL"],
       "outputs": ["PCX1_RAINFALL_EXCESS_HYETOGRAPH"],
-      "blocker_code": "PCX_HYDROGRAPH_NOT_IMPLEMENTED",
-      "next_implementation": "Gerar hidrograma com Tc/lag declarado, validar o metodo por projeto e propagar por alcances."
+      "blocker_code": "PCX_HYDROGRAPH_OPTIONAL_SEPARATE_PRODUCT",
+      "next_implementation": "Validar o metodo e os parametros por projeto e entregar os intervalos ao hidrograma preliminar quando solicitado."
+    },
+    {
+      "id": "PCX2_PRELIMINARY_HYDROGRAPH_KERNEL",
+      "title": "Hidrograma preliminar com resposta triangular e conservacao de volume",
+      "domain": "HYDROLOGY",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT"],
+      "required_capabilities": ["PCX1_RAINFALL_EXCESS_KERNEL"],
+      "outputs": ["PRELIMINARY_HYDROGRAPH", "PRELIMINARY_PEAK_FLOW"],
+      "blocker_code": "PCX_HYDRAULIC_ROUTING_NOT_IMPLEMENTED",
+      "next_implementation": "Derivar ou validar o tempo de resposta, propagar vazoes por alcances e testar secoes, receptores e falhas."
     },
     {
       "id": "PCE_ENGINE",
@@ -85,10 +96,10 @@
       "domain": "HYDROLOGY",
       "declared_status": "NOT_IMPLEMENTED",
       "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
-      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL", "PCX1_RAINFALL_EXCESS_KERNEL"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL", "PCX1_RAINFALL_EXCESS_KERNEL", "PCX2_PRELIMINARY_HYDROGRAPH_KERNEL"],
       "outputs": ["PCX_MASS_BALANCE", "HYDROGRAPH", "HYDRAULIC_GATES"],
       "blocker_code": "PCX_SOLVER_NOT_IMPLEMENTED",
-      "next_implementation": "Implementar eventos, chuva-excesso, Tc, roteamento, secoes, receptores, excedencia e incerteza."
+      "next_implementation": "Implementar roteamento por alcance, secoes, receptores, excedencia e incerteza sobre os eventos e hidrogramas ja reproduziveis."
     },
     {
       "id": "C1_CURVA_EMBUTIDA",

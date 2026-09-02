@@ -170,24 +170,82 @@ class PlatformApiTests(unittest.TestCase):
             },
         )
         self.assertEqual(run_response.status_code, 202, run_response.text)
-        run = self.wait_run(run_response.json()["id"])
+        run = self.wait_run(run_response.json()["id"], timeout=20.0)
         self.assertEqual(run["status"], "SUCCEEDED", run)
         self.assertEqual(run["result_summary"]["total_rainfall_excess_mm"], 15)
         self.assertFalse(run["result_summary"]["guidance_authorized"])
         artifacts = self.client.get(f"/api/runs/{run['id']}/artifacts").json()["items"]
         self.assertEqual({item["filename"] for item in artifacts}, {
-            "pcx1_rainfall_excess.json", "pcx1_rainfall_excess_intervals.csv"
+            "resultado_chuva_escoamento.json", "serie_chuva_escoamento.csv"
         })
         manifest_artifact = next(item for item in artifacts if item["filename"].endswith(".json"))
         manifest = self.client.get(manifest_artifact["download_url"]).json()
         self.assertEqual(manifest["release"], "PCX1_NRCS_CN_RAINFALL_EXCESS_ONLY")
-        self.assertIn("PCX_HYDROGRAPH_NOT_IMPLEMENTED", manifest["blocker_codes"])
+        self.assertIn("PCX_HYDROGRAPH_NOT_INCLUDED_IN_THIS_PRODUCT", manifest["blocker_codes"])
 
         missing_request = self.client.post(
             f"/api/projects/{project_id}/runs",
             json={"engine_id": "project_hydrology_screening", "product_ids": ["PCX1_RUNOFF_SCREENING"]},
         )
         self.assertEqual(missing_request.status_code, 409)
+
+    def test_preliminary_hydrograph_runs_with_plain_language_products(self) -> None:
+        project_id = self.create_project()["id"]
+        configuration = self.client.get(f"/api/projects/{project_id}/configuration").json()
+        configuration["hydrology_screening"] = {
+            "enabled": True,
+            "method": "NRCS_CURVE_NUMBER_EVENT_SCREENING",
+            "catchment_area_ha": 10,
+            "curve_number": 100,
+            "initial_abstraction_ratio": 0.2,
+            "parameter_evidence_state": "SYNTHETIC_TEST_ONLY",
+            "parameter_source_id": "analytic-hydrograph-test",
+            "rainfall_intervals": [
+                {"duration_s": 600, "rainfall_mm": 5},
+                {"duration_s": 600, "rainfall_mm": 10},
+            ],
+            "hydrograph_enabled": True,
+            "catchment_lag_minutes": 30,
+            "hydrograph_step_minutes": 1,
+            "triangle_base_to_peak_ratio": 2.67,
+        }
+        response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
+        self.assertEqual(response.status_code, 200, response.text)
+        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"]
+        request_response = self.client.post(
+            f"/api/projects/{project_id}/requests",
+            json={"name": "Resposta da chuva", "product_ids": product_ids},
+        )
+        self.assertEqual(request_response.status_code, 201, request_response.text)
+        run_response = self.client.post(
+            f"/api/projects/{project_id}/runs",
+            json={
+                "engine_id": "project_hydrology_screening",
+                "request_id": request_response.json()["id"],
+                "product_ids": product_ids,
+            },
+        )
+        self.assertEqual(run_response.status_code, 202, run_response.text)
+        run = self.wait_run(run_response.json()["id"], timeout=20.0)
+        self.assertEqual(run["status"], "SUCCEEDED", run)
+        self.assertGreater(run["result_summary"]["peak_flow_m3_s"], 0)
+        self.assertEqual(run["result_summary"]["hydrograph_mass_balance_status"], "PASS")
+        artifacts = self.client.get(f"/api/runs/{run['id']}/artifacts").json()["items"]
+        self.assertEqual(
+            {item["filename"] for item in artifacts},
+            {
+                "resultado_chuva_escoamento.json",
+                "serie_chuva_escoamento.csv",
+                "hidrograma_preliminar.json",
+                "hidrograma_preliminar.csv",
+                "grafico_hidrograma_preliminar.png",
+            },
+        )
+        hydrograph_artifact = next(item for item in artifacts if item["filename"] == "hidrograma_preliminar.json")
+        hydrograph = self.client.get(hydrograph_artifact["download_url"]).json()
+        self.assertEqual(hydrograph["mass_balance_status"], "PASS")
+        self.assertFalse(hydrograph["guidance_authorized"])
+        self.assertNotIn("PCX_HYDROGRAPH_NOT_INCLUDED_IN_THIS_PRODUCT", run["result_summary"]["blocker_codes"])
 
     def test_demo_only_publishes_whitelisted_existing_artifacts(self) -> None:
         project = self.create_project()
@@ -311,6 +369,7 @@ class PlatformApiTests(unittest.TestCase):
                 "CF0_CONTINUOUS",
                 "C1_EMBEDDED_SCREENING",
                 "PCX1_RUNOFF_SCREENING",
+                "PCX2_HYDROGRAPH_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
@@ -322,7 +381,7 @@ class PlatformApiTests(unittest.TestCase):
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
-        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING"])
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"])
         self.assertEqual(self.client.get("/api/openapi.json").status_code, 200)
         self.assertEqual(self.client.get("/api/docs").status_code, 200)
 

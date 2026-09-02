@@ -177,7 +177,7 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                 product_blockers.append("HYDRAULIC_RECEIVER_MISSING")
         implementation = definition["implementation"]
         client_engine = definition.get("client_engine")
-        if product_id == "PCX1_RUNOFF_SCREENING":
+        if product_id in {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING"}:
             hydrology = configuration.get("hydrology_screening", {})
             if hydrology.get("enabled") is not True:
                 product_blockers.append("PCX1_CONFIGURATION_NOT_ENABLED")
@@ -187,6 +187,13 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                     break
             if not hydrology.get("rainfall_intervals"):
                 product_blockers.append("PCX1_RAINFALL_INTERVALS_REQUIRED")
+            if product_id == "PCX2_HYDROGRAPH_SCREENING":
+                if "PCX1_RUNOFF_SCREENING" not in selected_product_ids:
+                    product_blockers.append("PCX1_RUNOFF_DEPENDENCY_REQUIRED")
+                if hydrology.get("hydrograph_enabled") is not True:
+                    product_blockers.append("HYDROGRAPH_CONFIGURATION_NOT_ENABLED")
+                if hydrology.get("catchment_lag_minutes") in (None, ""):
+                    product_blockers.append("CATCHMENT_LAG_REQUIRED")
         if product_id in {"SULCATION_E0", "CF0_CONTINUOUS", "C1_EMBEDDED_SCREENING"}:
             if not configuration["topography"].get("field_id_column"):
                 product_blockers.append("FIELD_ID_COLUMN_REQUIRED")
@@ -305,6 +312,9 @@ _BLOCKER_MESSAGES = {
     "PCX1_CONFIGURATION_NOT_ENABLED": "Habilite a triagem PCX1 na configuracao do projeto.",
     "PCX1_PARAMETERS_INCOMPLETE": "Informe area contribuinte, Curve Number e a fonte dos parametros.",
     "PCX1_RAINFALL_INTERVALS_REQUIRED": "Informe ao menos um intervalo do hietograma de chuva.",
+    "PCX1_RUNOFF_DEPENDENCY_REQUIRED": "Selecione tambem o produto Chuva que vira escoamento.",
+    "HYDROGRAPH_CONFIGURATION_NOT_ENABLED": "Habilite o hidrograma preliminar na configuracao.",
+    "CATCHMENT_LAG_REQUIRED": "Informe o tempo de resposta da bacia com sua fonte.",
 }
 
 

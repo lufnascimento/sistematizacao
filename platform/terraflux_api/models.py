@@ -74,6 +74,10 @@ class HydrologyScreeningConfiguration(StrictModel):
     rainfall_intervals: list[RainfallIntervalConfiguration] = Field(
         default_factory=list, max_length=10_000
     )
+    hydrograph_enabled: bool = False
+    catchment_lag_minutes: float | None = Field(default=None, gt=0.0, le=100_000.0)
+    hydrograph_step_minutes: float = Field(default=1.0, gt=0.0, le=10_000.0)
+    triangle_base_to_peak_ratio: float = Field(default=2.67, gt=1.0, le=20.0)
 
     @model_validator(mode="after")
     def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
@@ -87,6 +91,8 @@ class HydrologyScreeningConfiguration(StrictModel):
             raise ValueError("rainfall_intervals are required when hydrology screening is enabled")
         if not self.parameter_source_id:
             raise ValueError("parameter_source_id is required when hydrology screening is enabled")
+        if self.hydrograph_enabled and self.catchment_lag_minutes is None:
+            raise ValueError("catchment_lag_minutes is required when hydrograph is enabled")
         return self
 
 
