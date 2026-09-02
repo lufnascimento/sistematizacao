@@ -13,8 +13,8 @@ CAPACITY_LIMITATIONS = (
     "NO_BACKWATER_OR_DOWNSTREAM_CONTROL",
     "NO_TRANSITIONS_OR_LOCAL_LOSSES",
     "NO_SEDIMENT_OR_DEBRIS",
-    "NO_DEGRADED_SECTION_UNLESS_EXPLICITLY_PROVIDED",
-    "NO_ADMISSIBLE_VELOCITY_OR_SHEAR_APPROVAL",
+    "SECTION_CONDITION_IS_USER_DECLARED",
+    "DECLARED_STABILITY_LIMITS_ARE_SCREENING_ONLY",
     "NOT_PROJECT_EXECUTIVE",
     "NOT_GUIDANCE_AUTHORIZED",
 )
@@ -75,9 +75,11 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
     seen = set()
     for index, reach in enumerate(reaches):
         reach_id = str(reach.get("id") or "").strip()
-        if not reach_id or reach_id in seen:
-            raise ValueError("reach ids must be present and unique")
-        seen.add(reach_id)
+        condition_state = str(reach.get("condition_state") or "CURRENT").strip().upper()
+        section_key = (reach_id, condition_state)
+        if not reach_id or condition_state not in {"NEW", "CURRENT", "DEGRADED"} or section_key in seen:
+            raise ValueError("reach and condition combinations must be valid and unique")
+        seen.add(section_key)
         values = {}
         for key in ("peak_flow_m3_s", "bottom_width_m", "side_slope_h_to_v", "slope_m_m", "manning_n", "maximum_flow_depth_m"):
             value = reach.get(key)
@@ -103,8 +105,34 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
         else:
             velocity = froude = shear = 0.0
         ratio = values["peak_flow_m3_s"] / capacity if capacity else math.inf
+        velocity_limit = reach.get("maximum_admissible_velocity_m_s")
+        shear_limit = reach.get("maximum_admissible_shear_pa")
+        for key, value in (("maximum_admissible_velocity_m_s", velocity_limit), ("maximum_admissible_shear_pa", shear_limit)):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)) or float(value) <= 0):
+                raise ValueError(f"reaches[{index}].{key} must be positive when provided")
+        velocity_limit = float(velocity_limit) if velocity_limit is not None else None
+        shear_limit = float(shear_limit) if shear_limit is not None else None
+        limit_source_id = str(reach.get("stability_limit_source_id") or "").strip() or None
+        limit_evidence_state = str(reach.get("stability_limit_evidence_state") or "").strip() or None
+        if (velocity_limit is not None or shear_limit is not None) and (
+            not limit_source_id or limit_evidence_state not in {"SYSTEM_REFERENCE", "PROJECT_EVIDENCE"}
+        ):
+            raise ValueError("declared stability limits require valid source lineage")
+        velocity_exceeded = velocity_limit is not None and velocity > velocity_limit
+        shear_exceeded = shear_limit is not None and shear > shear_limit
+        if velocity_limit is None and shear_limit is None:
+            stability_status = "NOT_EVALUATED"
+        elif velocity_exceeded and shear_exceeded:
+            stability_status = "EXCEEDS_BOTH_DECLARED_LIMITS"
+        elif velocity_exceeded:
+            stability_status = "EXCEEDS_DECLARED_VELOCITY_LIMIT"
+        elif shear_exceeded:
+            stability_status = "EXCEEDS_DECLARED_SHEAR_LIMIT"
+        else:
+            stability_status = "WITHIN_DECLARED_LIMITS"
         results.append({
             "id": reach_id,
+            "condition_state": condition_state,
             **values,
             "capacity_m3_s": capacity,
             "capacity_ratio": ratio,
@@ -114,7 +142,14 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             "velocity_at_peak_m_s": velocity,
             "froude_number_at_peak": froude,
             "boundary_shear_at_peak_pa": shear,
+            "maximum_admissible_velocity_m_s": velocity_limit,
+            "maximum_admissible_shear_pa": shear_limit,
+            "stability_limit_source_id": limit_source_id,
+            "stability_limit_evidence_state": limit_evidence_state,
+            "velocity_limit_ratio": velocity / velocity_limit if velocity_limit else None,
+            "shear_limit_ratio": shear / shear_limit if shear_limit else None,
             "preliminary_capacity_status": "WITHIN_DECLARED_SECTION" if ratio <= 1 else "EXCEEDS_DECLARED_SECTION",
+            "preliminary_stability_status": stability_status,
             "erosion_safety_approved": False,
         })
     return {
@@ -123,10 +158,18 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
         "reach_count": len(results),
         "within_capacity_count": sum(item["capacity_ratio"] <= 1 for item in results),
         "exceeded_capacity_count": sum(item["capacity_ratio"] > 1 for item in results),
+        "stability_evaluated_count": sum(item["preliminary_stability_status"] != "NOT_EVALUATED" for item in results),
+        "stability_exceeded_count": sum(item["preliminary_stability_status"].startswith("EXCEEDS_") for item in results),
+        "condition_counts": {
+            state: sum(item["condition_state"] == state for item in results)
+            for state in ("NEW", "CURRENT", "DEGRADED")
+        },
         "reaches": results,
         "backwater_evaluated": False,
         "unsteady_flow_evaluated": False,
-        "admissible_velocity_or_shear_evaluated": False,
+        "admissible_velocity_or_shear_evaluated": any(
+            item["preliminary_stability_status"] != "NOT_EVALUATED" for item in results
+        ),
         "receiver_approved": False,
         "project_executive_authorized": False,
         "guidance_authorized": False,
@@ -137,8 +180,14 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
 def validate_capacity_release(result: Mapping[str, Any]) -> None:
     if result.get("release") != CAPACITY_RELEASE:
         raise ValueError("capacity release changed")
-    for key in ("backwater_evaluated", "unsteady_flow_evaluated", "admissible_velocity_or_shear_evaluated", "receiver_approved", "project_executive_authorized", "guidance_authorized"):
+    for key in ("backwater_evaluated", "unsteady_flow_evaluated", "receiver_approved", "project_executive_authorized", "guidance_authorized"):
         if result.get(key) is not False:
             raise ValueError(f"{key} must remain false")
+    if result.get("admissible_velocity_or_shear_evaluated") is not any(
+        item.get("preliminary_stability_status") != "NOT_EVALUATED" for item in result.get("reaches", [])
+    ):
+        raise ValueError("stability evaluation flag disagrees with reaches")
+    if any(item.get("erosion_safety_approved") is not False for item in result.get("reaches", [])):
+        raise ValueError("erosion safety must remain unapproved")
     if not set(CAPACITY_LIMITATIONS).issubset(set(result.get("limitations", []))):
         raise ValueError("capacity limitations are incomplete")

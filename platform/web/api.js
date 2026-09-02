@@ -938,6 +938,7 @@ export const systemCatalog = {
         { id: "hydrology.routing_source_node_id", name: "No onde a agua entra na rede", type: "text", unit: null, default: "ENTRADA", source: "Cliente" },
         { id: "hydrology.routing_reaches_json", name: "Trechos e tempos de viagem", type: "json", unit: null, default: "[]", source: "Cliente" },
         { id: "hydrology.capacity_enabled", name: "Verificar capacidade dos trechos", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.stability_reference_model", name: "Referencia para limite de velocidade", type: "select", options: [{ value: "NO_ASSUMED_LIMIT", label: "Sem limite presumido" }, { value: "NRCS_GRASS_SPARSE_0P9_REFERENCE", label: "Vegetacao esparsa - 0,9 m/s" }, { value: "NRCS_GRASS_SEEDED_0P9_REFERENCE", label: "Vegetacao semeada - 0,9 m/s" }, { value: "NRCS_GOOD_SOD_1P5_REFERENCE", label: "Cobertura densa estabelecida - 1,5 m/s" }, { value: "CUSTOM_PROJECT_LIMITS", label: "Limites proprios por trecho" }], default: "NO_ASSUMED_LIMIT", source: "Sistema" },
         { id: "hydrology.reach_sections_json", name: "Secoes e condicoes dos trechos", type: "json", unit: null, default: "[]", source: "Cliente" },
       ],
     },
@@ -1064,6 +1065,12 @@ function liveConfiguration(configuration) {
       "hydrology.routing_source_node_id": configuration.hydrology_screening?.routing_source_node_id || "ENTRADA",
       "hydrology.routing_reaches_json": JSON.stringify(configuration.hydrology_screening?.routing_reaches || [], null, 2),
       "hydrology.capacity_enabled": configuration.hydrology_screening?.capacity_enabled || false,
+      "hydrology.stability_reference_model": (() => {
+        const sources = [...new Set((configuration.hydrology_screening?.reach_sections || []).map((item) => item.stability_limit_source_id).filter(Boolean))];
+        return sources.length === 1 && ["NRCS_GRASS_SPARSE_0P9_REFERENCE", "NRCS_GRASS_SEEDED_0P9_REFERENCE", "NRCS_GOOD_SOD_1P5_REFERENCE"].includes(sources[0])
+          ? sources[0]
+          : sources.length ? "CUSTOM_PROJECT_LIMITS" : "NO_ASSUMED_LIMIT";
+      })(),
       "hydrology.reach_sections_json": JSON.stringify(configuration.hydrology_screening?.reach_sections || [], null, 2),
     },
     selected_product_ids: configuration.selected_product_ids,
@@ -1115,6 +1122,17 @@ function applyLiveConfiguration(current, payload) {
       throw new Error("A lista de secoes dos trechos nao e um JSON valido.");
     }
     if (!Array.isArray(reachSections)) throw new Error("As secoes devem formar uma lista.");
+    const referenceModels = {
+      NRCS_GRASS_SPARSE_0P9_REFERENCE: 0.9,
+      NRCS_GRASS_SEEDED_0P9_REFERENCE: 0.9,
+      NRCS_GOOD_SOD_1P5_REFERENCE: 1.5,
+    };
+    const selectedReference = values["hydrology.stability_reference_model"];
+    if (referenceModels[selectedReference]) {
+      reachSections = reachSections.map((section) => section.maximum_admissible_velocity_m_s == null
+        ? { ...section, maximum_admissible_velocity_m_s: referenceModels[selectedReference], stability_limit_source_id: selectedReference, stability_limit_evidence_state: "SYSTEM_REFERENCE" }
+        : section);
+    }
   }
   current.hydrology_screening = {
     enabled: hydrologyEnabled,

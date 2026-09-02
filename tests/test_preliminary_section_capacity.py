@@ -25,12 +25,13 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
         for field in (
             "backwater_evaluated",
             "unsteady_flow_evaluated",
-            "admissible_velocity_or_shear_evaluated",
             "receiver_approved",
             "project_executive_authorized",
             "guidance_authorized",
         ):
             self.assertFalse(properties[field]["const"])
+        self.assertEqual(properties["admissible_velocity_or_shear_evaluated"]["type"], "boolean")
+        self.assertFalse(properties["reaches"]["items"]["properties"]["erosion_safety_approved"]["const"])
 
     def test_rectangular_manning_discharge_and_inverse_depth(self) -> None:
         discharge = manning_discharge_m3_s(1.0, 2.0, 0.0, 0.01, 0.03)
@@ -49,6 +50,25 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
         self.assertEqual(result["exceeded_capacity_count"], 1)
         self.assertFalse(result["reaches"][0]["erosion_safety_approved"])
         validate_capacity_release(result)
+
+    def test_condition_states_and_declared_stability_limits_are_compared(self) -> None:
+        base = {"id": "T1", "peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "stability_limit_source_id": "regional-pack", "stability_limit_evidence_state": "SYSTEM_REFERENCE"}
+        result = check_reach_capacities([
+            {**base, "condition_state": "NEW", "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000},
+            {**base, "condition_state": "DEGRADED", "maximum_flow_depth_m": 0.2, "maximum_admissible_velocity_m_s": 0.01, "maximum_admissible_shear_pa": 0.01},
+        ])
+        self.assertEqual(result["condition_counts"], {"NEW": 1, "CURRENT": 0, "DEGRADED": 1})
+        self.assertEqual(result["stability_evaluated_count"], 2)
+        self.assertEqual(result["stability_exceeded_count"], 1)
+        self.assertEqual(result["reaches"][0]["preliminary_stability_status"], "WITHIN_DECLARED_LIMITS")
+        self.assertEqual(result["reaches"][1]["preliminary_stability_status"], "EXCEEDS_BOTH_DECLARED_LIMITS")
+        self.assertTrue(result["admissible_velocity_or_shear_evaluated"])
+        self.assertTrue(all(item["erosion_safety_approved"] is False for item in result["reaches"]))
+        validate_capacity_release(result)
+
+    def test_declared_stability_limit_requires_lineage(self) -> None:
+        with self.assertRaisesRegex(ValueError, "source lineage"):
+            check_reach_capacities([{"id": "T1", "peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "maximum_admissible_velocity_m_s": 1.0}])
 
     def test_invalid_inputs_and_release_promotion_fail_closed(self) -> None:
         with self.assertRaises(ValueError):

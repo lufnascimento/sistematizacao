@@ -119,6 +119,13 @@ def create_app(
             raise HTTPException(status_code=503, detail="system preset catalog is unavailable")
         return json.loads(path.read_text(encoding="utf-8"))
 
+    @api.get("/catalog/hydraulic-stability-models")
+    def hydraulic_stability_catalog() -> dict[str, Any]:
+        path = workspace / "config" / "catalogo_limites_estabilidade_hidraulica.json"
+        if not path.is_file():
+            raise HTTPException(status_code=503, detail="hydraulic stability reference catalog is unavailable")
+        return json.loads(path.read_text(encoding="utf-8"))
+
     @api.post("/projects", status_code=status.HTTP_201_CREATED)
     def create_project(payload: ProjectCreate) -> dict[str, Any]:
         now = utc_now()

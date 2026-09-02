@@ -27,6 +27,14 @@ class PlatformApiTests(unittest.TestCase):
         (self.workspace / "config" / "catalogo_presets_sistema.json").write_text(
             json.dumps({"schema_version": "test", "package_profiles": []}), encoding="utf-8"
         )
+        (self.workspace / "config" / "catalogo_limites_estabilidade_hidraulica.json").write_text(
+            json.dumps({
+                "schema_version": "test",
+                "default_model_id": "NO_ASSUMED_LIMIT",
+                "models": [{"id": "NO_ASSUMED_LIMIT", "requires_project_confirmation": True}],
+            }),
+            encoding="utf-8",
+        )
         self.app = create_app(self.data_root, self.workspace, max_upload_bytes=1024 * 1024)
         self.client_context = TestClient(self.app)
         self.client = self.client_context.__enter__()
@@ -216,8 +224,8 @@ class PlatformApiTests(unittest.TestCase):
             ],
             "capacity_enabled": True,
             "reach_sections": [
-                {"id": "T1", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6},
-                {"id": "T2", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2},
+                {"id": "T1", "condition_state": "CURRENT", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "SYSTEM_REFERENCE"},
+                {"id": "T2", "condition_state": "DEGRADED", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2, "maximum_admissible_velocity_m_s": 0.01, "maximum_admissible_shear_pa": 0.01, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "PROJECT_EVIDENCE"},
             ],
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
@@ -245,6 +253,9 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["routed_reach_count"], 2)
         self.assertEqual(run["result_summary"]["capacity_within_count"], 1)
         self.assertEqual(run["result_summary"]["capacity_exceeded_count"], 1)
+        self.assertEqual(run["result_summary"]["stability_evaluated_count"], 2)
+        self.assertEqual(run["result_summary"]["stability_exceeded_count"], 1)
+        self.assertEqual(run["result_summary"]["section_condition_counts"]["DEGRADED"], 1)
         self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
         logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
         self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))
@@ -406,6 +417,9 @@ class PlatformApiTests(unittest.TestCase):
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
         self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"])
+        stability_models = self.client.get("/api/catalog/hydraulic-stability-models").json()
+        self.assertEqual(stability_models["default_model_id"], "NO_ASSUMED_LIMIT")
+        self.assertTrue(all(item["requires_project_confirmation"] for item in stability_models["models"]))
         self.assertEqual(self.client.get("/api/openapi.json").status_code, 200)
         self.assertEqual(self.client.get("/api/docs").status_code, 200)
 

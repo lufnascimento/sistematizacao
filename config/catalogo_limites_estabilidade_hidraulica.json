@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "terraflux-hydraulic-stability-reference-models",
+  "default_model_id": "NO_ASSUMED_LIMIT",
+  "selection_policy": "REFERENCE_ONLY_NEVER_PROJECT_APPROVAL",
+  "models": [
+    {
+      "id": "NO_ASSUMED_LIMIT",
+      "name": "Sem limite presumido",
+      "maximum_admissible_velocity_m_s": null,
+      "maximum_admissible_shear_pa": null,
+      "evidence_state": null,
+      "source_url": null,
+      "applicability": "Padrao seguro quando solo, revestimento, cobertura e manutencao nao foram confirmados.",
+      "requires_project_confirmation": true
+    },
+    {
+      "id": "NRCS_GRASS_SPARSE_0P9_REFERENCE",
+      "name": "Vegetacao esparsa - referencia 0,9 m/s",
+      "maximum_admissible_velocity_m_s": 0.9,
+      "maximum_admissible_shear_pa": null,
+      "evidence_state": "SYSTEM_REFERENCE",
+      "source_url": "https://efotg.sc.egov.usda.gov/references/Public/LA/EFH-Ch07.pdf",
+      "applicability": "Referencia NRCS para cobertura esparsa; nao transferir sem confirmar solo, especie, estabelecimento, duracao e manutencao.",
+      "requires_project_confirmation": true
+    },
+    {
+      "id": "NRCS_GRASS_SEEDED_0P9_REFERENCE",
+      "name": "Vegetacao semeada - referencia conservadora 0,9 m/s",
+      "maximum_admissible_velocity_m_s": 0.9,
+      "maximum_admissible_shear_pa": null,
+      "evidence_state": "SYSTEM_REFERENCE",
+      "source_url": "https://efotg.sc.egov.usda.gov/references/Public/LA/EFH-Ch07.pdf",
+      "applicability": "Extremo inferior da faixa NRCS de 0,9 a 1,2 m/s para estabelecimento por semeadura.",
+      "requires_project_confirmation": true
+    },
+    {
+      "id": "NRCS_GOOD_SOD_1P5_REFERENCE",
+      "name": "Cobertura densa estabelecida - referencia 1,5 m/s",
+      "maximum_admissible_velocity_m_s": 1.5,
+      "maximum_admissible_shear_pa": null,
+      "evidence_state": "SYSTEM_REFERENCE",
+      "source_url": "https://efotg.sc.egov.usda.gov/references/Public/LA/EFH-Ch07.pdf",
+      "applicability": "Extremo inferior da faixa NRCS de 1,5 a 1,8 m/s para cobertura bem estabelecida e de boa qualidade.",
+      "requires_project_confirmation": true
+    },
+    {
+      "id": "CUSTOM_PROJECT_LIMITS",
+      "name": "Limites proprios do projeto",
+      "maximum_admissible_velocity_m_s": null,
+      "maximum_admissible_shear_pa": null,
+      "evidence_state": "PROJECT_EVIDENCE",
+      "source_url": null,
+      "applicability": "Valores informados por trecho com fonte, responsavel e revisao do projeto.",
+      "requires_project_confirmation": true
+    }
+  ],
+  "limitations": [
+    "Nenhum modelo do sistema aprova seguranca erosiva.",
+    "Tensao admissivel nao recebe valor padrao porque depende do material, solo e revestimento locais.",
+    "A duracao do evento e o estado degradado devem ser avaliados antes do projeto executivo.",
+    "Valores de referencia estrangeiros exigem verificacao de aplicabilidade local no Brasil."
+  ]
+}

@@ -70,11 +70,25 @@ class RoutingReachConfiguration(StrictModel):
 
 class ReachSectionConfiguration(StrictModel):
     id: str = Field(min_length=1, max_length=100)
+    condition_state: Literal["NEW", "CURRENT", "DEGRADED"] = "CURRENT"
     bottom_width_m: float = Field(ge=0.0, le=10_000.0)
     side_slope_h_to_v: float = Field(ge=0.0, le=100.0)
     slope_m_m: float = Field(gt=0.0, le=1.0)
     manning_n: float = Field(gt=0.0, le=1.0)
     maximum_flow_depth_m: float = Field(gt=0.0, le=1000.0)
+    maximum_admissible_velocity_m_s: float | None = Field(default=None, gt=0.0, le=100.0)
+    maximum_admissible_shear_pa: float | None = Field(default=None, gt=0.0, le=1_000_000.0)
+    stability_limit_source_id: str | None = Field(default=None, max_length=300)
+    stability_limit_evidence_state: Literal["SYSTEM_REFERENCE", "PROJECT_EVIDENCE"] | None = None
+
+    @model_validator(mode="after")
+    def stability_limits_have_lineage(self) -> "ReachSectionConfiguration":
+        has_limit = self.maximum_admissible_velocity_m_s is not None or self.maximum_admissible_shear_pa is not None
+        if has_limit and (not self.stability_limit_source_id or self.stability_limit_evidence_state is None):
+            raise ValueError("stability limits require source and evidence state")
+        if not has_limit and (self.stability_limit_source_id or self.stability_limit_evidence_state is not None):
+            raise ValueError("stability limit lineage requires at least one declared limit")
+        return self
 
 
 class HydrologyScreeningConfiguration(StrictModel):

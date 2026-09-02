@@ -499,14 +499,26 @@ class JobRunner:
                 raise ValueError("ROUTING_DEPENDENCY_REQUIRED")
             if configuration.get("capacity_enabled") is not True:
                 raise ValueError("SECTION_CONFIGURATION_REQUIRED")
-            sections = {item["id"]: item for item in configuration.get("reach_sections") or []}
+            section_values = configuration.get("reach_sections") or []
             routed_ids = {item["id"] for item in routing_result["reaches"]}
-            if set(sections) != routed_ids:
+            section_keys = {(item["id"], item.get("condition_state", "CURRENT")) for item in section_values}
+            if len(section_keys) != len(section_values):
+                raise ValueError("SECTION_STATES_MUST_BE_UNIQUE_PER_REACH")
+            if {item["id"] for item in section_values} != routed_ids:
                 raise ValueError("SECTION_IDS_MUST_MATCH_ROUTED_REACH_IDS")
             capacity_inputs = []
             for routed in routing_result["reaches"]:
-                section = sections[routed["id"]]
-                capacity_inputs.append({"id": routed["id"], "peak_flow_m3_s": routed["peak_flow_m3_s"], **{key: section[key] for key in ("bottom_width_m", "side_slope_h_to_v", "slope_m_m", "manning_n", "maximum_flow_depth_m")}})
+                for section in (item for item in section_values if item["id"] == routed["id"]):
+                    capacity_inputs.append({
+                        "id": routed["id"],
+                        "peak_flow_m3_s": routed["peak_flow_m3_s"],
+                        **{key: section.get(key) for key in (
+                            "condition_state", "bottom_width_m", "side_slope_h_to_v", "slope_m_m",
+                            "manning_n", "maximum_flow_depth_m", "maximum_admissible_velocity_m_s",
+                            "maximum_admissible_shear_pa", "stability_limit_source_id",
+                            "stability_limit_evidence_state",
+                        )},
+                    })
             capacity_result = check_reach_capacities(capacity_inputs)
             validate_capacity_release(capacity_result)
             result["blocker_codes"] = [
@@ -521,7 +533,7 @@ class JobRunner:
                 "request_ref": {"id": request["id"], "sha256": request["sha256"]},
                 "source_routing_release": routing_result["release"],
                 "stage_status": "PRELIMINARY_CAPACITY_WITH_EXPLICIT_BLOCKERS",
-                "blocker_codes": ["UNIFORM_FLOW_ASSUMPTION", "BACKWATER_NOT_EVALUATED", "TRANSITIONS_NOT_EVALUATED", "EROSION_LIMITS_NOT_APPROVED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
+                "blocker_codes": ["UNIFORM_FLOW_ASSUMPTION", "BACKWATER_NOT_EVALUATED", "TRANSITIONS_NOT_EVALUATED", "EROSION_SAFETY_NOT_APPROVED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
             })
             capacity_dir = run_dir / "products" / "preliminary_section_capacity"
             capacity_dir.mkdir(parents=True, exist_ok=False)
@@ -529,8 +541,8 @@ class JobRunner:
             capacity_json.write_text(json.dumps(capacity_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             capacity_csv = capacity_dir / "capacidade_por_trecho.csv"
             capacity_csv.write_text(
-                "trecho,vazao_maxima_m3_s,capacidade_m3_s,ocupacao,profundidade_necessaria_m,folga_profundidade_m,velocidade_m_s,tensao_pa,estado\n"
-                + "\n".join(f"{item['id']},{item['peak_flow_m3_s']},{item['capacity_m3_s']},{item['capacity_ratio']},{item['required_normal_depth_m']},{item['depth_margin_m']},{item['velocity_at_peak_m_s']},{item['boundary_shear_at_peak_pa']},{item['preliminary_capacity_status']}" for item in capacity_result["reaches"])
+                "trecho,estado_secao,vazao_maxima_m3_s,capacidade_m3_s,ocupacao,profundidade_necessaria_m,folga_profundidade_m,velocidade_m_s,limite_velocidade_m_s,tensao_pa,limite_tensao_pa,estado_capacidade,estado_estabilidade\n"
+                + "\n".join(f"{item['id']},{item['condition_state']},{item['peak_flow_m3_s']},{item['capacity_m3_s']},{item['capacity_ratio']},{item['required_normal_depth_m']},{item['depth_margin_m']},{item['velocity_at_peak_m_s']},{item['maximum_admissible_velocity_m_s']},{item['boundary_shear_at_peak_pa']},{item['maximum_admissible_shear_pa']},{item['preliminary_capacity_status']},{item['preliminary_stability_status']}" for item in capacity_result["reaches"])
                 + "\n",
                 encoding="utf-8",
             )
@@ -555,6 +567,9 @@ class JobRunner:
                 "routing_outlet_count": len(routing_result["outlet_node_ids"]) if routing_result else None,
                 "capacity_within_count": capacity_result["within_capacity_count"] if capacity_result else None,
                 "capacity_exceeded_count": capacity_result["exceeded_capacity_count"] if capacity_result else None,
+                "stability_evaluated_count": capacity_result["stability_evaluated_count"] if capacity_result else None,
+                "stability_exceeded_count": capacity_result["stability_exceeded_count"] if capacity_result else None,
+                "section_condition_counts": capacity_result["condition_counts"] if capacity_result else None,
                 "guidance_authorized": False,
             },
         )
