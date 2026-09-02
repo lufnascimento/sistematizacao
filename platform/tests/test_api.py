@@ -224,8 +224,8 @@ class PlatformApiTests(unittest.TestCase):
             ],
             "capacity_enabled": True,
             "reach_sections": [
-                {"id": "T1", "condition_state": "CURRENT", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "SYSTEM_REFERENCE"},
-                {"id": "T2", "condition_state": "DEGRADED", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2, "maximum_admissible_velocity_m_s": 0.01, "maximum_admissible_shear_pa": 0.01, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "PROJECT_EVIDENCE"},
+                {"id": "T1", "condition_state": "CURRENT", "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "bankfull_depth_m": 0.8, "required_freeboard_m": 0.15, "maximum_admissible_velocity_m_s": 100, "maximum_admissible_shear_pa": 100000, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "SYSTEM_REFERENCE"},
+                {"id": "T2", "condition_state": "DEGRADED", "bottom_width_m": 0.2, "side_slope_h_to_v": 1.0, "slope_m_m": 0.001, "manning_n": 0.05, "maximum_flow_depth_m": 0.2, "bankfull_depth_m": 0.4, "required_freeboard_m": 0.1, "overflow_path_state": "DECLARED_NOT_REVIEWED", "overflow_receiver_id": "SAIDA_CONTROLADA", "maximum_admissible_velocity_m_s": 0.01, "maximum_admissible_shear_pa": 0.01, "stability_limit_source_id": "analytic-test", "stability_limit_evidence_state": "PROJECT_EVIDENCE"},
             ],
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
@@ -256,6 +256,9 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["stability_evaluated_count"], 2)
         self.assertEqual(run["result_summary"]["stability_exceeded_count"], 1)
         self.assertEqual(run["result_summary"]["section_condition_counts"]["DEGRADED"], 1)
+        self.assertEqual(run["result_summary"]["freeboard_evaluated_count"], 2)
+        self.assertEqual(run["result_summary"]["overtopping_count"], 1)
+        self.assertEqual(run["result_summary"]["overflow_path_declared_count"], 1)
         self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
         logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
         self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))

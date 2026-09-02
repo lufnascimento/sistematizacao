@@ -76,6 +76,10 @@ class ReachSectionConfiguration(StrictModel):
     slope_m_m: float = Field(gt=0.0, le=1.0)
     manning_n: float = Field(gt=0.0, le=1.0)
     maximum_flow_depth_m: float = Field(gt=0.0, le=1000.0)
+    bankfull_depth_m: float | None = Field(default=None, gt=0.0, le=1000.0)
+    required_freeboard_m: float | None = Field(default=None, ge=0.0, le=1000.0)
+    overflow_path_state: Literal["NOT_DECLARED", "DECLARED_NOT_REVIEWED", "PROJECT_REVIEWED"] = "NOT_DECLARED"
+    overflow_receiver_id: str | None = Field(default=None, max_length=200)
     maximum_admissible_velocity_m_s: float | None = Field(default=None, gt=0.0, le=100.0)
     maximum_admissible_shear_pa: float | None = Field(default=None, gt=0.0, le=1_000_000.0)
     stability_limit_source_id: str | None = Field(default=None, max_length=300)
@@ -88,6 +92,17 @@ class ReachSectionConfiguration(StrictModel):
             raise ValueError("stability limits require source and evidence state")
         if not has_limit and (self.stability_limit_source_id or self.stability_limit_evidence_state is not None):
             raise ValueError("stability limit lineage requires at least one declared limit")
+        has_freeboard = self.bankfull_depth_m is not None or self.required_freeboard_m is not None
+        if has_freeboard and (self.bankfull_depth_m is None or self.required_freeboard_m is None):
+            raise ValueError("bankfull depth and required freeboard must be declared together")
+        if self.bankfull_depth_m is not None and self.bankfull_depth_m < self.maximum_flow_depth_m:
+            raise ValueError("bankfull depth cannot be lower than maximum flow depth")
+        if self.bankfull_depth_m is not None and self.maximum_flow_depth_m + self.required_freeboard_m > self.bankfull_depth_m:
+            raise ValueError("maximum flow depth plus required freeboard exceeds bankfull depth")
+        if self.overflow_path_state == "NOT_DECLARED" and self.overflow_receiver_id:
+            raise ValueError("overflow receiver requires a declared overflow path")
+        if self.overflow_path_state != "NOT_DECLARED" and not self.overflow_receiver_id:
+            raise ValueError("declared overflow path requires a receiver id")
         return self
 
 

@@ -9,6 +9,8 @@ profundidade disponivel e profundidade normal requerida para o pico. Tambem
 publica velocidade, numero de Froude e tensao media de contorno como
 diagnosticos. Uma mesma rede pode conter secoes nos estados **nova**, **atual**
 e **degradada**, permitindo comparar perda de capacidade sem duplicar trechos.
+Quando a profundidade ate a margem e a borda livre requerida sao informadas,
+o motor separa margem atendida, margem insuficiente e transbordamento.
 
 Limites de velocidade e tensao podem ser declarados por estado. Cada limite
 exige uma fonte e deve ser marcado como referencia do sistema ou evidencia do
@@ -34,6 +36,10 @@ Exemplo de entrada:
     "slope_m_m": 0.005,
     "manning_n": 0.04,
     "maximum_flow_depth_m": 0.6,
+    "bankfull_depth_m": 0.85,
+    "required_freeboard_m": 0.2,
+    "overflow_path_state": "DECLARED_NOT_REVIEWED",
+    "overflow_receiver_id": "BACIA_SEGURA_01",
     "maximum_admissible_velocity_m_s": 1.2,
     "maximum_admissible_shear_pa": 20.0,
     "stability_limit_source_id": "regra-regional-revisao-3",
@@ -57,8 +63,13 @@ profissional locais. A NRCS ressalta que limites variam com material,
 vegetacao, duracao e condicao do local e recomenda fator de seguranca para
 valores tabelados.
 
-O proximo incremento deve testar borda livre, condicoes de jusante, transicoes
-e caminho de excedencia. Depois disso sera possivel iniciar a comparacao
+Um caminho de excedencia declarado registra o destino pretendido da agua, mas
+nao simula a mancha, a velocidade fora da secao, a erosao no percurso nem a
+capacidade do receptor. Mesmo `PROJECT_REVIEWED` permanece sem aprovacao
+hidraulica nesta entrega.
+
+O proximo incremento deve testar condicoes de jusante e transicoes e gerar a
+geometria espacial do caminho de excedencia. Depois disso sera possivel iniciar a comparacao
 hidraulica das estruturas de curva embutida, base larga/passante e ESD.
 
 Referencias metodologicas:

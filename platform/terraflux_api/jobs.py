@@ -514,7 +514,8 @@ class JobRunner:
                         "peak_flow_m3_s": routed["peak_flow_m3_s"],
                         **{key: section.get(key) for key in (
                             "condition_state", "bottom_width_m", "side_slope_h_to_v", "slope_m_m",
-                            "manning_n", "maximum_flow_depth_m", "maximum_admissible_velocity_m_s",
+                            "manning_n", "maximum_flow_depth_m", "bankfull_depth_m", "required_freeboard_m",
+                            "overflow_path_state", "overflow_receiver_id", "maximum_admissible_velocity_m_s",
                             "maximum_admissible_shear_pa", "stability_limit_source_id",
                             "stability_limit_evidence_state",
                         )},
@@ -533,7 +534,7 @@ class JobRunner:
                 "request_ref": {"id": request["id"], "sha256": request["sha256"]},
                 "source_routing_release": routing_result["release"],
                 "stage_status": "PRELIMINARY_CAPACITY_WITH_EXPLICIT_BLOCKERS",
-                "blocker_codes": ["UNIFORM_FLOW_ASSUMPTION", "BACKWATER_NOT_EVALUATED", "TRANSITIONS_NOT_EVALUATED", "EROSION_SAFETY_NOT_APPROVED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
+                "blocker_codes": ["UNIFORM_FLOW_ASSUMPTION", "BACKWATER_NOT_EVALUATED", "TRANSITIONS_NOT_EVALUATED", "EROSION_SAFETY_NOT_APPROVED", "OVERFLOW_PATH_NOT_SIMULATED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
             })
             capacity_dir = run_dir / "products" / "preliminary_section_capacity"
             capacity_dir.mkdir(parents=True, exist_ok=False)
@@ -541,8 +542,8 @@ class JobRunner:
             capacity_json.write_text(json.dumps(capacity_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             capacity_csv = capacity_dir / "capacidade_por_trecho.csv"
             capacity_csv.write_text(
-                "trecho,estado_secao,vazao_maxima_m3_s,capacidade_m3_s,ocupacao,profundidade_necessaria_m,folga_profundidade_m,velocidade_m_s,limite_velocidade_m_s,tensao_pa,limite_tensao_pa,estado_capacidade,estado_estabilidade\n"
-                + "\n".join(f"{item['id']},{item['condition_state']},{item['peak_flow_m3_s']},{item['capacity_m3_s']},{item['capacity_ratio']},{item['required_normal_depth_m']},{item['depth_margin_m']},{item['velocity_at_peak_m_s']},{item['maximum_admissible_velocity_m_s']},{item['boundary_shear_at_peak_pa']},{item['maximum_admissible_shear_pa']},{item['preliminary_capacity_status']},{item['preliminary_stability_status']}" for item in capacity_result["reaches"])
+                "trecho,estado_secao,vazao_maxima_m3_s,capacidade_m3_s,ocupacao,profundidade_necessaria_m,folga_profundidade_m,profundidade_margem_m,borda_livre_requerida_m,borda_livre_no_pico_m,estado_borda_livre,caminho_excedente,receptor_excedente,velocidade_m_s,limite_velocidade_m_s,tensao_pa,limite_tensao_pa,estado_capacidade,estado_estabilidade\n"
+                + "\n".join(f"{item['id']},{item['condition_state']},{item['peak_flow_m3_s']},{item['capacity_m3_s']},{item['capacity_ratio']},{item['required_normal_depth_m']},{item['depth_margin_m']},{item['bankfull_depth_m']},{item['required_freeboard_m']},{item['actual_freeboard_at_peak_m']},{item['preliminary_freeboard_status']},{item['overflow_path_state']},{item['overflow_receiver_id']},{item['velocity_at_peak_m_s']},{item['maximum_admissible_velocity_m_s']},{item['boundary_shear_at_peak_pa']},{item['maximum_admissible_shear_pa']},{item['preliminary_capacity_status']},{item['preliminary_stability_status']}" for item in capacity_result["reaches"])
                 + "\n",
                 encoding="utf-8",
             )
@@ -570,6 +571,10 @@ class JobRunner:
                 "stability_evaluated_count": capacity_result["stability_evaluated_count"] if capacity_result else None,
                 "stability_exceeded_count": capacity_result["stability_exceeded_count"] if capacity_result else None,
                 "section_condition_counts": capacity_result["condition_counts"] if capacity_result else None,
+                "freeboard_evaluated_count": capacity_result["freeboard_evaluated_count"] if capacity_result else None,
+                "freeboard_shortfall_count": capacity_result["freeboard_shortfall_count"] if capacity_result else None,
+                "overtopping_count": capacity_result["overtopping_count"] if capacity_result else None,
+                "overflow_path_declared_count": capacity_result["overflow_path_declared_count"] if capacity_result else None,
                 "guidance_authorized": False,
             },
         )

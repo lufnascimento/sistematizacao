@@ -32,6 +32,8 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
             self.assertFalse(properties[field]["const"])
         self.assertEqual(properties["admissible_velocity_or_shear_evaluated"]["type"], "boolean")
         self.assertFalse(properties["reaches"]["items"]["properties"]["erosion_safety_approved"]["const"])
+        self.assertFalse(properties["reaches"]["items"]["properties"]["overflow_path_approved"]["const"])
+        self.assertFalse(properties["overflow_paths_approved"]["const"])
 
     def test_rectangular_manning_discharge_and_inverse_depth(self) -> None:
         discharge = manning_discharge_m3_s(1.0, 2.0, 0.0, 0.01, 0.03)
@@ -69,6 +71,26 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
     def test_declared_stability_limit_requires_lineage(self) -> None:
         with self.assertRaisesRegex(ValueError, "source lineage"):
             check_reach_capacities([{"id": "T1", "peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "maximum_admissible_velocity_m_s": 1.0}])
+
+    def test_freeboard_overtopping_and_overflow_path_are_reported(self) -> None:
+        base = {"peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6}
+        result = check_reach_capacities([
+            {"id": "OK", **base, "bankfull_depth_m": 1.0, "required_freeboard_m": 0.2},
+            {"id": "TRANSBORDA", **base, "bankfull_depth_m": 0.7, "required_freeboard_m": 0.1, "peak_flow_m3_s": 5.0, "overflow_path_state": "DECLARED_NOT_REVIEWED", "overflow_receiver_id": "BACIA_01"},
+        ])
+        self.assertEqual(result["freeboard_evaluated_count"], 2)
+        self.assertEqual(result["overtopping_count"], 1)
+        self.assertEqual(result["overflow_path_declared_count"], 1)
+        self.assertEqual(result["reaches"][0]["preliminary_freeboard_status"], "WITHIN_DECLARED_FREEBOARD")
+        self.assertEqual(result["reaches"][1]["preliminary_freeboard_status"], "OVERTOPS_DECLARED_BANK")
+        validate_capacity_release(result)
+
+    def test_overflow_path_requires_receiver_and_freeboard_pair(self) -> None:
+        base = {"id": "T1", "peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6}
+        with self.assertRaisesRegex(ValueError, "declared together"):
+            check_reach_capacities([{**base, "bankfull_depth_m": 1.0}])
+        with self.assertRaisesRegex(ValueError, "declarations disagree"):
+            check_reach_capacities([{**base, "overflow_path_state": "DECLARED_NOT_REVIEWED"}])
 
     def test_invalid_inputs_and_release_promotion_fail_closed(self) -> None:
         with self.assertRaises(ValueError):

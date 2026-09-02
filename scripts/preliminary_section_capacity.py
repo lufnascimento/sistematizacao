@@ -15,6 +15,7 @@ CAPACITY_LIMITATIONS = (
     "NO_SEDIMENT_OR_DEBRIS",
     "SECTION_CONDITION_IS_USER_DECLARED",
     "DECLARED_STABILITY_LIMITS_ARE_SCREENING_ONLY",
+    "OVERFLOW_PATH_IS_DECLARED_NOT_HYDRAULICALLY_SIMULATED",
     "NOT_PROJECT_EXECUTIVE",
     "NOT_GUIDANCE_AUTHORIZED",
 )
@@ -130,6 +131,33 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             stability_status = "EXCEEDS_DECLARED_SHEAR_LIMIT"
         else:
             stability_status = "WITHIN_DECLARED_LIMITS"
+        bankfull_depth = reach.get("bankfull_depth_m")
+        required_freeboard = reach.get("required_freeboard_m")
+        if (bankfull_depth is None) != (required_freeboard is None):
+            raise ValueError("bankfull depth and required freeboard must be declared together")
+        if bankfull_depth is not None:
+            bankfull_depth = float(bankfull_depth)
+            required_freeboard = float(required_freeboard)
+            if not all(math.isfinite(value) for value in (bankfull_depth, required_freeboard)) or bankfull_depth <= 0 or required_freeboard < 0:
+                raise ValueError("freeboard dimensions are invalid")
+            if values["maximum_flow_depth_m"] + required_freeboard > bankfull_depth + 1e-12:
+                raise ValueError("maximum flow depth plus required freeboard exceeds bankfull depth")
+            actual_freeboard = bankfull_depth - required_depth
+            if required_depth > bankfull_depth:
+                freeboard_status = "OVERTOPS_DECLARED_BANK"
+            elif actual_freeboard + 1e-12 < required_freeboard:
+                freeboard_status = "BELOW_DECLARED_FREEBOARD"
+            else:
+                freeboard_status = "WITHIN_DECLARED_FREEBOARD"
+        else:
+            actual_freeboard = None
+            freeboard_status = "NOT_EVALUATED"
+        overflow_path_state = str(reach.get("overflow_path_state") or "NOT_DECLARED").strip().upper()
+        overflow_receiver_id = str(reach.get("overflow_receiver_id") or "").strip() or None
+        if overflow_path_state not in {"NOT_DECLARED", "DECLARED_NOT_REVIEWED", "PROJECT_REVIEWED"}:
+            raise ValueError("overflow path state is invalid")
+        if (overflow_path_state == "NOT_DECLARED") is (overflow_receiver_id is not None):
+            raise ValueError("overflow path and receiver declarations disagree")
         results.append({
             "id": reach_id,
             "condition_state": condition_state,
@@ -150,6 +178,13 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             "shear_limit_ratio": shear / shear_limit if shear_limit else None,
             "preliminary_capacity_status": "WITHIN_DECLARED_SECTION" if ratio <= 1 else "EXCEEDS_DECLARED_SECTION",
             "preliminary_stability_status": stability_status,
+            "bankfull_depth_m": bankfull_depth,
+            "required_freeboard_m": required_freeboard,
+            "actual_freeboard_at_peak_m": actual_freeboard,
+            "preliminary_freeboard_status": freeboard_status,
+            "overflow_path_state": overflow_path_state,
+            "overflow_receiver_id": overflow_receiver_id,
+            "overflow_path_approved": False,
             "erosion_safety_approved": False,
         })
     return {
@@ -160,6 +195,10 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
         "exceeded_capacity_count": sum(item["capacity_ratio"] > 1 for item in results),
         "stability_evaluated_count": sum(item["preliminary_stability_status"] != "NOT_EVALUATED" for item in results),
         "stability_exceeded_count": sum(item["preliminary_stability_status"].startswith("EXCEEDS_") for item in results),
+        "freeboard_evaluated_count": sum(item["preliminary_freeboard_status"] != "NOT_EVALUATED" for item in results),
+        "freeboard_shortfall_count": sum(item["preliminary_freeboard_status"] == "BELOW_DECLARED_FREEBOARD" for item in results),
+        "overtopping_count": sum(item["preliminary_freeboard_status"] == "OVERTOPS_DECLARED_BANK" for item in results),
+        "overflow_path_declared_count": sum(item["overflow_path_state"] != "NOT_DECLARED" for item in results),
         "condition_counts": {
             state: sum(item["condition_state"] == state for item in results)
             for state in ("NEW", "CURRENT", "DEGRADED")
@@ -171,6 +210,7 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             item["preliminary_stability_status"] != "NOT_EVALUATED" for item in results
         ),
         "receiver_approved": False,
+        "overflow_paths_approved": False,
         "project_executive_authorized": False,
         "guidance_authorized": False,
         "limitations": list(CAPACITY_LIMITATIONS),
@@ -189,5 +229,9 @@ def validate_capacity_release(result: Mapping[str, Any]) -> None:
         raise ValueError("stability evaluation flag disagrees with reaches")
     if any(item.get("erosion_safety_approved") is not False for item in result.get("reaches", [])):
         raise ValueError("erosion safety must remain unapproved")
+    if result.get("overflow_paths_approved") is not False or any(
+        item.get("overflow_path_approved") is not False for item in result.get("reaches", [])
+    ):
+        raise ValueError("overflow paths must remain unapproved")
     if not set(CAPACITY_LIMITATIONS).issubset(set(result.get("limitations", []))):
         raise ValueError("capacity limitations are incomplete")

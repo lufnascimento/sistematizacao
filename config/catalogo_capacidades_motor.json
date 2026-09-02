@@ -86,9 +86,9 @@
       "declared_status": "IMPLEMENTED_LIMITED",
       "required_evidence_packages": ["DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
       "required_capabilities": ["PRELIMINARY_REACH_ROUTING_KERNEL"],
-      "outputs": ["REACH_CAPACITY_SCREENING", "SECTION_CONDITION_COMPARISON", "NORMAL_DEPTH", "DECLARED_VELOCITY_AND_SHEAR_LIMIT_SCREENING"],
+      "outputs": ["REACH_CAPACITY_SCREENING", "SECTION_CONDITION_COMPARISON", "NORMAL_DEPTH", "DECLARED_VELOCITY_AND_SHEAR_LIMIT_SCREENING", "FREEBOARD_AND_OVERTOPPING_SCREENING", "DECLARED_OVERFLOW_PATH_TRACEABILITY"],
       "blocker_code": "BACKWATER_EROSION_AND_FAILURE_NOT_EVALUATED",
-      "next_implementation": "Adicionar borda livre, transicoes, condicoes de jusante, caminhos de falha e validacao profissional dos limites erosivos."
+      "next_implementation": "Adicionar transicoes, condicoes de jusante, geometria espacial dos caminhos de falha e validacao profissional dos limites erosivos."
     },
     {
       "id": "PCE_ENGINE",
