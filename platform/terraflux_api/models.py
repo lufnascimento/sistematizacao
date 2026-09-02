@@ -120,6 +120,26 @@ class ReachSectionConfiguration(StrictModel):
         return self
 
 
+class SpatialReceiverConfiguration(StrictModel):
+    id: str = Field(min_length=1, max_length=100)
+    coordinate: tuple[float, float, float]
+    review_state: Literal["NOT_REVIEWED", "FIELD_VERIFIED"] = "NOT_REVIEWED"
+
+
+class OverflowPathConfiguration(StrictModel):
+    id: str = Field(min_length=1, max_length=100)
+    reach_id: str = Field(min_length=1, max_length=100)
+    receiver_id: str = Field(min_length=1, max_length=100)
+    coordinates: list[tuple[float, float, float]] = Field(min_length=2, max_length=100_000)
+
+
+class SpatialBarrierConfiguration(StrictModel):
+    id: str = Field(min_length=1, max_length=100)
+    type: Literal["POWER_NETWORK", "ROAD_WITHOUT_CROSSING", "ENVIRONMENTAL_EXCLUSION", "OTHER"]
+    coordinates: list[tuple[float, float]] = Field(min_length=2, max_length=100_000)
+    buffer_m: float = Field(default=0.0, ge=0.0, le=1000.0)
+
+
 class HydrologyScreeningConfiguration(StrictModel):
     enabled: bool = False
     method: Literal["NRCS_CURVE_NUMBER_EVENT_SCREENING"] = "NRCS_CURVE_NUMBER_EVENT_SCREENING"
@@ -144,6 +164,12 @@ class HydrologyScreeningConfiguration(StrictModel):
     reach_sections: list[ReachSectionConfiguration] = Field(default_factory=list, max_length=10_000)
     profile_enabled: bool = False
     profile_step_count: int = Field(default=20, ge=2, le=1000)
+    overflow_path_screening_enabled: bool = False
+    overflow_path_endpoint_tolerance_m: float = Field(default=2.0, gt=0.0, le=100.0)
+    overflow_path_elevation_tolerance_m: float = Field(default=0.05, ge=0.0, le=10.0)
+    spatial_receivers: list[SpatialReceiverConfiguration] = Field(default_factory=list, max_length=10_000)
+    overflow_paths: list[OverflowPathConfiguration] = Field(default_factory=list, max_length=10_000)
+    spatial_barriers: list[SpatialBarrierConfiguration] = Field(default_factory=list, max_length=10_000)
 
     @model_validator(mode="after")
     def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
@@ -178,6 +204,19 @@ class HydrologyScreeningConfiguration(StrictModel):
                 raise ValueError("every routed reach requires length when profile is enabled")
             if any(section.downstream_water_depth_m is None or section.downstream_water_depth_m <= 0 for section in self.reach_sections):
                 raise ValueError("every section state requires downstream depth when profile is enabled")
+        if self.overflow_path_screening_enabled:
+            if not self.profile_enabled:
+                raise ValueError("profile must be enabled when overflow path screening is enabled")
+            if not self.spatial_receivers or not self.overflow_paths:
+                raise ValueError("receivers and overflow paths are required when spatial screening is enabled")
+            receiver_ids = {item.id for item in self.spatial_receivers}
+            routed_ids = {item.id for item in self.routing_reaches}
+            if len(receiver_ids) != len(self.spatial_receivers):
+                raise ValueError("spatial receiver ids must be unique")
+            if len({item.id for item in self.overflow_paths}) != len(self.overflow_paths):
+                raise ValueError("overflow path ids must be unique")
+            if any(item.receiver_id not in receiver_ids or item.reach_id not in routed_ids for item in self.overflow_paths):
+                raise ValueError("overflow paths must reference configured receivers and routed reaches")
         return self
 
 

@@ -41,7 +41,9 @@ Configurar, habilite **Calcular a parcela que escoa**, informe area contribuinte
 CN, `Ia/S`, intervalo, serie de chuva e fonte. Para obter vazao no tempo,
 habilite tambem **Calcular vazao ao longo do tempo** e informe o tempo de
 resposta da area. Em Produtos, escolha **Chuva que vira escoamento** e,
-opcionalmente, **Hidrograma preliminar** e **Propagacao preliminar na rede**.
+opcionalmente, **Hidrograma preliminar**, **Propagacao preliminar na rede**,
+**Verificacao preliminar de capacidade**, **Perfil preliminar da lamina** e
+**Caminhos de extravasamento**.
 O terceiro produto exige no de entrada, conectividade e tempo de viagem de
 cada trecho. Resultados mostra chuva, excesso, volume, pico, rede e downloads. Esses produtos nao exigem LAZ, mas tambem
 nao espacializam alcances nem dimensionam estruturas.
@@ -59,8 +61,10 @@ nao espacializam alcances nem dimensionam estruturas.
   chuva que vira escoamento e, quando solicitado, em hidrograma preliminar com
   pico e conservacao de volume e, quando configurado, desloca e acumula a onda
   em uma rede aciclica, compara secoes e calcula perfis permanentes subcriticos
-  em trechos prismaticos. Atenuacao fisica, regime misto, estruturas e
-  receptores permanecem explicitamente bloqueados.
+  em trechos prismaticos. Quando configurado, tambem verifica polilinhas XYZ de
+  extravasamento, chegada ao receptor e conflitos com barreiras declaradas.
+  Atenuacao fisica, regime misto, estruturas, propagacao do excedente e
+  capacidade ou aprovacao dos receptores permanecem explicitamente bloqueados.
 - `demo_current_dataset`: publica somente artefatos demonstrativos presentes em
   uma lista fechada no workspace local. Esses dados nao acompanham o repositorio
   publico.

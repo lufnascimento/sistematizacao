@@ -177,7 +177,7 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                 product_blockers.append("HYDRAULIC_RECEIVER_MISSING")
         implementation = definition["implementation"]
         client_engine = definition.get("client_engine")
-        if product_id in {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
+        if product_id in {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"}:
             hydrology = configuration.get("hydrology_screening", {})
             if hydrology.get("enabled") is not True:
                 product_blockers.append("PCX1_CONFIGURATION_NOT_ENABLED")
@@ -187,30 +187,37 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                     break
             if not hydrology.get("rainfall_intervals"):
                 product_blockers.append("PCX1_RAINFALL_INTERVALS_REQUIRED")
-            if product_id in {"PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
+            if product_id in {"PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"}:
                 if "PCX1_RUNOFF_SCREENING" not in selected_product_ids:
                     product_blockers.append("PCX1_RUNOFF_DEPENDENCY_REQUIRED")
                 if hydrology.get("hydrograph_enabled") is not True:
                     product_blockers.append("HYDROGRAPH_CONFIGURATION_NOT_ENABLED")
                 if hydrology.get("catchment_lag_minutes") in (None, ""):
                     product_blockers.append("CATCHMENT_LAG_REQUIRED")
-            if product_id in {"PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
+            if product_id in {"PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"}:
                 if "PCX2_HYDROGRAPH_SCREENING" not in selected_product_ids:
                     product_blockers.append("HYDROGRAPH_DEPENDENCY_REQUIRED")
                 if hydrology.get("routing_enabled") is not True:
                     product_blockers.append("ROUTING_CONFIGURATION_NOT_ENABLED")
                 if not hydrology.get("routing_source_node_id") or not hydrology.get("routing_reaches"):
                     product_blockers.append("ROUTING_NETWORK_REQUIRED")
-            if product_id in {"PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"}:
+            if product_id in {"PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"}:
                 if "PCX3_REACH_ROUTING_SCREENING" not in selected_product_ids:
                     product_blockers.append("ROUTING_DEPENDENCY_REQUIRED")
                 if hydrology.get("capacity_enabled") is not True or not hydrology.get("reach_sections"):
                     product_blockers.append("SECTION_CONFIGURATION_REQUIRED")
-            if product_id == "PCX5_WATER_SURFACE_PROFILE_SCREENING":
+            if product_id in {"PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"}:
                 if "PCX4_SECTION_CAPACITY_SCREENING" not in selected_product_ids:
                     product_blockers.append("SECTION_CAPACITY_DEPENDENCY_REQUIRED")
                 if hydrology.get("profile_enabled") is not True:
                     product_blockers.append("PROFILE_CONFIGURATION_NOT_ENABLED")
+            if product_id == "PCX6_OVERFLOW_PATH_SCREENING":
+                if "PCX5_WATER_SURFACE_PROFILE_SCREENING" not in selected_product_ids:
+                    product_blockers.append("WATER_PROFILE_DEPENDENCY_REQUIRED")
+                if not hydrology.get("overflow_path_screening_enabled"):
+                    product_blockers.append("OVERFLOW_PATH_CONFIGURATION_NOT_ENABLED")
+                if not hydrology.get("spatial_receivers") or not hydrology.get("overflow_paths"):
+                    product_blockers.append("OVERFLOW_PATH_GEOMETRY_REQUIRED")
                 if any(item.get("length_m") in (None, "") for item in hydrology.get("routing_reaches") or []):
                     product_blockers.append("REACH_LENGTHS_REQUIRED")
                 if any(item.get("downstream_water_depth_m") is None for item in hydrology.get("reach_sections") or []):
@@ -345,6 +352,9 @@ _BLOCKER_MESSAGES = {
     "PROFILE_CONFIGURATION_NOT_ENABLED": "Habilite o perfil preliminar na configuracao.",
     "REACH_LENGTHS_REQUIRED": "Informe o comprimento de cada trecho da rede.",
     "DOWNSTREAM_DEPTHS_REQUIRED": "Informe a lamina a jusante de cada estado de secao.",
+    "WATER_PROFILE_DEPENDENCY_REQUIRED": "Selecione tambem o Perfil preliminar da lamina.",
+    "OVERFLOW_PATH_CONFIGURATION_NOT_ENABLED": "Habilite a verificacao dos caminhos de extravasamento.",
+    "OVERFLOW_PATH_GEOMETRY_REQUIRED": "Informe os caminhos tridimensionais e seus receptores.",
 }
 
 

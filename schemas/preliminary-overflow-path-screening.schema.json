@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/preliminary-overflow-path-screening.schema.json",
+  "title": "Triagem preliminar dos caminhos de extravasamento",
+  "type": "object",
+  "required": ["schema_version", "manifest_type", "release", "project_id", "run_id", "request_ref", "source_profile_release", "method", "path_count", "screened_clear_count", "requires_review_count", "connected_receiver_count", "barrier_conflict_count", "paths", "terrain_derived", "overflow_routed", "receivers_approved", "project_executive_authorized", "guidance_authorized", "limitations"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "manifest_type": {"const": "PRELIMINARY_OVERFLOW_PATH_SCREENING_RESULT"},
+    "release": {"const": "PRELIMINARY_DECLARED_OVERFLOW_PATH_SCREENING_ONLY"},
+    "project_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "request_ref": {"type": "object"},
+    "source_profile_release": {"type": "string", "minLength": 1},
+    "method": {"const": "DECLARED_3D_POLYLINE_GRAVITY_AND_BARRIER_SCREENING"},
+    "path_count": {"type": "integer", "minimum": 1},
+    "screened_clear_count": {"type": "integer", "minimum": 0},
+    "requires_review_count": {"type": "integer", "minimum": 0},
+    "connected_receiver_count": {"type": "integer", "minimum": 0},
+    "barrier_conflict_count": {"type": "integer", "minimum": 0},
+    "paths": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "reach_id", "receiver_id", "coordinates", "length_m", "elevation_drop_m", "minimum_segment_slope_m_m", "maximum_adverse_rise_m", "receiver_connection_status", "crossed_barriers", "screening_status", "receiver_approved", "overflow_path_approved"],
+        "properties": {
+          "screening_status": {"enum": ["SCREENED_CLEAR", "REQUIRES_REVIEW"]},
+          "receiver_connection_status": {"enum": ["CONNECTED_WITHIN_TOLERANCE", "NOT_CONNECTED"]},
+          "receiver_approved": {"const": false},
+          "overflow_path_approved": {"const": false}
+        }
+      }
+    },
+    "terrain_derived": {"const": false},
+    "overflow_routed": {"const": false},
+    "receivers_approved": {"const": false},
+    "project_executive_authorized": {"const": false},
+    "guidance_authorized": {"const": false},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  }
+}

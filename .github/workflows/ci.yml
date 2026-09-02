@@ -65,3 +65,6 @@ jobs:
 
       - name: Run preliminary water-profile tests
         run: python -m unittest -v tests.test_preliminary_backwater_profile
+
+      - name: Run preliminary overflow-path tests
+        run: python -m unittest -v tests.test_preliminary_overflow_path_screening

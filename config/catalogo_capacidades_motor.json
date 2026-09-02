@@ -102,6 +102,17 @@
       "next_implementation": "Adicionar secoes nao prismaticas, estruturas, confluencias por momento, regime misto e caminho espacial do excedente."
     },
     {
+      "id": "PRELIMINARY_OVERFLOW_PATH_SCREENING_KERNEL",
+      "title": "Triagem espacial dos caminhos de extravasamento",
+      "domain": "HYDRAULICS",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["DRAINAGE_NETWORK", "FULL_CATCHMENT", "ENVIRONMENT_LEGAL"],
+      "required_capabilities": ["PRELIMINARY_WATER_SURFACE_PROFILE_KERNEL"],
+      "outputs": ["OVERFLOW_PATH_JSON", "OVERFLOW_PATH_CSV", "OVERFLOW_PATH_GEOJSON", "OVERFLOW_PATH_MAP"],
+      "blocker_code": "OVERFLOW_ROUTING_AND_RECEIVER_CAPACITY_NOT_EVALUATED",
+      "next_implementation": "Derivar caminhos pelo MDT condicionado, propagar o excedente e verificar estruturas e capacidade do receptor."
+    },
+    {
       "id": "PCE_ENGINE",
       "title": "Motor de controle de erosao PCE",
       "domain": "CONSERVATION",

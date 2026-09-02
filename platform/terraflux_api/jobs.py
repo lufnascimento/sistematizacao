@@ -292,6 +292,7 @@ class JobRunner:
         )
         from scripts.preliminary_section_capacity import check_reach_capacities, validate_capacity_release
         from scripts.preliminary_backwater_profile import calculate_standard_step_profiles, validate_profile_release
+        from scripts.preliminary_overflow_path_screening import screen_overflow_paths, validate_overflow_path_release
 
         project = self.store.get("projects", run["project_id"])
         if project is None:
@@ -307,6 +308,7 @@ class JobRunner:
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING"},
             {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"},
+            {"PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"},
         ):
             raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
 
@@ -379,6 +381,7 @@ class JobRunner:
         routing_result: dict[str, Any] | None = None
         capacity_result: dict[str, Any] | None = None
         profile_result: dict[str, Any] | None = None
+        overflow_path_result: dict[str, Any] | None = None
         if "PCX2_HYDROGRAPH_SCREENING" in requested_products:
             result["blocker_codes"] = [
                 code for code in result["blocker_codes"]
@@ -608,6 +611,61 @@ class JobRunner:
             self._plot_water_profiles(profile_result, profile_plot)
             for path in (profile_json, profile_csv, profile_plot):
                 self._artifact(run, path, "PCX5_WATER_SURFACE_PROFILE_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        if "PCX6_OVERFLOW_PATH_SCREENING" in requested_products:
+            if profile_result is None or capacity_result is None:
+                raise ValueError("WATER_PROFILE_DEPENDENCY_REQUIRED")
+            if configuration.get("overflow_path_screening_enabled") is not True:
+                raise ValueError("OVERFLOW_PATH_CONFIGURATION_NOT_ENABLED")
+            paths = configuration.get("overflow_paths") or []
+            receivers = configuration.get("spatial_receivers") or []
+            if not paths or not receivers:
+                raise ValueError("OVERFLOW_PATH_GEOMETRY_REQUIRED")
+            declared_destinations = {
+                (item["id"], item["overflow_receiver_id"])
+                for item in capacity_result["reaches"] if item.get("overflow_receiver_id")
+            }
+            if any((item["reach_id"], item["receiver_id"]) not in declared_destinations for item in paths):
+                raise ValueError("OVERFLOW_PATH_DESTINATION_MUST_MATCH_SECTION_DECLARATION")
+            overflow_path_result = screen_overflow_paths(
+                paths, receivers, configuration.get("spatial_barriers") or [],
+                endpoint_tolerance_m=float(configuration.get("overflow_path_endpoint_tolerance_m", 2.0)),
+                elevation_tolerance_m=float(configuration.get("overflow_path_elevation_tolerance_m", 0.05)),
+            )
+            validate_overflow_path_release(overflow_path_result)
+            overflow_path_result.update({
+                "schema_version": "1.0.0",
+                "manifest_type": "PRELIMINARY_OVERFLOW_PATH_SCREENING_RESULT",
+                "project_id": project["id"], "run_id": run["id"],
+                "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                "source_profile_release": profile_result["release"],
+                "stage_status": "SPATIAL_SCREENING_WITH_EXPLICIT_BLOCKERS",
+                "blocker_codes": ["DECLARED_GEOMETRY_ONLY", "OVERFLOW_NOT_ROUTED", "RECEIVER_CAPACITY_NOT_EVALUATED", "RECEIVER_NOT_APPROVED", "GUIDANCE_NOT_AUTHORIZED"],
+            })
+            overflow_dir = run_dir / "products" / "preliminary_overflow_paths"
+            overflow_dir.mkdir(parents=True, exist_ok=False)
+            overflow_json = overflow_dir / "verificacao_caminhos_extravasamento.json"
+            overflow_json.write_text(json.dumps(overflow_path_result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            overflow_csv = overflow_dir / "caminhos_extravasamento.csv"
+            overflow_csv.write_text(
+                "caminho,trecho,receptor,comprimento_m,queda_m,menor_declividade_m_m,maior_subida_m,conexao_receptor,conflitos_barreira,status\n"
+                + "\n".join(
+                    f"{item['id']},{item['reach_id']},{item['receiver_id']},{item['length_m']},{item['elevation_drop_m']},{item['minimum_segment_slope_m_m']},{item['maximum_adverse_rise_m']},{item['receiver_connection_status']},{len(item['crossed_barriers'])},{item['screening_status']}"
+                    for item in overflow_path_result["paths"]
+                ) + "\n", encoding="utf-8",
+            )
+            overflow_geojson = overflow_dir / "caminhos_extravasamento.geojson"
+            overflow_geojson.write_text(json.dumps({
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": {key: item[key] for key in ("id", "reach_id", "receiver_id", "length_m", "elevation_drop_m", "screening_status")},
+                    "geometry": {"type": "LineString", "coordinates": item["coordinates"]},
+                } for item in overflow_path_result["paths"]],
+            }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            overflow_plot = overflow_dir / "mapa_caminhos_extravasamento.png"
+            self._plot_overflow_paths(overflow_path_result, receivers, configuration.get("spatial_barriers") or [], overflow_plot)
+            for path in (overflow_json, overflow_csv, overflow_geojson, overflow_plot):
+                self._artifact(run, path, "PCX6_OVERFLOW_PATH_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
         self._set(
             run["id"],
             progress=95,
@@ -638,6 +696,9 @@ class JobRunner:
                 "downstream_controlled_count": capacity_result["downstream_controlled_count"] if capacity_result else None,
                 "water_profile_count": profile_result["profile_count"] if profile_result else None,
                 "water_profile_maximum_depth_m": max((item["maximum_water_depth_m"] for item in profile_result["profiles"]), default=None) if profile_result else None,
+                "overflow_path_screened_count": overflow_path_result["path_count"] if overflow_path_result else None,
+                "overflow_path_clear_count": overflow_path_result["screened_clear_count"] if overflow_path_result else None,
+                "overflow_path_barrier_conflict_count": overflow_path_result["barrier_conflict_count"] if overflow_path_result else None,
                 "guidance_authorized": False,
             },
         )
@@ -650,6 +711,8 @@ class JobRunner:
             message += " Capacidade das secoes verificada somente por escoamento uniforme."
         if profile_result is not None:
             message += " Perfil permanente subcritico calculado por passo padrao."
+        if overflow_path_result is not None:
+            message += " Caminhos de extravasamento verificados espacialmente."
         self._log(run["id"], "WARN", message)
 
     @staticmethod
@@ -710,6 +773,30 @@ class JobRunner:
         figure.tight_layout()
         figure.savefig(output_path, bbox_inches="tight")
         plt.close(figure)
+
+    @staticmethod
+    def _plot_overflow_paths(result: dict[str, Any], receivers: list[dict[str, Any]], barriers: list[dict[str, Any]], output_path: Path) -> None:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        figure, axis = plt.subplots(figsize=(9, 6), dpi=150)
+        for barrier in barriers:
+            coordinates = barrier["coordinates"]
+            axis.plot([p[0] for p in coordinates], [p[1] for p in coordinates], color="#a61b1b", linewidth=2.2, label="Barreira" if "Barreira" not in axis.get_legend_handles_labels()[1] else None)
+        for path in result["paths"]:
+            coordinates = path["coordinates"]
+            clear = path["screening_status"] == "SCREENED_CLEAR"
+            axis.plot([p[0] for p in coordinates], [p[1] for p in coordinates], color="#19734a" if clear else "#d97706", linewidth=2.5, marker="o", markersize=3, label=f"{path['id']} - {'sem conflito detectado' if clear else 'revisar'}")
+        for receiver in receivers:
+            x, y, _ = receiver["coordinate"]
+            axis.scatter([x], [y], marker="*", s=110, color="#1769aa", zorder=5)
+            axis.annotate(f"Receptor {receiver['id']}", (x, y), xytext=(5, 5), textcoords="offset points", fontsize=8)
+        axis.set_title("Triagem dos caminhos de extravasamento declarados")
+        axis.set_xlabel("Coordenada X (m)"); axis.set_ylabel("Coordenada Y (m)")
+        axis.set_aspect("equal", adjustable="datalim"); axis.grid(True, color="#d8ded9", linewidth=0.7)
+        axis.legend(fontsize=8); figure.tight_layout(); figure.savefig(output_path, bbox_inches="tight"); plt.close(figure)
 
     def _project_topography(self, run: dict[str, Any]) -> None:
         project = self.store.get("projects", run["project_id"])

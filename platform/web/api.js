@@ -831,6 +831,14 @@ export const systemCatalog = {
       available: true,
     },
     {
+      id: "PCX6_OVERFLOW_PATH_SCREENING",
+      name: "Caminhos de extravasamento",
+      description: "Verifica descida, chegada ao receptor e conflitos com barreiras conhecidas.",
+      level: "E0",
+      requires: ["PERFIL_DA_LAMINA", "CAMINHOS_3D", "RECEPTORES"],
+      available: true,
+    },
+    {
       id: "C1_DIMENSIONED",
       name: "Curva embutida dimensionada",
       description: "TI/TD, seção, superfície proposta, volumes e verificação hidráulica conservacionista.",
@@ -950,6 +958,12 @@ export const systemCatalog = {
         { id: "hydrology.reach_sections_json", name: "Secoes e condicoes dos trechos", type: "json", unit: null, default: "[]", source: "Cliente" },
         { id: "hydrology.profile_enabled", name: "Calcular perfil da lamina nos trechos", type: "boolean", default: false, source: "Cliente" },
         { id: "hydrology.profile_step_count", name: "Divisoes de calculo por trecho", type: "number", unit: null, min: 2, max: 1000, step: 1, default: 20, source: "Sistema" },
+        { id: "hydrology.overflow_path_screening_enabled", name: "Verificar caminhos de extravasamento", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.spatial_receivers_json", name: "Pontos receptores com cota", type: "json", unit: null, default: "[]", source: "Cliente" },
+        { id: "hydrology.overflow_paths_json", name: "Caminhos tridimensionais ate os receptores", type: "json", unit: null, default: "[]", source: "Cliente" },
+        { id: "hydrology.spatial_barriers_json", name: "Barreiras lineares conhecidas", type: "json", unit: null, default: "[]", source: "Cliente" },
+        { id: "hydrology.overflow_path_endpoint_tolerance_m", name: "Tolerancia de chegada ao receptor", type: "number", unit: "m", min: 0.1, max: 100, step: 0.1, default: 2, source: "Sistema" },
+        { id: "hydrology.overflow_path_elevation_tolerance_m", name: "Tolerancia de subida entre pontos", type: "number", unit: "m", min: 0, max: 10, step: 0.01, default: 0.05, source: "Sistema" },
       ],
     },
   ],
@@ -1084,6 +1098,12 @@ function liveConfiguration(configuration) {
       "hydrology.reach_sections_json": JSON.stringify(configuration.hydrology_screening?.reach_sections || [], null, 2),
       "hydrology.profile_enabled": configuration.hydrology_screening?.profile_enabled || false,
       "hydrology.profile_step_count": configuration.hydrology_screening?.profile_step_count || 20,
+      "hydrology.overflow_path_screening_enabled": configuration.hydrology_screening?.overflow_path_screening_enabled || false,
+      "hydrology.spatial_receivers_json": JSON.stringify(configuration.hydrology_screening?.spatial_receivers || [], null, 2),
+      "hydrology.overflow_paths_json": JSON.stringify(configuration.hydrology_screening?.overflow_paths || [], null, 2),
+      "hydrology.spatial_barriers_json": JSON.stringify(configuration.hydrology_screening?.spatial_barriers || [], null, 2),
+      "hydrology.overflow_path_endpoint_tolerance_m": configuration.hydrology_screening?.overflow_path_endpoint_tolerance_m || 2,
+      "hydrology.overflow_path_elevation_tolerance_m": configuration.hydrology_screening?.overflow_path_elevation_tolerance_m ?? 0.05,
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1146,6 +1166,19 @@ function applyLiveConfiguration(current, payload) {
         : section);
     }
   }
+  const parseList = (key, label) => {
+    try {
+      const parsed = JSON.parse(String(values[key] || "[]"));
+      if (!Array.isArray(parsed)) throw new Error();
+      return parsed;
+    } catch {
+      throw new Error(`${label} deve formar uma lista JSON valida.`);
+    }
+  };
+  const overflowEnabled = Boolean(values["hydrology.overflow_path_screening_enabled"]);
+  const spatialReceivers = overflowEnabled ? parseList("hydrology.spatial_receivers_json", "Os receptores") : [];
+  const overflowPaths = overflowEnabled ? parseList("hydrology.overflow_paths_json", "Os caminhos de extravasamento") : [];
+  const spatialBarriers = overflowEnabled ? parseList("hydrology.spatial_barriers_json", "As barreiras") : [];
   current.hydrology_screening = {
     enabled: hydrologyEnabled,
     method: "NRCS_CURVE_NUMBER_EVENT_SCREENING",
@@ -1170,6 +1203,12 @@ function applyLiveConfiguration(current, payload) {
     reach_sections: reachSections,
     profile_enabled: Boolean(values["hydrology.profile_enabled"]),
     profile_step_count: Number(values["hydrology.profile_step_count"] || 20),
+    overflow_path_screening_enabled: overflowEnabled,
+    overflow_path_endpoint_tolerance_m: Number(values["hydrology.overflow_path_endpoint_tolerance_m"] || 2),
+    overflow_path_elevation_tolerance_m: Number(values["hydrology.overflow_path_elevation_tolerance_m"] ?? 0.05),
+    spatial_receivers: spatialReceivers,
+    overflow_paths: overflowPaths,
+    spatial_barriers: spatialBarriers,
   };
   return current;
 }
@@ -1430,7 +1469,7 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"]);
+    const hydrologyProducts = new Set(["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"]);
     const isHydrologyOnly = productIds.length > 0 && productIds.every((productId) => hydrologyProducts.has(productId));
     const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {

@@ -229,10 +229,16 @@ class PlatformApiTests(unittest.TestCase):
             ],
             "profile_enabled": True,
             "profile_step_count": 10,
+            "overflow_path_screening_enabled": True,
+            "overflow_path_endpoint_tolerance_m": 2,
+            "overflow_path_elevation_tolerance_m": 0.05,
+            "spatial_receivers": [{"id": "SAIDA_CONTROLADA", "coordinate": [120, 100, 98], "review_state": "FIELD_VERIFIED"}],
+            "overflow_paths": [{"id": "CAMINHO_01", "reach_id": "T2", "receiver_id": "SAIDA_CONTROLADA", "coordinates": [[0, 100, 102], [60, 100, 100], [120, 100, 98]]}],
+            "spatial_barriers": [{"id": "REDE_FORA", "type": "POWER_NETWORK", "coordinates": [[0, 200], [120, 200]], "buffer_m": 15}],
         }
         response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
         self.assertEqual(response.status_code, 200, response.text)
-        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"]
+        product_ids = ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"]
         request_response = self.client.post(
             f"/api/projects/{project_id}/requests",
             json={"name": "Resposta da chuva", "product_ids": product_ids},
@@ -265,6 +271,9 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["downstream_controlled_count"], 2)
         self.assertEqual(run["result_summary"]["water_profile_count"], 2)
         self.assertGreater(run["result_summary"]["water_profile_maximum_depth_m"], 0)
+        self.assertEqual(run["result_summary"]["overflow_path_screened_count"], 1)
+        self.assertEqual(run["result_summary"]["overflow_path_clear_count"], 1)
+        self.assertEqual(run["result_summary"]["overflow_path_barrier_conflict_count"], 0)
         self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
         logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
         self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))
@@ -284,6 +293,10 @@ class PlatformApiTests(unittest.TestCase):
                 "perfil_preliminar_lamina.json",
                 "perfil_preliminar_lamina.csv",
                 "grafico_perfil_preliminar_lamina.png",
+                "verificacao_caminhos_extravasamento.json",
+                "caminhos_extravasamento.csv",
+                "caminhos_extravasamento.geojson",
+                "mapa_caminhos_extravasamento.png",
             },
         )
         hydrograph_artifact = next(item for item in artifacts if item["filename"] == "hidrograma_preliminar.json")
@@ -418,6 +431,7 @@ class PlatformApiTests(unittest.TestCase):
                 "PCX3_REACH_ROUTING_SCREENING",
                 "PCX4_SECTION_CAPACITY_SCREENING",
                 "PCX5_WATER_SURFACE_PROFILE_SCREENING",
+                "PCX6_OVERFLOW_PATH_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
@@ -429,7 +443,7 @@ class PlatformApiTests(unittest.TestCase):
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
         hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
-        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING"])
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING", "PCX2_HYDROGRAPH_SCREENING", "PCX3_REACH_ROUTING_SCREENING", "PCX4_SECTION_CAPACITY_SCREENING", "PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"])
         stability_models = self.client.get("/api/catalog/hydraulic-stability-models").json()
         self.assertEqual(stability_models["default_model_id"], "NO_ASSUMED_LIMIT")
         self.assertTrue(all(item["requires_project_confirmation"] for item in stability_models["models"]))
