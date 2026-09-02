@@ -34,6 +34,7 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
         self.assertFalse(properties["reaches"]["items"]["properties"]["erosion_safety_approved"]["const"])
         self.assertFalse(properties["reaches"]["items"]["properties"]["overflow_path_approved"]["const"])
         self.assertFalse(properties["overflow_paths_approved"]["const"])
+        self.assertEqual(properties["downstream_screening_envelope_evaluated"]["type"], "boolean")
 
     def test_rectangular_manning_discharge_and_inverse_depth(self) -> None:
         discharge = manning_discharge_m3_s(1.0, 2.0, 0.0, 0.01, 0.03)
@@ -91,6 +92,24 @@ class PreliminarySectionCapacityTests(unittest.TestCase):
             check_reach_capacities([{**base, "bankfull_depth_m": 1.0}])
         with self.assertRaisesRegex(ValueError, "declarations disagree"):
             check_reach_capacities([{**base, "overflow_path_state": "DECLARED_NOT_REVIEWED"}])
+
+    def test_downstream_depth_and_transition_loss_raise_screening_envelope(self) -> None:
+        base = {"peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "downstream_boundary_source_id": "survey-01", "downstream_boundary_evidence_state": "PROJECT_EVIDENCE"}
+        result = check_reach_capacities([
+            {"id": "SEM_CONTROLE", **base, "downstream_water_depth_m": 0.0},
+            {"id": "CONTROLADO", **base, "downstream_water_depth_m": 1.0, "downstream_velocity_m_s": 0.1, "transition_loss_coefficient": 0.3},
+        ])
+        self.assertEqual(result["downstream_evaluated_count"], 2)
+        self.assertEqual(result["downstream_controlled_count"], 1)
+        self.assertEqual(result["reaches"][0]["preliminary_downstream_control_status"], "DOES_NOT_RAISE_SCREENING_ENVELOPE")
+        self.assertEqual(result["reaches"][1]["preliminary_downstream_control_status"], "RAISES_SCREENING_ENVELOPE")
+        self.assertGreater(result["reaches"][1]["transition_head_loss_m"], 0)
+        self.assertTrue(result["downstream_screening_envelope_evaluated"])
+        validate_capacity_release(result)
+
+    def test_downstream_values_require_source_lineage(self) -> None:
+        with self.assertRaisesRegex(ValueError, "valid source lineage"):
+            check_reach_capacities([{"id": "T1", "peak_flow_m3_s": 0.5, "bottom_width_m": 0.5, "side_slope_h_to_v": 1.5, "slope_m_m": 0.005, "manning_n": 0.04, "maximum_flow_depth_m": 0.6, "downstream_water_depth_m": 0.2}])
 
     def test_invalid_inputs_and_release_promotion_fail_closed(self) -> None:
         with self.assertRaises(ValueError):

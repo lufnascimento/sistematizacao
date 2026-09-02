@@ -16,6 +16,7 @@ CAPACITY_LIMITATIONS = (
     "SECTION_CONDITION_IS_USER_DECLARED",
     "DECLARED_STABILITY_LIMITS_ARE_SCREENING_ONLY",
     "OVERFLOW_PATH_IS_DECLARED_NOT_HYDRAULICALLY_SIMULATED",
+    "DOWNSTREAM_AND_TRANSITION_VALUES_FORM_SCREENING_ENVELOPE_ONLY",
     "NOT_PROJECT_EXECUTIVE",
     "NOT_GUIDANCE_AUTHORIZED",
 )
@@ -131,6 +132,27 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             stability_status = "EXCEEDS_DECLARED_SHEAR_LIMIT"
         else:
             stability_status = "WITHIN_DECLARED_LIMITS"
+        downstream_depth = reach.get("downstream_water_depth_m")
+        downstream_velocity = reach.get("downstream_velocity_m_s")
+        transition_coefficient = reach.get("transition_loss_coefficient")
+        boundary_source_id = str(reach.get("downstream_boundary_source_id") or "").strip() or None
+        boundary_evidence_state = str(reach.get("downstream_boundary_evidence_state") or "").strip() or None
+        boundary_values = (downstream_depth, downstream_velocity, transition_coefficient)
+        if any(value is not None for value in boundary_values):
+            if downstream_depth is None or not boundary_source_id or boundary_evidence_state not in {"SYSTEM_REFERENCE", "PROJECT_EVIDENCE"}:
+                raise ValueError("downstream screening requires depth and valid source lineage")
+            downstream_depth = float(downstream_depth)
+            downstream_velocity = float(downstream_velocity) if downstream_velocity is not None else 0.0
+            transition_coefficient = float(transition_coefficient) if transition_coefficient is not None else 0.0
+            if not all(math.isfinite(value) and value >= 0 for value in (downstream_depth, downstream_velocity, transition_coefficient)) or transition_coefficient > 1:
+                raise ValueError("downstream screening values are invalid")
+            transition_head_loss = transition_coefficient * abs(velocity * velocity - downstream_velocity * downstream_velocity) / (2.0 * 9.80665)
+            controlled_depth = max(required_depth, downstream_depth) + transition_head_loss
+            downstream_status = "RAISES_SCREENING_ENVELOPE" if controlled_depth > required_depth + 1e-12 else "DOES_NOT_RAISE_SCREENING_ENVELOPE"
+        else:
+            downstream_depth = downstream_velocity = transition_coefficient = transition_head_loss = None
+            controlled_depth = required_depth
+            downstream_status = "NOT_EVALUATED"
         bankfull_depth = reach.get("bankfull_depth_m")
         required_freeboard = reach.get("required_freeboard_m")
         if (bankfull_depth is None) != (required_freeboard is None):
@@ -142,8 +164,8 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
                 raise ValueError("freeboard dimensions are invalid")
             if values["maximum_flow_depth_m"] + required_freeboard > bankfull_depth + 1e-12:
                 raise ValueError("maximum flow depth plus required freeboard exceeds bankfull depth")
-            actual_freeboard = bankfull_depth - required_depth
-            if required_depth > bankfull_depth:
+            actual_freeboard = bankfull_depth - controlled_depth
+            if controlled_depth > bankfull_depth:
                 freeboard_status = "OVERTOPS_DECLARED_BANK"
             elif actual_freeboard + 1e-12 < required_freeboard:
                 freeboard_status = "BELOW_DECLARED_FREEBOARD"
@@ -178,6 +200,14 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
             "shear_limit_ratio": shear / shear_limit if shear_limit else None,
             "preliminary_capacity_status": "WITHIN_DECLARED_SECTION" if ratio <= 1 else "EXCEEDS_DECLARED_SECTION",
             "preliminary_stability_status": stability_status,
+            "downstream_water_depth_m": downstream_depth,
+            "downstream_velocity_m_s": downstream_velocity,
+            "transition_loss_coefficient": transition_coefficient,
+            "transition_head_loss_m": transition_head_loss,
+            "screening_control_depth_m": controlled_depth,
+            "preliminary_downstream_control_status": downstream_status,
+            "downstream_boundary_source_id": boundary_source_id,
+            "downstream_boundary_evidence_state": boundary_evidence_state,
             "bankfull_depth_m": bankfull_depth,
             "required_freeboard_m": required_freeboard,
             "actual_freeboard_at_peak_m": actual_freeboard,
@@ -199,12 +229,17 @@ def check_reach_capacities(reaches: Sequence[Mapping[str, Any]]) -> dict[str, An
         "freeboard_shortfall_count": sum(item["preliminary_freeboard_status"] == "BELOW_DECLARED_FREEBOARD" for item in results),
         "overtopping_count": sum(item["preliminary_freeboard_status"] == "OVERTOPS_DECLARED_BANK" for item in results),
         "overflow_path_declared_count": sum(item["overflow_path_state"] != "NOT_DECLARED" for item in results),
+        "downstream_evaluated_count": sum(item["preliminary_downstream_control_status"] != "NOT_EVALUATED" for item in results),
+        "downstream_controlled_count": sum(item["preliminary_downstream_control_status"] == "RAISES_SCREENING_ENVELOPE" for item in results),
         "condition_counts": {
             state: sum(item["condition_state"] == state for item in results)
             for state in ("NEW", "CURRENT", "DEGRADED")
         },
         "reaches": results,
         "backwater_evaluated": False,
+        "downstream_screening_envelope_evaluated": any(
+            item["preliminary_downstream_control_status"] != "NOT_EVALUATED" for item in results
+        ),
         "unsteady_flow_evaluated": False,
         "admissible_velocity_or_shear_evaluated": any(
             item["preliminary_stability_status"] != "NOT_EVALUATED" for item in results
@@ -233,5 +268,9 @@ def validate_capacity_release(result: Mapping[str, Any]) -> None:
         item.get("overflow_path_approved") is not False for item in result.get("reaches", [])
     ):
         raise ValueError("overflow paths must remain unapproved")
+    if result.get("downstream_screening_envelope_evaluated") is not any(
+        item.get("preliminary_downstream_control_status") != "NOT_EVALUATED" for item in result.get("reaches", [])
+    ):
+        raise ValueError("downstream screening flag disagrees with reaches")
     if not set(CAPACITY_LIMITATIONS).issubset(set(result.get("limitations", []))):
         raise ValueError("capacity limitations are incomplete")

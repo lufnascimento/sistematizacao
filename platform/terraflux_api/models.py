@@ -80,6 +80,11 @@ class ReachSectionConfiguration(StrictModel):
     required_freeboard_m: float | None = Field(default=None, ge=0.0, le=1000.0)
     overflow_path_state: Literal["NOT_DECLARED", "DECLARED_NOT_REVIEWED", "PROJECT_REVIEWED"] = "NOT_DECLARED"
     overflow_receiver_id: str | None = Field(default=None, max_length=200)
+    downstream_water_depth_m: float | None = Field(default=None, ge=0.0, le=1000.0)
+    downstream_velocity_m_s: float | None = Field(default=None, ge=0.0, le=100.0)
+    transition_loss_coefficient: float | None = Field(default=None, ge=0.0, le=1.0)
+    downstream_boundary_source_id: str | None = Field(default=None, max_length=300)
+    downstream_boundary_evidence_state: Literal["SYSTEM_REFERENCE", "PROJECT_EVIDENCE"] | None = None
     maximum_admissible_velocity_m_s: float | None = Field(default=None, gt=0.0, le=100.0)
     maximum_admissible_shear_pa: float | None = Field(default=None, gt=0.0, le=1_000_000.0)
     stability_limit_source_id: str | None = Field(default=None, max_length=300)
@@ -103,6 +108,14 @@ class ReachSectionConfiguration(StrictModel):
             raise ValueError("overflow receiver requires a declared overflow path")
         if self.overflow_path_state != "NOT_DECLARED" and not self.overflow_receiver_id:
             raise ValueError("declared overflow path requires a receiver id")
+        boundary_values = (self.downstream_water_depth_m, self.downstream_velocity_m_s, self.transition_loss_coefficient)
+        has_boundary = any(value is not None for value in boundary_values)
+        if has_boundary and (self.downstream_water_depth_m is None or not self.downstream_boundary_source_id or self.downstream_boundary_evidence_state is None):
+            raise ValueError("downstream screening requires depth, source and evidence state")
+        if self.transition_loss_coefficient is not None and self.downstream_velocity_m_s is None:
+            raise ValueError("transition loss coefficient requires downstream velocity")
+        if not has_boundary and (self.downstream_boundary_source_id or self.downstream_boundary_evidence_state is not None):
+            raise ValueError("downstream lineage requires declared boundary data")
         return self
 
 

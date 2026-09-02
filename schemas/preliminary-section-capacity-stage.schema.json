@@ -3,7 +3,7 @@
   "$id": "https://terraflux.local/schemas/preliminary-section-capacity-stage.schema.json",
   "title": "TerraFlux preliminary section capacity result",
   "type": "object",
-  "required": ["schema_version", "manifest_type", "release", "project_id", "run_id", "request_ref", "source_routing_release", "method", "reach_count", "within_capacity_count", "exceeded_capacity_count", "stability_evaluated_count", "stability_exceeded_count", "freeboard_evaluated_count", "freeboard_shortfall_count", "overtopping_count", "overflow_path_declared_count", "condition_counts", "reaches", "stage_status", "blocker_codes", "backwater_evaluated", "unsteady_flow_evaluated", "admissible_velocity_or_shear_evaluated", "receiver_approved", "overflow_paths_approved", "project_executive_authorized", "guidance_authorized", "limitations"],
+  "required": ["schema_version", "manifest_type", "release", "project_id", "run_id", "request_ref", "source_routing_release", "method", "reach_count", "within_capacity_count", "exceeded_capacity_count", "stability_evaluated_count", "stability_exceeded_count", "freeboard_evaluated_count", "freeboard_shortfall_count", "overtopping_count", "overflow_path_declared_count", "downstream_evaluated_count", "downstream_controlled_count", "condition_counts", "reaches", "stage_status", "blocker_codes", "backwater_evaluated", "downstream_screening_envelope_evaluated", "unsteady_flow_evaluated", "admissible_velocity_or_shear_evaluated", "receiver_approved", "overflow_paths_approved", "project_executive_authorized", "guidance_authorized", "limitations"],
   "properties": {
     "schema_version": { "const": "1.0.0" },
     "manifest_type": { "const": "PRELIMINARY_SECTION_CAPACITY_RESULT" },
@@ -22,6 +22,8 @@
     "freeboard_shortfall_count": { "type": "integer", "minimum": 0 },
     "overtopping_count": { "type": "integer", "minimum": 0 },
     "overflow_path_declared_count": { "type": "integer", "minimum": 0 },
+    "downstream_evaluated_count": { "type": "integer", "minimum": 0 },
+    "downstream_controlled_count": { "type": "integer", "minimum": 0 },
     "condition_counts": {
       "type": "object",
       "required": ["NEW", "CURRENT", "DEGRADED"],
@@ -37,12 +39,13 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "condition_state", "preliminary_capacity_status", "preliminary_stability_status", "preliminary_freeboard_status", "overflow_path_state", "overflow_path_approved", "erosion_safety_approved"],
+        "required": ["id", "condition_state", "preliminary_capacity_status", "preliminary_stability_status", "preliminary_downstream_control_status", "preliminary_freeboard_status", "overflow_path_state", "overflow_path_approved", "erosion_safety_approved"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "condition_state": { "enum": ["NEW", "CURRENT", "DEGRADED"] },
           "preliminary_capacity_status": { "enum": ["WITHIN_DECLARED_SECTION", "EXCEEDS_DECLARED_SECTION"] },
           "preliminary_stability_status": { "enum": ["NOT_EVALUATED", "WITHIN_DECLARED_LIMITS", "EXCEEDS_DECLARED_VELOCITY_LIMIT", "EXCEEDS_DECLARED_SHEAR_LIMIT", "EXCEEDS_BOTH_DECLARED_LIMITS"] },
+          "preliminary_downstream_control_status": { "enum": ["NOT_EVALUATED", "DOES_NOT_RAISE_SCREENING_ENVELOPE", "RAISES_SCREENING_ENVELOPE"] },
           "preliminary_freeboard_status": { "enum": ["NOT_EVALUATED", "WITHIN_DECLARED_FREEBOARD", "BELOW_DECLARED_FREEBOARD", "OVERTOPS_DECLARED_BANK"] },
           "overflow_path_state": { "enum": ["NOT_DECLARED", "DECLARED_NOT_REVIEWED", "PROJECT_REVIEWED"] },
           "overflow_path_approved": { "const": false },
@@ -53,6 +56,7 @@
     "stage_status": { "const": "PRELIMINARY_CAPACITY_WITH_EXPLICIT_BLOCKERS" },
     "blocker_codes": { "type": "array", "minItems": 6, "items": { "type": "string" }, "uniqueItems": true },
     "backwater_evaluated": { "const": false },
+    "downstream_screening_envelope_evaluated": { "type": "boolean" },
     "unsteady_flow_evaluated": { "const": false },
     "admissible_velocity_or_shear_evaluated": { "type": "boolean" },
     "receiver_approved": { "const": false },

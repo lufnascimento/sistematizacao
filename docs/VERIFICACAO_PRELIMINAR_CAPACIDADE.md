@@ -11,6 +11,9 @@ diagnosticos. Uma mesma rede pode conter secoes nos estados **nova**, **atual**
 e **degradada**, permitindo comparar perda de capacidade sem duplicar trechos.
 Quando a profundidade ate a margem e a borda livre requerida sao informadas,
 o motor separa margem atendida, margem insuficiente e transbordamento.
+Tambem pode receber uma lamina conhecida a jusante e um coeficiente de perda
+em transicao. O envelope soma a perda baseada na diferenca entre cargas de
+velocidade e usa a maior profundidade entre a normal e a declarada a jusante.
 
 Limites de velocidade e tensao podem ser declarados por estado. Cada limite
 exige uma fonte e deve ser marcado como referencia do sistema ou evidencia do
@@ -40,6 +43,11 @@ Exemplo de entrada:
     "required_freeboard_m": 0.2,
     "overflow_path_state": "DECLARED_NOT_REVIEWED",
     "overflow_receiver_id": "BACIA_SEGURA_01",
+    "downstream_water_depth_m": 0.35,
+    "downstream_velocity_m_s": 0.2,
+    "transition_loss_coefficient": 0.3,
+    "downstream_boundary_source_id": "levantamento-jusante-2026-08",
+    "downstream_boundary_evidence_state": "PROJECT_EVIDENCE",
     "maximum_admissible_velocity_m_s": 1.2,
     "maximum_admissible_shear_pa": 20.0,
     "stability_limit_source_id": "regra-regional-revisao-3",
@@ -68,11 +76,17 @@ nao simula a mancha, a velocidade fora da secao, a erosao no percurso nem a
 capacidade do receptor. Mesmo `PROJECT_REVIEWED` permanece sem aprovacao
 hidraulica nesta entrega.
 
-O proximo incremento deve testar condicoes de jusante e transicoes e gerar a
-geometria espacial do caminho de excedencia. Depois disso sera possivel iniciar a comparacao
+Esse envelope nao resolve o perfil gradualmente variado nem propaga o remanso
+entre secoes. O HEC-RAS alerta que condicoes de contorno mal definidas podem
+introduzir erro e instabilidade; portanto a origem da lamina e obrigatoria.
+
+O proximo incremento deve resolver o perfil entre secoes e gerar a geometria
+espacial do caminho de excedencia. Depois disso sera possivel iniciar a comparacao
 hidraulica das estruturas de curva embutida, base larga/passante e ESD.
 
 Referencias metodologicas:
 
 - [NRCS National Engineering Handbook, Chapter 7 - Grassed Waterways](https://directives.nrcs.usda.gov/sites/default/files2/1748618373/Chapter%207%20%E2%80%93%20Grassed%20Waterways.pdf)
 - [NRCS National Engineering Handbook, Chapter 8 - Threshold Channel Design](https://directives.nrcs.usda.gov/sites/default/files2/1720613324/Chapter%2008%20-%20Threshold%20Channel%20Design.pdf)
+- [HEC-RAS - Downstream Boundary Condition Considerations](https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/latest/performing-a-dam-break-study-with-hec-ras/downstream-boundary-condition-considerations)
+- [HEC-RAS - Contraction and Expansion Loss Evaluation](https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.1/theoretical-basis-for-one-dimensional-and-two-dimensional-hydrodynamic-calculations/1d-steady-flow-water-surface-profiles/contraction-and-expansion-loss-evaluation?scroll-versions%3Aversion-name=6.7_beta4)
