@@ -93,6 +93,7 @@ def create_app(
                 "SULCATION_E0",
                 "CF0_CONTINUOUS",
                 "C1_EMBEDDED_SCREENING",
+                "PCX1_RUNOFF_SCREENING",
             ],
         }
 
@@ -274,7 +275,7 @@ def create_app(
             request = _require(store, "generation_requests", payload.request_id, "generation request")
             if request["project_id"] != project_id:
                 raise HTTPException(status_code=409, detail="generation request belongs to another project")
-        if payload.engine_id in {"project_topography", "project_pipeline_e0"} and request is None:
+        if payload.engine_id in {"project_topography", "project_pipeline_e0", "project_hydrology_screening"} and request is None:
             raise HTTPException(
                 status_code=409,
                 detail={"code": "IMMUTABLE_REQUEST_REQUIRED", "message": "Crie um pedido imutavel antes de executar este motor."},
@@ -282,7 +283,7 @@ def create_app(
         product_ids = payload.product_ids or (request or {}).get("product_ids", [])
         if (
             request is not None
-            and payload.engine_id in {"project_topography", "project_pipeline_e0"}
+            and payload.engine_id in {"project_topography", "project_pipeline_e0", "project_hydrology_screening"}
             and payload.product_ids
             and payload.product_ids != request.get("product_ids", [])
         ):
@@ -592,6 +593,15 @@ def _validate_run_products(engine_id: str, product_ids: list[str]) -> None:
                     ],
                 },
             )
+    if engine_id == "project_hydrology_screening":
+        if product_ids != ["PCX1_RUNOFF_SCREENING"]:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "ENGINE_PRODUCT_MISMATCH",
+                    "required_product_ids": ["PCX1_RUNOFF_SCREENING"],
+                },
+            )
 
 
 def _validate_product_dependencies(product_ids: list[str]) -> None:
@@ -622,7 +632,11 @@ def _new_run(project_id: str, engine_id: str, product_ids: list[str], request_id
         "cancel_requested": False,
         "created_at": now,
         "updated_at": now,
-        "delivery_boundary": "E0_TRIAGEM_NOT_GUIDANCE_AUTHORIZED",
+        "delivery_boundary": (
+            "PCX1_RAINFALL_EXCESS_ONLY_NOT_HYDRAULIC_DESIGN"
+            if engine_id == "project_hydrology_screening"
+            else "E0_TRIAGEM_NOT_GUIDANCE_AUTHORIZED"
+        ),
     }
 
 

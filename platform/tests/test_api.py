@@ -137,6 +137,58 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(request["configuration_snapshot"]["topography"]["resolution_m"], 1.0)
         self.assertEqual(request["configuration_snapshot"]["sulcation"]["row_spacing_m"], 1.5)
 
+    def test_pcx1_configuration_runs_from_immutable_request_and_publishes_products(self) -> None:
+        project_id = self.create_project()["id"]
+        configuration = self.client.get(f"/api/projects/{project_id}/configuration").json()
+        configuration["hydrology_screening"] = {
+            "enabled": True,
+            "method": "NRCS_CURVE_NUMBER_EVENT_SCREENING",
+            "catchment_area_ha": 10,
+            "curve_number": 100,
+            "initial_abstraction_ratio": 0.2,
+            "parameter_evidence_state": "SYNTHETIC_TEST_ONLY",
+            "parameter_source_id": "analytic-cn100-test",
+            "rainfall_intervals": [
+                {"duration_s": 600, "rainfall_mm": 5},
+                {"duration_s": 600, "rainfall_mm": 10},
+            ],
+        }
+        response = self.client.put(f"/api/projects/{project_id}/configuration", json=configuration)
+        self.assertEqual(response.status_code, 200, response.text)
+        request_response = self.client.post(
+            f"/api/projects/{project_id}/requests",
+            json={"name": "PCX1 sintetico", "product_ids": ["PCX1_RUNOFF_SCREENING"]},
+        )
+        self.assertEqual(request_response.status_code, 201, request_response.text)
+        request = request_response.json()
+        run_response = self.client.post(
+            f"/api/projects/{project_id}/runs",
+            json={
+                "engine_id": "project_hydrology_screening",
+                "request_id": request["id"],
+                "product_ids": ["PCX1_RUNOFF_SCREENING"],
+            },
+        )
+        self.assertEqual(run_response.status_code, 202, run_response.text)
+        run = self.wait_run(run_response.json()["id"])
+        self.assertEqual(run["status"], "SUCCEEDED", run)
+        self.assertEqual(run["result_summary"]["total_rainfall_excess_mm"], 15)
+        self.assertFalse(run["result_summary"]["guidance_authorized"])
+        artifacts = self.client.get(f"/api/runs/{run['id']}/artifacts").json()["items"]
+        self.assertEqual({item["filename"] for item in artifacts}, {
+            "pcx1_rainfall_excess.json", "pcx1_rainfall_excess_intervals.csv"
+        })
+        manifest_artifact = next(item for item in artifacts if item["filename"].endswith(".json"))
+        manifest = self.client.get(manifest_artifact["download_url"]).json()
+        self.assertEqual(manifest["release"], "PCX1_NRCS_CN_RAINFALL_EXCESS_ONLY")
+        self.assertIn("PCX_HYDROGRAPH_NOT_IMPLEMENTED", manifest["blocker_codes"])
+
+        missing_request = self.client.post(
+            f"/api/projects/{project_id}/runs",
+            json={"engine_id": "project_hydrology_screening", "product_ids": ["PCX1_RUNOFF_SCREENING"]},
+        )
+        self.assertEqual(missing_request.status_code, 409)
+
     def test_demo_only_publishes_whitelisted_existing_artifacts(self) -> None:
         project = self.create_project()
         demo_pdf = self.workspace / "dataset" / "derived" / "Dossie_Completo_Sistematizacao_E0_CF0_C1_Opcoes_2026-08-24.pdf"
@@ -258,16 +310,19 @@ class PlatformApiTests(unittest.TestCase):
                 "SULCATION_E0",
                 "CF0_CONTINUOUS",
                 "C1_EMBEDDED_SCREENING",
+                "PCX1_RUNOFF_SCREENING",
             ],
         )
         catalog = self.client.get("/api/catalog").json()
         self.assertEqual(
             {item["id"] for item in catalog["engines"]},
-            {"validate_uploads", "project_topography", "project_pipeline_e0", "demo_current_dataset"},
+            {"validate_uploads", "project_topography", "project_pipeline_e0", "project_hydrology_screening", "demo_current_dataset"},
         )
         self.assertIn("C3_ESD", {item["id"] for item in catalog["products"]})
         pipeline = next(item for item in catalog["engines"] if item["id"] == "project_pipeline_e0")
         self.assertIn("C1_EMBEDDED_SCREENING", pipeline["supported_product_ids"])
+        hydrology = next(item for item in catalog["engines"] if item["id"] == "project_hydrology_screening")
+        self.assertEqual(hydrology["supported_product_ids"], ["PCX1_RUNOFF_SCREENING"])
         self.assertEqual(self.client.get("/api/openapi.json").status_code, 200)
         self.assertEqual(self.client.get("/api/docs").status_code, 200)
 

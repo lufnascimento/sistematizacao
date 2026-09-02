@@ -47,6 +47,17 @@
       "next_implementation": "Adicionar metodo de chuva-excesso aprovado, hidrograma, roteamento, secoes, receptores, excedencia e incerteza."
     },
     {
+      "id": "PCX1_RAINFALL_EXCESS_KERNEL",
+      "title": "Nucleo PCX1 de chuva-excesso incremental NRCS-CN",
+      "domain": "HYDROLOGY",
+      "declared_status": "IMPLEMENTED_LIMITED",
+      "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT"],
+      "required_capabilities": ["PCX0_MASS_BALANCE_KERNEL"],
+      "outputs": ["PCX1_RAINFALL_EXCESS_HYETOGRAPH"],
+      "blocker_code": "PCX_HYDROGRAPH_NOT_IMPLEMENTED",
+      "next_implementation": "Gerar hidrograma com Tc/lag declarado, validar o metodo por projeto e propagar por alcances."
+    },
+    {
       "id": "PCE_ENGINE",
       "title": "Motor de controle de erosao PCE",
       "domain": "CONSERVATION",
@@ -74,7 +85,7 @@
       "domain": "HYDROLOGY",
       "declared_status": "NOT_IMPLEMENTED",
       "required_evidence_packages": ["RAINFALL_DESIGN", "SOIL_PROFILE_HYDRAULIC", "FULL_CATCHMENT", "DRAINAGE_NETWORK", "CONSERVATION_RULE_PACK"],
-      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL"],
+      "required_capabilities": ["TOPO_E0_PRODUCTS", "DTM_UNCERTAINTY_ENGINE", "PCX0_MASS_BALANCE_KERNEL", "PCX1_RAINFALL_EXCESS_KERNEL"],
       "outputs": ["PCX_MASS_BALANCE", "HYDROGRAPH", "HYDRAULIC_GATES"],
       "blocker_code": "PCX_SOLVER_NOT_IMPLEMENTED",
       "next_implementation": "Implementar eventos, chuva-excesso, Tc, roteamento, secoes, receptores, excedencia e incerteza."

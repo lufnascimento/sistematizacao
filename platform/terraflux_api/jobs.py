@@ -31,6 +31,7 @@ class JobRunner:
             "validate_uploads": self._validate_uploads,
             "project_topography": self._project_topography,
             "project_pipeline_e0": self._project_pipeline_e0,
+            "project_hydrology_screening": self._project_hydrology_screening,
             "demo_current_dataset": self._publish_demo,
         }
         if set(self._engines) != set(ENGINE_CATALOG):
@@ -271,6 +272,107 @@ class JobRunner:
             self._artifact(run, path, product_id, "DEMO_CURRENT_DATASET_REFERENCE")
             self._set(run["id"], progress=10 + int(80 * index / total))
         self._log(run["id"], "INFO", f"{len(selected)} artefatos demonstrativos publicados.")
+
+    def _project_hydrology_screening(self, run: dict[str, Any]) -> None:
+        workspace_text = str(self.workspace_root)
+        if workspace_text not in sys.path:
+            sys.path.insert(0, workspace_text)
+        from scripts.pcx1_runoff import (
+            RainfallInterval,
+            calculate_pcx1_rainfall_excess,
+            validate_pcx1_release,
+        )
+
+        project = self.store.get("projects", run["project_id"])
+        if project is None:
+            raise RuntimeError("project disappeared")
+        request = self.store.get("generation_requests", run.get("request_id") or "")
+        if request is None or request["project_id"] != project["id"]:
+            raise ValueError("project_hydrology_screening requires an immutable request from the same project")
+        self._verify_request_snapshot(request)
+        if request.get("product_ids") != ["PCX1_RUNOFF_SCREENING"]:
+            raise ValueError("PCX1_REQUEST_PRODUCT_SNAPSHOT_MISMATCH")
+
+        configuration = request["configuration_snapshot"].get("hydrology_screening", {})
+        if configuration.get("enabled") is not True:
+            raise ValueError("PCX1_CONFIGURATION_NOT_ENABLED")
+        source_id = str(configuration.get("parameter_source_id") or "").strip()
+        if not source_id:
+            raise ValueError("PCX1_PARAMETER_SOURCE_REQUIRED")
+        interval_values = configuration.get("rainfall_intervals")
+        if not isinstance(interval_values, list) or not interval_values:
+            raise ValueError("PCX1_RAINFALL_INTERVALS_REQUIRED")
+        intervals = [RainfallInterval(**item) for item in interval_values]
+
+        self._set(run["id"], progress=30, stage="CALCULATING_PCX1_RAINFALL_EXCESS")
+        result = calculate_pcx1_rainfall_excess(
+            intervals,
+            catchment_area_ha=configuration.get("catchment_area_ha"),
+            curve_number=configuration.get("curve_number"),
+            initial_abstraction_ratio=configuration.get("initial_abstraction_ratio"),
+        )
+        validate_pcx1_release(result)
+        result.update(
+            {
+                "schema_version": "1.0.0",
+                "manifest_type": "PCX1_RAINFALL_EXCESS_SCREENING_RESULT",
+                "project_id": project["id"],
+                "run_id": run["id"],
+                "request_ref": {"id": request["id"], "sha256": request["sha256"]},
+                "parameter_source": {
+                    "source_id": source_id,
+                    "evidence_state": configuration.get("parameter_evidence_state"),
+                },
+                "stage_status": "SCREENING_ONLY_WITH_EXPLICIT_BLOCKERS",
+                "blocker_codes": [
+                    "PCX1_METHOD_PROJECT_APPROVAL_REQUIRED",
+                    "PCX_HYDROGRAPH_NOT_IMPLEMENTED",
+                    "PCX_HYDRAULIC_ROUTING_NOT_IMPLEMENTED",
+                    "PCX_SECTION_CAPACITY_NOT_EVALUATED",
+                    "PCX_RECEIVER_NOT_APPROVED",
+                    "GUIDANCE_NOT_AUTHORIZED",
+                ],
+            }
+        )
+        if configuration.get("parameter_evidence_state") != "PROJECT_EVIDENCE":
+            result["blocker_codes"].append("PCX1_PROJECT_EVIDENCE_INCOMPLETE")
+
+        run_dir = self.store.project_dir(project["id"]) / "runs" / run["id"]
+        output_dir = run_dir / "products" / "pcx1_runoff_screening"
+        output_dir.mkdir(parents=True, exist_ok=False)
+        manifest_path = output_dir / "pcx1_rainfall_excess.json"
+        manifest_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        csv_path = output_dir / "pcx1_rainfall_excess_intervals.csv"
+        columns = (
+            "index,duration_s,elapsed_s,rainfall_mm,rainfall_intensity_mm_h,"
+            "cumulative_rainfall_mm,rainfall_excess_mm,cumulative_rainfall_excess_mm,incremental_loss_mm\n"
+        )
+        rows = [
+            ",".join(str(item[key]) for key in (
+                "index", "duration_s", "elapsed_s", "rainfall_mm",
+                "rainfall_intensity_mm_h", "cumulative_rainfall_mm",
+                "rainfall_excess_mm", "cumulative_rainfall_excess_mm", "incremental_loss_mm"
+            ))
+            for item in result["intervals"]
+        ]
+        csv_path.write_text(columns + "\n".join(rows) + "\n", encoding="utf-8")
+        self._artifact(run, manifest_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        self._artifact(run, csv_path, "PCX1_RUNOFF_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+        self._set(
+            run["id"],
+            progress=95,
+            stage="PUBLISHED_PCX1_SCREENING",
+            result="PASS_PCX1_RAINFALL_EXCESS_SCREENING_NOT_DESIGN",
+            result_summary={
+                "total_rainfall_mm": result["total_rainfall_mm"],
+                "total_rainfall_excess_mm": result["total_rainfall_excess_mm"],
+                "total_rainfall_excess_volume_m3": result["total_rainfall_excess_volume_m3"],
+                "runoff_coefficient_event": result["runoff_coefficient_event"],
+                "blocker_codes": result["blocker_codes"],
+                "guidance_authorized": False,
+            },
+        )
+        self._log(run["id"], "WARN", "PCX1 publicado como chuva-excesso de triagem; hidrograma e capacidade nao avaliados.")
 
     def _project_topography(self, run: dict[str, Any]) -> None:
         project = self.store.get("projects", run["project_id"])

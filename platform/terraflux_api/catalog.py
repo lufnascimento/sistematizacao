@@ -126,6 +126,21 @@ PRODUCTS: dict[str, dict] = {
             "embedded_terrace_screening_manifest.json", "Relatorio_Triagem_C1_Curva_Embutida_E0.pdf",
         ],
     },
+    "PCX1_RUNOFF_SCREENING": {
+        "label": "Chuva-excesso PCX1",
+        "description": "Hietograma de chuva-excesso NRCS-CN para triagem, sem hidrograma ou capacidade hidraulica.",
+        "stage": "E0_TRIAGEM",
+        "implementation": "ENGINE_AVAILABLE_LIMITED",
+        "client_engine": "project_hydrology_screening",
+        "required_asset_groups": [],
+        "limitations": [
+            "METHOD_REQUIRES_PROJECT_APPROVAL",
+            "NO_HYDROGRAPH",
+            "NO_PEAK_FLOW",
+            "HYDRAULIC_CAPACITY_NOT_EVALUATED",
+            "GUIDANCE_NOT_AUTHORIZED",
+        ],
+    },
     "C2_BROAD_BASE": {
         "label": "Base larga ou passante C2",
         "description": "Produto conservacionista dimensionado.",
@@ -182,6 +197,14 @@ ENGINE_CATALOG: dict[str, dict] = {
         "supported_product_ids": ["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS", "C1_EMBEDDED_SCREENING"],
         "description": "Gera a base topografica, familias geometricas E0, candidatos CF0 e a triagem conceitual C1 dependente de CF0.",
         "delivery_boundary": "E0_TRIAGEM_NOT_GUIDANCE_AUTHORIZED",
+    },
+    "project_hydrology_screening": {
+        "label": "Gerar chuva-excesso PCX1",
+        "mode": "CLIENT_DATA",
+        "executes_external_process": False,
+        "supported_product_ids": ["PCX1_RUNOFF_SCREENING"],
+        "description": "Calcula chuva-excesso incremental NRCS-CN a partir do evento e dos parametros congelados no pedido.",
+        "delivery_boundary": "PCX1_RAINFALL_EXCESS_ONLY_NOT_HYDRAULIC_DESIGN",
     },
     "demo_current_dataset": {
         "label": "Publicar demonstracao local controlada",

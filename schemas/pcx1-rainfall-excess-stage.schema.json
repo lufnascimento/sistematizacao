@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terraflux.local/schemas/pcx1-rainfall-excess-stage.schema.json",
+  "title": "TerraFlux PCX1 rainfall-excess screening result",
+  "type": "object",
+  "required": [
+    "schema_version", "manifest_type", "release", "project_id", "run_id",
+    "request_ref", "parameter_source", "method", "catchment_area_ha",
+    "curve_number", "initial_abstraction_ratio", "total_rainfall_mm",
+    "total_rainfall_excess_mm", "total_rainfall_excess_volume_m3", "intervals",
+    "stage_status", "blocker_codes", "hydrograph_generated",
+    "peak_flow_evaluated", "hydraulic_capacity_evaluated", "receiver_approved",
+    "guidance_authorized", "limitations"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "manifest_type": { "const": "PCX1_RAINFALL_EXCESS_SCREENING_RESULT" },
+    "release": { "const": "PCX1_NRCS_CN_RAINFALL_EXCESS_ONLY" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "request_ref": {
+      "type": "object",
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "parameter_source": {
+      "type": "object",
+      "required": ["source_id", "evidence_state"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "evidence_state": {
+          "enum": ["PROJECT_EVIDENCE", "E0_ASSUMPTION", "SYNTHETIC_TEST_ONLY"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "method": { "const": "NRCS_CURVE_NUMBER_EVENT_SCREENING" },
+    "catchment_area_ha": { "type": "number", "exclusiveMinimum": 0 },
+    "curve_number": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+    "initial_abstraction_ratio": { "type": "number", "minimum": 0, "maximum": 0.3 },
+    "potential_retention_mm": { "type": "number", "minimum": 0 },
+    "initial_abstraction_mm": { "type": "number", "minimum": 0 },
+    "event_duration_s": { "type": "number", "exclusiveMinimum": 0 },
+    "total_rainfall_mm": { "type": "number", "minimum": 0 },
+    "total_rainfall_volume_m3": { "type": "number", "minimum": 0 },
+    "total_rainfall_excess_mm": { "type": "number", "minimum": 0 },
+    "total_rainfall_excess_volume_m3": { "type": "number", "minimum": 0 },
+    "runoff_coefficient_event": { "type": "number", "minimum": 0, "maximum": 1 },
+    "intervals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "index", "duration_s", "elapsed_s", "rainfall_mm",
+          "rainfall_intensity_mm_h", "cumulative_rainfall_mm",
+          "rainfall_excess_mm", "cumulative_rainfall_excess_mm",
+          "incremental_loss_mm"
+        ],
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "duration_s": { "type": "number", "exclusiveMinimum": 0 },
+          "elapsed_s": { "type": "number", "exclusiveMinimum": 0 },
+          "rainfall_mm": { "type": "number", "minimum": 0 },
+          "rainfall_intensity_mm_h": { "type": "number", "minimum": 0 },
+          "cumulative_rainfall_mm": { "type": "number", "minimum": 0 },
+          "rainfall_excess_mm": { "type": "number", "minimum": 0 },
+          "cumulative_rainfall_excess_mm": { "type": "number", "minimum": 0 },
+          "incremental_loss_mm": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stage_status": { "const": "SCREENING_ONLY_WITH_EXPLICIT_BLOCKERS" },
+    "blocker_codes": {
+      "type": "array",
+      "minItems": 6,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "hydrograph_generated": { "const": false },
+    "peak_flow_evaluated": { "const": false },
+    "hydraulic_capacity_evaluated": { "const": false },
+    "receiver_approved": { "const": false },
+    "guidance_authorized": { "const": false },
+    "limitations": {
+      "type": "array",
+      "allOf": [
+        { "contains": { "const": "NO_HYDROGRAPH" } },
+        { "contains": { "const": "NO_PEAK_FLOW" } },
+        { "contains": { "const": "NOT_HYDRAULIC_CAPACITY" } },
+        { "contains": { "const": "NOT_PROJECT_EXECUTIVE" } },
+        { "contains": { "const": "NOT_GUIDANCE_AUTHORIZED" } }
+      ],
+      "items": { "type": "string" },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

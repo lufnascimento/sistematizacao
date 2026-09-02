@@ -59,6 +59,28 @@ class ProductReadinessTests(unittest.TestCase):
         self.assertEqual(readiness["summary"]["blocking_count"], 0)
         self.assertIn("TOPOGRAPHY_E0", readiness["summary"]["available_product_ids"])
 
+    def test_pcx1_requires_complete_explicit_event_configuration(self) -> None:
+        readiness = build_readiness(self.store, self.project)
+        product = self.product(readiness, "PCX1_RUNOFF_SCREENING")
+        self.assertFalse(product["client_data_generation_available"])
+        self.assertIn("PCX1_CONFIGURATION_NOT_ENABLED", product["blockers"])
+
+        self.project["configuration"]["hydrology_screening"] = {
+            "enabled": True,
+            "method": "NRCS_CURVE_NUMBER_EVENT_SCREENING",
+            "catchment_area_ha": 20.0,
+            "curve_number": 82.0,
+            "initial_abstraction_ratio": 0.2,
+            "parameter_evidence_state": "PROJECT_EVIDENCE",
+            "parameter_source_id": "soil-survey-2026",
+            "rainfall_intervals": [{"duration_s": 900.0, "rainfall_mm": 25.0}],
+        }
+        readiness = build_readiness(self.store, self.project)
+        product = self.product(readiness, "PCX1_RUNOFF_SCREENING")
+        self.assertTrue(product["client_data_generation_available"])
+        self.assertEqual(product["client_engine"], "project_hydrology_screening")
+        self.assertEqual(product["blockers"], [])
+
     def test_e0_and_cf0_require_field_id_and_declared_absence_of_power_network(self) -> None:
         self.add_minimum_inputs()
         readiness = build_readiness(self.store, self.project)
@@ -179,6 +201,7 @@ class ProductReadinessTests(unittest.TestCase):
             "SULCATION_E0",
             "CF0_CONTINUOUS",
             "C1_EMBEDDED_SCREENING",
+            "PCX1_RUNOFF_SCREENING",
             *unavailable,
             "COMPLETE_DOSSIER",
         }

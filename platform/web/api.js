@@ -791,6 +791,14 @@ export const systemCatalog = {
       available: true,
     },
     {
+      id: "PCX1_RUNOFF_SCREENING",
+      name: "Chuva-excesso PCX1",
+      description: "Converte o hietograma em chuva-excesso NRCS-CN; nao gera hidrograma, vazao de pico ou dimensionamento.",
+      level: "E0",
+      requires: ["AREA_CONTRIBUINTE", "HIETOGRAMA", "CURVE_NUMBER_COM_FONTE"],
+      available: true,
+    },
+    {
       id: "C1_DIMENSIONED",
       name: "Curva embutida dimensionada",
       description: "TI/TD, seção, superfície proposta, volumes e verificação hidráulica conservacionista.",
@@ -883,6 +891,21 @@ export const systemCatalog = {
         { id: "power_line.state", name: "Rede elétrica aérea", type: "select", options: [{ value: "PENDING", label: "Não revisada" }, { value: "DECLARED_NONE", label: "Declarada inexistente" }, { value: "PROVIDED", label: "Shape enviado" }], default: "PENDING", source: "Cliente" },
         { id: "connections.cross_field_enabled", name: "Avaliar conexão entre talhões", type: "boolean", default: true, source: "Cliente" },
         { id: "connections.cross_property_enabled", name: "Avaliar conexão entre propriedades", type: "boolean", default: false, source: "Cliente" },
+      ],
+    },
+    {
+      id: "hydrology-screening",
+      name: "Chuva e escoamento PCX1",
+      description: "Evento de triagem; os valores precisam de fonte e nao dimensionam estruturas",
+      parameters: [
+        { id: "hydrology.enabled", name: "Habilitar chuva-excesso PCX1", type: "boolean", default: false, source: "Cliente" },
+        { id: "hydrology.catchment_area_ha", name: "Area contribuinte", type: "number", unit: "ha", min: 0.01, max: 1000000, step: 0.01, default: 1, source: "Cliente" },
+        { id: "hydrology.curve_number", name: "Curve Number do evento", type: "number", unit: null, min: 1, max: 100, step: 0.1, default: 75, source: "Cliente" },
+        { id: "hydrology.initial_abstraction_ratio", name: "Razao de abstracao inicial", type: "number", unit: "Ia/S", min: 0, max: 0.3, step: 0.01, default: 0.2, source: "Cliente" },
+        { id: "hydrology.interval_minutes", name: "Duracao de cada intervalo", type: "number", unit: "min", min: 1, max: 10080, step: 1, default: 10, source: "Cliente" },
+        { id: "hydrology.rainfall_series_mm", name: "Chuva por intervalo", type: "text", unit: "mm", default: "", source: "Cliente" },
+        { id: "hydrology.parameter_source_id", name: "Fonte do CN e do evento", type: "text", unit: null, default: "", source: "Cliente" },
+        { id: "hydrology.evidence_state", name: "Estado da evidencia", type: "select", options: [{ value: "E0_ASSUMPTION", label: "Hipotese E0" }, { value: "PROJECT_EVIDENCE", label: "Evidencia do projeto" }], default: "E0_ASSUMPTION", source: "Cliente" },
       ],
     },
   ],
@@ -992,6 +1015,14 @@ function liveConfiguration(configuration) {
       "power_line.state": configuration.constraints.power_network_state === "UNKNOWN" ? "PENDING" : configuration.constraints.power_network_state === "UPLOADED" ? "PROVIDED" : "DECLARED_NONE",
       "connections.cross_field_enabled": configuration.sulcation.allow_cross_field,
       "connections.cross_property_enabled": configuration.sulcation.allow_cross_property,
+      "hydrology.enabled": configuration.hydrology_screening?.enabled || false,
+      "hydrology.catchment_area_ha": configuration.hydrology_screening?.catchment_area_ha || 1,
+      "hydrology.curve_number": configuration.hydrology_screening?.curve_number || 75,
+      "hydrology.initial_abstraction_ratio": configuration.hydrology_screening?.initial_abstraction_ratio ?? 0.2,
+      "hydrology.interval_minutes": configuration.hydrology_screening?.rainfall_intervals?.[0]?.duration_s ? configuration.hydrology_screening.rainfall_intervals[0].duration_s / 60 : 10,
+      "hydrology.rainfall_series_mm": (configuration.hydrology_screening?.rainfall_intervals || []).map((item) => item.rainfall_mm).join(", "),
+      "hydrology.parameter_source_id": configuration.hydrology_screening?.parameter_source_id || "",
+      "hydrology.evidence_state": configuration.hydrology_screening?.parameter_evidence_state || "E0_ASSUMPTION",
     },
     selected_product_ids: configuration.selected_product_ids,
     _backend: configuration,
@@ -1019,6 +1050,24 @@ function applyLiveConfiguration(current, payload) {
   current.objectives.performance_weight = Number(values["objectives.performance_weight"] ?? current.objectives.performance_weight);
   const power = values["power_line.state"];
   current.constraints.power_network_state = power === "DECLARED_NONE" ? "DECLARED_NONE" : power === "PROVIDED" ? "UPLOADED" : "UNKNOWN";
+  const hydrologyEnabled = Boolean(values["hydrology.enabled"]);
+  const intervalSeconds = Number(values["hydrology.interval_minutes"] || 10) * 60;
+  const rainfallValues = String(values["hydrology.rainfall_series_mm"] || "")
+    .split(/[;,\s]+/)
+    .filter(Boolean)
+    .map(Number);
+  current.hydrology_screening = {
+    enabled: hydrologyEnabled,
+    method: "NRCS_CURVE_NUMBER_EVENT_SCREENING",
+    catchment_area_ha: hydrologyEnabled ? Number(values["hydrology.catchment_area_ha"]) : null,
+    curve_number: hydrologyEnabled ? Number(values["hydrology.curve_number"]) : null,
+    initial_abstraction_ratio: Number(values["hydrology.initial_abstraction_ratio"] ?? 0.2),
+    parameter_evidence_state: values["hydrology.evidence_state"] || "E0_ASSUMPTION",
+    parameter_source_id: hydrologyEnabled ? String(values["hydrology.parameter_source_id"] || "").trim() : null,
+    rainfall_intervals: hydrologyEnabled && rainfallValues.every(Number.isFinite)
+      ? rainfallValues.map((rainfall_mm) => ({ duration_s: intervalSeconds, rainfall_mm }))
+      : [],
+  };
   return current;
 }
 
@@ -1040,6 +1089,8 @@ function liveRun(run, logs = [], artifactCount = 0) {
       ? "Topografia E0 do projeto"
       : run.engine_id === "project_pipeline_e0"
         ? "Cenários E0 do projeto"
+        : run.engine_id === "project_hydrology_screening"
+          ? "Chuva-excesso PCX1"
         : run.engine_id === "validate_uploads"
           ? "Validação dos dados"
           : "Rodada de produtos",
@@ -1276,7 +1327,8 @@ class ApiClient {
     const scenarioProductIds = new Set(["SULCATION_E0", "CF0_CONTINUOUS"]);
     const hasScenarioProduct = productIds.some((productId) => scenarioProductIds.has(productId));
     const isTopographyOnly = productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0";
-    const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : null;
+    const isHydrologyOnly = productIds.length === 1 && productIds[0] === "PCX1_RUNOFF_SCREENING";
+    const engineId = hasScenarioProduct ? "project_pipeline_e0" : isTopographyOnly ? "project_topography" : isHydrologyOnly ? "project_hydrology_screening" : null;
     if (!engineId) {
       throw new Error("O pedido não possui uma combinação de produtos executável pelos motores atuais.");
     }

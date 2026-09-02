@@ -733,6 +733,13 @@ async function renderConfigureStep(project) {
       showToast("Pesos inválidos", `Os três objetivos somam ${weights}%. Ajuste para 100%.`, "error");
       return;
     }
+    if (payload.parameters["hydrology.enabled"]) {
+      const rainfall = String(payload.parameters["hydrology.rainfall_series_mm"] || "").split(/[;,\s]+/).filter(Boolean).map(Number);
+      if (!rainfall.length || rainfall.some((value) => !Number.isFinite(value) || value < 0) || !String(payload.parameters["hydrology.parameter_source_id"] || "").trim()) {
+        showToast("Evento PCX1 incompleto", "Informe a chuva por intervalo com valores nao negativos e identifique a fonte dos parametros.", "error");
+        return;
+      }
+    }
     button.disabled = true;
     try {
       await api.saveConfiguration(project.id, payload);
@@ -793,6 +800,7 @@ const readinessAliases = {
   C2_BROAD_BASE: "C2",
   C3_ESD: "C3",
   POA_STATIC: "POA",
+  PCX1_RUNOFF_SCREENING: "PCX1_RUNOFF_SCREENING",
 };
 
 function productReadiness(readiness, product) {
@@ -811,6 +819,7 @@ function requestMatchesProducts(request, productIds) {
 }
 
 function executionEngineFor(productIds) {
+  if (productIds.length === 1 && productIds[0] === "PCX1_RUNOFF_SCREENING") return "project_hydrology_screening";
   const supported = new Set(["TOPOGRAPHY_E0", "SULCATION_E0", "CF0_CONTINUOUS"]);
   if (productIds.some((item) => !supported.has(item))) return null;
   if (productIds.length === 1 && productIds[0] === "TOPOGRAPHY_E0") return "project_topography";
@@ -871,7 +880,7 @@ async function renderRunStep(project) {
   const productIds = products.map((item) => item.id);
   const productStates = products.map((product) => ({ product, ...productReadiness(readiness, product) }));
   const engineId = executionEngineFor(productIds);
-  const canRun = products.length > 0 && productStates.every((item) => item.ready) && Boolean(engineId) && readiness.maximum_delivery_level !== "NOT_READY";
+  const canRun = products.length > 0 && productStates.every((item) => item.ready) && Boolean(engineId) && (engineId === "project_hydrology_screening" || readiness.maximum_delivery_level !== "NOT_READY");
   const compiledRequest = requestMatchesProducts(latestRequest, productIds) ? latestRequest : null;
   main.innerHTML = `
     ${projectHead(project, "run", `<button class="button" id="compile-request" type="button">${icon("file-lock-2")} Compilar pedido</button><button class="button is-primary" id="start-run" type="button" ${!canRun ? "disabled" : ""}>${icon("play")} Iniciar processamento</button>`)}
@@ -897,7 +906,7 @@ async function renderRunStep(project) {
       </div>
       <aside class="content-aside">
         <section class="panel"><div class="panel-header"><h3>Gates da execução</h3></div><div class="panel-body"><div class="checklist">
-          ${minimumDataCheck("Dados mínimos E0", readiness.maximum_delivery_level !== "NOT_READY", readiness.maximum_delivery_level || "Não pronto")}
+          ${minimumDataCheck(engineId === "project_hydrology_screening" ? "Evento PCX1 completo" : "Dados mínimos E0", engineId === "project_hydrology_screening" || readiness.maximum_delivery_level !== "NOT_READY", engineId === "project_hydrology_screening" ? "Área, CN, fonte e hietograma" : readiness.maximum_delivery_level || "Não pronto")}
           ${minimumDataCheck("Produtos selecionados", products.length > 0, `${products.length} produto(s)`) }
           ${minimumDataCheck("Configuração salva", Boolean(configuration.preset_id), configuration.preset_id || "Escolha um preset")}
           ${minimumDataCheck("Produtos liberados", productStates.length > 0 && productStates.every((item) => item.ready), productStates.every((item) => item.ready) ? "Readiness confirmado" : "Há produto bloqueado")}
@@ -999,9 +1008,15 @@ async function renderResultsStep(project) {
 }
 
 function renderNoScenarioFocus(artifacts, run) {
+  if (run.engine_id === "project_hydrology_screening") return renderHydrologyFocus(run);
   const topography = renderTopographyFocus(artifacts);
   if (run.engine_id !== "project_pipeline_e0") return topography;
   return `<div class="callout is-warning">${icon("triangle-alert")}<div><strong>Nenhum cenário foi publicado.</strong>A topografia pode ter sido concluída, mas as alternativas E0/CF0/C1 não foram liberadas nesta rodada. Verifique o manifesto e os logs.</div></div>${topography}`;
+}
+
+function renderHydrologyFocus(run) {
+  const summary = run.result_summary || {};
+  return `<section class="panel"><div class="panel-header"><div><h2>Chuva-excesso PCX1</h2><p>Resultado do evento congelado no pedido; nao representa vazao de pico ou capacidade hidraulica.</p></div>${badge("LIMITED", "Triagem")}</div><div class="panel-body"><div class="stats-grid">${statBlock("Chuva total", `${Number(summary.total_rainfall_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mm`, "cloud-rain", "Evento informado")}${statBlock("Chuva-excesso", `${Number(summary.total_rainfall_excess_mm || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} mm`, "waves", "Metodo NRCS-CN")}${statBlock("Volume gerado", `${Number(summary.total_rainfall_excess_volume_m3 || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m3`, "container", "Antes do roteamento")}${statBlock("Coeficiente do evento", Number(summary.runoff_coefficient_event || 0).toLocaleString("pt-BR", { maximumFractionDigits: 3 }), "ratio", "Nao e parametro universal")}</div><div class="callout is-warning" style="margin-top:14px">${icon("shield-alert")}<div><strong>Bloqueios preservados</strong>${escapeHtml((summary.blocker_codes || []).join(", ") || "Hidrograma, secoes e receptores ainda nao avaliados.")}</div></div></div></section>`;
 }
 
 function renderTopographyFocus(artifacts) {

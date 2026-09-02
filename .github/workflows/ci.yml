@@ -50,3 +50,6 @@ jobs:
 
       - name: Run PCE0 and PCX0 contract tests
         run: python -m unittest -v tests.test_pce_pcx tests.test_run_pce_pcx_screening
+
+      - name: Run PCX1 rainfall-excess tests
+        run: python -m unittest -v tests.test_pcx1_runoff

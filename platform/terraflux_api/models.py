@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class StrictModel(BaseModel):
@@ -56,6 +56,40 @@ class ConservationConfiguration(StrictModel):
     hydraulic_receiver_id: str | None = Field(default=None, max_length=100)
 
 
+class RainfallIntervalConfiguration(StrictModel):
+    duration_s: float = Field(gt=0.0, le=604800.0)
+    rainfall_mm: float = Field(ge=0.0, le=1000.0)
+
+
+class HydrologyScreeningConfiguration(StrictModel):
+    enabled: bool = False
+    method: Literal["NRCS_CURVE_NUMBER_EVENT_SCREENING"] = "NRCS_CURVE_NUMBER_EVENT_SCREENING"
+    catchment_area_ha: float | None = Field(default=None, gt=0.0, le=1_000_000.0)
+    curve_number: float | None = Field(default=None, gt=0.0, le=100.0)
+    initial_abstraction_ratio: float = Field(default=0.2, ge=0.0, le=0.30)
+    parameter_evidence_state: Literal[
+        "PROJECT_EVIDENCE", "E0_ASSUMPTION", "SYNTHETIC_TEST_ONLY"
+    ] = "E0_ASSUMPTION"
+    parameter_source_id: str | None = Field(default=None, max_length=200)
+    rainfall_intervals: list[RainfallIntervalConfiguration] = Field(
+        default_factory=list, max_length=10_000
+    )
+
+    @model_validator(mode="after")
+    def enabled_screening_is_complete(self) -> "HydrologyScreeningConfiguration":
+        if not self.enabled:
+            return self
+        if self.catchment_area_ha is None:
+            raise ValueError("catchment_area_ha is required when hydrology screening is enabled")
+        if self.curve_number is None:
+            raise ValueError("curve_number is required when hydrology screening is enabled")
+        if not self.rainfall_intervals:
+            raise ValueError("rainfall_intervals are required when hydrology screening is enabled")
+        if not self.parameter_source_id:
+            raise ValueError("parameter_source_id is required when hydrology screening is enabled")
+        return self
+
+
 class ObjectiveConfiguration(StrictModel):
     soil_conservation_weight: float = Field(default=45.0, ge=0.0, le=100.0)
     harvestability_weight: float = Field(default=35.0, ge=0.0, le=100.0)
@@ -89,6 +123,9 @@ class ProjectConfiguration(StrictModel):
     topography: TopographyConfiguration = Field(default_factory=TopographyConfiguration)
     sulcation: SulcationConfiguration = Field(default_factory=SulcationConfiguration)
     conservation: ConservationConfiguration = Field(default_factory=ConservationConfiguration)
+    hydrology_screening: HydrologyScreeningConfiguration = Field(
+        default_factory=HydrologyScreeningConfiguration
+    )
     objectives: ObjectiveConfiguration = Field(default_factory=ObjectiveConfiguration)
     constraints: ConstraintConfiguration = Field(default_factory=ConstraintConfiguration)
     logistics: LogisticsConfiguration = Field(default_factory=LogisticsConfiguration)
@@ -131,7 +168,8 @@ class GenerationRequestCreate(StrictModel):
 
 class RunCreate(StrictModel):
     engine_id: Literal[
-        "validate_uploads", "project_topography", "project_pipeline_e0", "demo_current_dataset"
+        "validate_uploads", "project_topography", "project_pipeline_e0",
+        "project_hydrology_screening", "demo_current_dataset"
     ] = "validate_uploads"
     request_id: str | None = None
     product_ids: list[str] = Field(default_factory=list, max_length=20)

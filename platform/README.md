@@ -36,6 +36,12 @@ declarado em `TERRAFLUX_QGIS_PYTHON`.
 7. Comparar os cenarios e baixar mapas, GeoPackages, rasters, manifestos e o
    dossie PDF da rodada.
 
+Para chuva-excesso PCX1, o fluxo e independente da topografia: em Configurar,
+habilite PCX1, informe area contribuinte, CN, `Ia/S`, intervalo, serie de chuva
+e fonte; selecione apenas `PCX1_RUNOFF_SCREENING`; compile e execute. Resultados
+mostra chuva, excesso, volume, blockers e os downloads JSON/CSV. O produto nao
+exige LAZ, mas tambem nao espacializa alcances nem dimensiona estruturas.
+
 ## Motores habilitados
 
 - `validate_uploads`: integridade, papeis e prontidao dos insumos.
@@ -45,6 +51,9 @@ declarado em `TERRAFLUX_QGIS_PYTHON`.
   E0, familia curva continua CF0 e triagem conceitual C1, conforme os produtos
   selecionados; ao final, consolida resultados e evidencias em um dossie PDF
   pesquisavel.
+- `project_hydrology_screening`: transforma o hietograma declarado em
+  chuva-excesso incremental NRCS-CN, mantendo hidrograma, pico, propagacao,
+  secoes e receptores explicitamente bloqueados.
 - `demo_current_dataset`: publica somente artefatos demonstrativos presentes em
   uma lista fechada no workspace local. Esses dados nao acompanham o repositorio
   publico.
@@ -68,10 +77,12 @@ validar o estagio que transforma eixos/postes em barreiras e divide as linhas.
 
 ## Fronteira tecnica
 
-Os produtos atuais sao triagem E0/CF0 e C1 conceitual. Eles nao autorizam
+Os produtos atuais sao triagem E0/CF0, C1 conceitual e chuva-excesso PCX1. Eles nao autorizam
 guiamento de maquina, projeto agronomico executivo, aprovacao hidraulica ou
 locacao em campo. C1 publica sensibilidades TI e registra TD como bloqueado;
-PCE, PCX, secoes e espacamentos ainda nao sao dimensionados.
+PCE/PCX completos, secoes e espacamentos ainda nao sao dimensionados. PCX1
+calcula apenas chuva-excesso; um resultado numerico nao equivale a vazao ou
+capacidade hidraulica aprovada.
 
 Curva embutida dimensionada, base larga/passante, ESD/canal escoadouro, POA
 dinamico e continuidade entre talhoes/propriedades continuam visiveis no

@@ -177,6 +177,16 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                 product_blockers.append("HYDRAULIC_RECEIVER_MISSING")
         implementation = definition["implementation"]
         client_engine = definition.get("client_engine")
+        if product_id == "PCX1_RUNOFF_SCREENING":
+            hydrology = configuration.get("hydrology_screening", {})
+            if hydrology.get("enabled") is not True:
+                product_blockers.append("PCX1_CONFIGURATION_NOT_ENABLED")
+            for key in ("catchment_area_ha", "curve_number", "parameter_source_id"):
+                if hydrology.get(key) in (None, ""):
+                    product_blockers.append("PCX1_PARAMETERS_INCOMPLETE")
+                    break
+            if not hydrology.get("rainfall_intervals"):
+                product_blockers.append("PCX1_RAINFALL_INTERVALS_REQUIRED")
         if product_id in {"SULCATION_E0", "CF0_CONTINUOUS", "C1_EMBEDDED_SCREENING"}:
             if not configuration["topography"].get("field_id_column"):
                 product_blockers.append("FIELD_ID_COLUMN_REQUIRED")
@@ -292,6 +302,9 @@ _BLOCKER_MESSAGES = {
     "ROADS_CARRIERS_MISSING": "Envie carreadores e estradas para este produto.",
     "FLEET_CONFIGURATION_MISSING": "Configure a frota para este produto.",
     "HYDRAULIC_RECEIVER_MISSING": "Informe o receptor hidraulico para este produto.",
+    "PCX1_CONFIGURATION_NOT_ENABLED": "Habilite a triagem PCX1 na configuracao do projeto.",
+    "PCX1_PARAMETERS_INCOMPLETE": "Informe area contribuinte, Curve Number e a fonte dos parametros.",
+    "PCX1_RAINFALL_INTERVALS_REQUIRED": "Informe ao menos um intervalo do hietograma de chuva.",
 }
 
 
