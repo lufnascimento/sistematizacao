@@ -22,7 +22,27 @@ Mercator com origem local; comprimentos e quedas exibidos vem dos produtos
 originais, nao da projecao da tela. Latitudes acima de 85 graus, arquivos
 acima de 20 MB e camadas acima de 200 mil vertices exigem outro tratamento.
 
-Ainda faltam malha do MDT, modo 3D, carregamento progressivo, vetores de
-sulcacao e limites convertidos, perfis e comparacao de cenarios.
-terrain_mesh_available permanece false. A disponibilidade de uma linha
-horizontal nao significa que o terreno ou a referencia vertical existam.
+Novas rodadas topograficas publicam terrain_inspection_mesh.json quando
+ha superficie suficiente. A malha amostra ate 129 por 129 vertices nos
+centros dos pixels e omite cada quadrilatero que atravesse qualquer pixel
+invalido do raster original, inclusive pixels entre amostras. O arquivo
+registra checksum da fonte, grade, metodo e unidades. Quando nao e possivel
+gerar a malha, o manifesto registra a indisponibilidade sem descartar os
+demais produtos topograficos.
+
+O modo 3D e habilitado apos carregar a malha. Permite orbitar, enquadrar,
+alterar opacidade e consultar a cota interpolada da malha. Z e relativo ao
+minimo da fonte para exibicao, com escala horizontal local de Mercator
+compensada na vertical. Nao ha conversao de datum vertical; a cota consultada
+permanece na referencia original nao informada. Cores representam a faixa
+de cotas da propria rodada, nao classes de risco.
+
+Ainda faltam carregamento progressivo, vetores de sulcacao e limites
+convertidos, drapeamento das linhas, ortomosaico, perfis e comparacao de
+cenarios. terrain_mesh_available reflete somente malha publicada e rodada
+concluida. A presenca de linhas horizontais nao demonstra terreno ou datum.
+
+Validacao local: python platform/tests/verify_map_viewer.py --url URL --terrain
+verifica pixels, visibilidade, zoom, selecao, opacidade, rotacao e layout nos
+viewports desktop e mobile. tests/test_terrain_web_mesh.py executa no Python
+QGIS/GDAL e verifica cotas e uma lacuna NoData entre vertices amostrados.

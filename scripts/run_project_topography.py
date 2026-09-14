@@ -398,7 +398,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if density:
         outputs["point_density"] = artifact(density)
 
+    try:
+        from scripts.terrain_web_mesh import generate_terrain_mesh
+    except ModuleNotFoundError:
+        from terrain_web_mesh import generate_terrain_mesh
+    terrain_mesh_path = output_dir / "terrain_inspection_mesh.json"
+    try:
+        generate_terrain_mesh(dtm, terrain_mesh_path)
+        outputs["terrain_inspection_mesh"] = artifact(terrain_mesh_path)
+        terrain_mesh_status = {"status": "AVAILABLE", "inspection_only": True}
+    except ValueError as exc:
+        terrain_mesh_status = {"status": "UNAVAILABLE", "reason": str(exc), "inspection_only": True}
+
     manifest = {
+        "terrain_mesh": terrain_mesh_status,
         "schema_version": SCHEMA_VERSION,
         "artifact_id": "terraflux-project-topography-package",
         "release": RELEASE,

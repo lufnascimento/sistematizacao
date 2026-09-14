@@ -13,6 +13,10 @@ let camera;
 let controls;
 let origin = [0, 0];
 let span = 100;
+let mode3d = false;
+let terrainLoaded = false;
+let elevationOrigin = 0;
+let elevationScale = 1;
 const objects = [];
 const groups = [];
 const radius = 6378137;
@@ -40,8 +44,10 @@ function fit() {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   span = Math.max(size.y, size.x / (viewport.clientWidth / viewport.clientHeight), 10) * 1.35;
-  camera.position.set(center.x, center.y, 1000);
-  controls.target.set(center.x, center.y, 0);
+  camera.up.set(0, mode3d ? 0 : 1, mode3d ? 1 : 0);
+  camera.position.set(center.x + (mode3d ? span * .5 : 0), center.y - (mode3d ? span * .7 : 0), center.z + Math.max(span, 1000));
+  camera.far = Math.max(span * 20, 10000);
+  controls.target.copy(center);
   camera.zoom = 1;
   controls.update();
   resize();
@@ -93,6 +99,38 @@ async function start() {
     try {
       if (layer.size_bytes > 20 * 1024 * 1024) throw new Error("Camada excede 20 MB; requer carregamento progressivo.");
       const data = await getJSON(layer.source_url);
+      if (layer.spatial_metadata.format === "TERRAIN_INSPECTION_MESH") {
+        if (data.type !== "TerrainInspectionMesh" || !Array.isArray(data.vertices) || !data.vertices.length || data.vertices.length > 66049 || !Array.isArray(data.triangles) || !data.triangles.length || data.triangles.length > 131072) throw new Error("Malha fora dos limites de exibicao.");
+        if (data.vertices.some(p => !Array.isArray(p) || p.length !== 3 || !p.every(Number.isFinite) || Math.abs(p[0]) > 180 || Math.abs(p[1]) > 85) || data.triangles.some(t => !Array.isArray(t) || t.length !== 3 || t.some(i => !Number.isInteger(i) || i < 0 || i >= data.vertices.length))) throw new Error("Malha com coordenadas ou indices invalidos.");
+        if (!featureCount) origin = project(data.vertices[0]);
+        elevationOrigin = Math.min(...data.vertices.map(p => p[2]));
+        const maximum = Math.max(...data.vertices.map(p => p[2]));
+        elevationScale = 1 / Math.cos(data.vertices[0][1] * radians);
+        const positions = []; const colors = [];
+        for (const point of data.vertices) {
+          const [x, y] = project(point);
+          positions.push(x - origin[0], y - origin[1], (point[2] - elevationOrigin) * elevationScale);
+          const color = new THREE.Color().setHSL(.38 - .22 * (point[2] - elevationOrigin) / Math.max(maximum - elevationOrigin, 1), .28, .48);
+          colors.push(color.r, color.g, color.b);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setIndex(data.triangles.flat()); geometry.computeVertexNormals();
+        const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true });
+        const mesh = new THREE.Mesh(geometry, material); mesh.userData = { terrain: true };
+        const group = new THREE.Group(); group.add(mesh); groups.push(group); objects.push(mesh); scene.add(group);
+        const light = new THREE.DirectionalLight(0xffffff, 1.4); light.position.set(-1000, -1000, 2000); scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+        loaded++; featureCount++; terrainLoaded = true;
+        toggle.disabled = false; toggle.checked = true;
+        toggle.addEventListener("change", () => { group.visible = toggle.checked; render(); });
+        const opacity = document.createElement("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "1"; opacity.step = "0.05"; opacity.value = "1";
+        opacity.setAttribute("aria-label", `Opacidade de ${layer.name}`);
+        opacity.addEventListener("input", () => { material.opacity = Number(opacity.value); render(); });
+        row.append(opacity); detail.textContent = `${data.triangles.length.toLocaleString("pt-BR")} triangulos / ${elevationOrigin.toFixed(1)} a ${maximum.toFixed(1)} m`;
+        continue;
+      }
       if (data.type !== "FeatureCollection" || !Array.isArray(data.features)) throw new Error("Geometria indisponivel.");
       const group = new THREE.Group();
       let vertices = 0;
@@ -119,9 +157,21 @@ async function start() {
       row.append(opacity); detail.textContent = `${data.features.length} ${data.features.length === 1 ? "linha" : "linhas"}`;
     } catch (error) { detail.textContent = error.message; }
   }
-  status.textContent = `${loaded} ${loaded === 1 ? "camada carregada" : "camadas carregadas"} / ${featureCount} ${featureCount === 1 ? "linha" : "linhas"}`;
+  status.textContent = `${loaded} ${loaded === 1 ? "camada carregada" : "camadas carregadas"} / ${featureCount} ${terrainLoaded ? featureCount === 1 ? "objeto" : "objetos" : featureCount === 1 ? "linha" : "linhas"}`;
   if (!featureCount) { empty.hidden = false; empty.textContent = "Nenhuma camada vetorial disponivel nesta rodada."; }
   fit(); resize();
+  if (terrainLoaded) {
+    document.querySelector("#terrain-status").textContent = "MDT simplificado / datum vertical nao informado";
+    document.querySelector("#orbit").disabled = false;
+  }
+  for (const id of ["plan", "orbit"]) document.getElementById(id).onclick = () => {
+    mode3d = id === "orbit" && terrainLoaded;
+    controls.enableRotate = mode3d;
+    controls.mouseButtons.LEFT = mode3d ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+    document.querySelector("#plan").setAttribute("aria-pressed", String(!mode3d));
+    document.querySelector("#orbit").setAttribute("aria-pressed", String(mode3d));
+    fit();
+  };
   document.querySelector("#fit").onclick = fit;
   for (const [id, factor] of [["zoom-in", 1.4], ["zoom-out", 1 / 1.4]]) document.getElementById(id).onclick = () => { camera.zoom = THREE.MathUtils.clamp(camera.zoom * factor, 0.01, 10000); camera.updateProjectionMatrix(); render(); };
   const raycaster = new THREE.Raycaster();
@@ -134,7 +184,12 @@ async function start() {
     raycaster.params.Line.threshold = span / camera.zoom / rect.height * 8;
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(objects.filter(object => object.parent.visible && object.material.opacity > 0));
-    if (hits.length) showSelection(hits[0].object.userData);
+    if (hits.length && hits[0].object.userData.terrain) {
+      const list = document.querySelector("#selection"); list.replaceChildren();
+      const title = document.createElement("dt"); title.textContent = "Cota interpolada da malha (m)";
+      const value = document.createElement("dd"); value.textContent = (hits[0].point.z / elevationScale + elevationOrigin).toFixed(2);
+      list.append(title, value);
+    } else if (hits.length) showSelection(hits[0].object.userData);
     const point = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
     if (point) { const [lon, lat] = unproject(point.x + origin[0], point.y + origin[1]); document.querySelector("#position").textContent = `${lon.toFixed(6)}, ${lat.toFixed(6)}`; }
   });

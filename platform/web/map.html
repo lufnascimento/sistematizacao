@@ -6,7 +6,7 @@
   <title>TerraFlux | Mapa da rodada</title>
   <link rel="stylesheet" href="map.css">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js"}}</script>
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="./vendor/lucide.min.js" defer></script>
 </head>
 <body>
   <header><a id="back" href="/">Voltar aos resultados</a><strong>TerraFlux / Mapa da rodada</strong><span id="status" role="status">Carregando</span></header>
@@ -17,10 +17,10 @@
         <button id="fit" type="button" title="Enquadrar camadas" aria-label="Enquadrar camadas"><i data-lucide="scan"></i></button>
         <button id="zoom-in" type="button" title="Aproximar" aria-label="Aproximar"><i data-lucide="plus"></i></button>
         <button id="zoom-out" type="button" title="Afastar" aria-label="Afastar"><i data-lucide="minus"></i></button>
-        <span>Planta</span><button disabled title="Malha do terreno ainda indisponivel">3D</button>
+        <button id="plan" aria-pressed="true" title="Vista em planta">2D</button><button id="orbit" disabled aria-pressed="false" title="Vista tridimensional do terreno">3D</button>
       </div>
       <p id="empty" hidden></p>
-      <footer>Sem terreno publicado <span id="position"></span></footer>
+      <footer><span id="terrain-status">Sem terreno publicado</span><span id="position"></span></footer>
     </section>
   </main>
   <script type="module" src="map.js"></script>

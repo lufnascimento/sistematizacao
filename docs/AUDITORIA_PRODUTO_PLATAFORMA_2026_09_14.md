@@ -9,6 +9,11 @@ A verificacao visual usou uma rodada sintetica identificada como QA.
 As tabelas abaixo registram a situacao inicial; terreno 3D e camadas de
 sulcacao continuam pendentes. Ver CONTRATO_CAMADAS_MAPA.md.
 
+Atualizacao seguinte: terreno 3D implementado e verificado com DEM.tif real
+em nova rodada topografica. A malha e um derivado de inspecao com lacunas
+NoData preservadas. Camadas de sulcacao, curvas, ortomosaico e comparacao
+espacial continuam pendentes; o modo 3D ja nao e uma pendencia integral.
+
 ## Conclusao
 
 Existe uma plataforma local de estudos preliminares, com cadastro, upload, configuracao, pedidos imutaveis, fila, artefatos, revisao e comparacao. Ainda nao existe o produto completo de sistematizacao conservacionista com tres familias dimensionadas e visualizacao geoespacial 3D integrada. Testes de software aprovados nao comprovam desempenho agronomico ou qualidade das linhas em campo.

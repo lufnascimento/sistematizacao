@@ -849,8 +849,9 @@ class JobRunner:
             "--contour-interval-m", str(topography.get("contour_interval_m", 1.0)),
             "--output-dir", str(output_dir),
         ]
-        if project.get("crs"):
-            command.extend(["--crs", project["crs"]])
+        reference = request.get("spatial_reference_snapshot", {"horizontal_crs": project.get("crs")})
+        if reference.get("horizontal_crs"):
+            command.extend(["--crs", reference["horizontal_crs"]])
         if topography.get("field_id_column"):
             command.extend(["--field-id-column", topography["field_id_column"]])
         if topography.get("boundary_layer"):
@@ -889,7 +890,15 @@ class JobRunner:
                 raise RuntimeError(f"topography output size mismatch: {path.name}")
             if file_sha256(path) != str(output.get("sha256", "")).lower():
                 raise RuntimeError(f"topography output hash mismatch: {path.name}")
-            self._artifact(run, path, "TOPOGRAPHY_E0", "GENERATED_FROM_CLIENT_DATA")
+            self._artifact(
+                run, path, "TOPOGRAPHY_E0", "GENERATED_FROM_CLIENT_DATA",
+                spatial_metadata={
+                    "label": "Terreno da rodada", "format": "TERRAIN_INSPECTION_MESH",
+                    "horizontal_crs": "OGC:CRS84", "geometry_type": "Mesh",
+                    "geometry_dimensions": 3, "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
+                    "inspection_only": True,
+                } if path.name == "terrain_inspection_mesh.json" else None,
+            )
         self._artifact(run, manifest_path, "TOPOGRAPHY_E0", "GENERATED_FROM_CLIENT_DATA")
         if run.get("engine_id") == "project_topography":
             self._set(run["id"], progress=90, stage="GENERATING_REVIEW_DOSSIER")
