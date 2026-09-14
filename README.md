@@ -114,4 +114,6 @@ As restrições ambientais/fundiárias/físicas, a microbacia, as entradas e sa�
 
 ## Próximo marco
 
+Auditoria atual: [pendencias do produto, plataforma e visualizador 3D](./docs/AUDITORIA_PRODUTO_PLATAFORMA_2026_09_14.md).
+
 O motor CF0 1.2 resolve a família contínua geométrica, mas permanece `HYDRAULIC_UNCONFIRMED`. O estágio `C1_ALIGNMENT_SCREENING` gera sensibilidade TI limitada; PCE0/PCX0 cobrem triagem RUSLE e balanço volumétrico; e a cadeia hidráulica chega ao perfil e a triagem espacial dos caminhos declarados de extravasamento. Ainda não há derivação desses caminhos pelo MDT, propagação do volume extravasado, regime misto, estruturas, capacidade e aprovação do receptor ou autorização de guiamento. O próximo incremento é derivar e comparar caminhos sobre a superfície condicionada e, sobre a cadeia verificada, formar os solvers dimensionados de curva embutida, base larga/passante e ESD.

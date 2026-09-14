@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .catalog import ENGINE_CATALOG, PRODUCTS, public_catalog
 from .jobs import JobRunner
+from .map_layers import build_map_layers
 from .models import (
     ArtifactReviewCreate,
     GenerationRequestCreate,
@@ -360,6 +361,11 @@ def create_app(
         _require(store, "runs", run_id, "run")
         return {"items": store.list("scenarios", lambda item: item["run_id"] == run_id)}
 
+    @api.get("/runs/{run_id}/map-layers")
+    def run_map_layers(run_id: str) -> dict[str, Any]:
+        run = _require(store, "runs", run_id, "run")
+        return build_map_layers(run, store.list("artifacts", lambda item: item["run_id"] == run_id))
+
     @api.get("/runs/{run_id}/scenario-selection")
     def active_scenario_selection(run_id: str) -> dict[str, Any]:
         _require(store, "runs", run_id, "run")
@@ -552,6 +558,7 @@ def _request_snapshot(store: LocalStore, project: dict[str, Any], payload: dict[
         "project_id": project["id"],
         **payload,
         "configuration_snapshot": project["configuration"],
+        "spatial_reference_snapshot": {"horizontal_crs": project.get("crs")},
         "asset_snapshot": [
             {"asset_id": item["id"], "role": item["role"], "sha256": item["sha256"], "size_bytes": item["size_bytes"]}
             for item in sorted(assets, key=lambda item: item["id"])

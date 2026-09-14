@@ -88,6 +88,13 @@ def screen_overflow_paths(
             raise ValueError(f"paths[{index}] contains a zero-length segment")
         rises = [float(b[2]) - float(a[2]) for a, b in zip(coordinates, coordinates[1:])]
         adverse = [position for position, rise in enumerate(rises) if rise > elevation_tolerance_m]
+        # Compare against every earlier low point, not just the previous vertex.
+        lowest_elevation = float(coordinates[0][2])
+        maximum_accumulated_rise = 0.0
+        for point in coordinates[1:]:
+            elevation = float(point[2])
+            maximum_accumulated_rise = max(maximum_accumulated_rise, elevation - lowest_elevation)
+            lowest_elevation = min(lowest_elevation, elevation)
         endpoint_distance = _distance_2d(coordinates[-1], receiver_point)
         endpoint_vertical_difference = abs(float(coordinates[-1][2]) - float(receiver_point[2]))
         crossed = []
@@ -106,13 +113,14 @@ def screen_overflow_paths(
             ):
                 crossed.append({"id": barrier_id, "type": str(barrier.get("type") or "OTHER"), "buffer_m": buffer_m})
         connected = endpoint_distance <= endpoint_tolerance_m and endpoint_vertical_difference <= elevation_tolerance_m
-        status = "SCREENED_CLEAR" if connected and not adverse and not crossed else "REQUIRES_REVIEW"
+        status = "SCREENED_CLEAR" if connected and maximum_accumulated_rise <= elevation_tolerance_m and not crossed else "REQUIRES_REVIEW"
         results.append({
             "id": path_id, "reach_id": reach_id, "receiver_id": receiver_id,
             "coordinates": [[float(value) for value in point] for point in coordinates],
             "length_m": sum(horizontal_lengths), "elevation_drop_m": float(coordinates[0][2]) - float(coordinates[-1][2]),
             "minimum_segment_slope_m_m": min(-rise / length for rise, length in zip(rises, horizontal_lengths)),
             "maximum_adverse_rise_m": max([0.0, *rises]), "adverse_segment_indexes": adverse,
+            "maximum_accumulated_adverse_rise_m": maximum_accumulated_rise,
             "endpoint_distance_to_receiver_m": endpoint_distance,
             "endpoint_vertical_difference_m": endpoint_vertical_difference,
             "receiver_connection_status": "CONNECTED_WITHIN_TOLERANCE" if connected else "NOT_CONNECTED",

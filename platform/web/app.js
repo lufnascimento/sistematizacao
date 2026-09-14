@@ -1064,6 +1064,11 @@ async function renderResultsStep(project) {
       ${renderArtifacts(artifacts)}
     </section>`;
   bindResultActions(project, successful, artifacts, scenarios);
+  const mapLink = document.createElement("a");
+  mapLink.className = "button";
+  mapLink.href = `/map.html?run=${encodeURIComponent(successful.id)}`;
+  mapLink.textContent = "Abrir mapa de camadas";
+  main.querySelector(".section-head")?.append(mapLink);
 }
 
 function renderNoScenarioFocus(artifacts, run) {

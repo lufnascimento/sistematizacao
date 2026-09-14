@@ -208,6 +208,7 @@ class JobRunner:
         source: str,
         *,
         delivery_level: str = "E0_TRIAGEM",
+        spatial_metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         artifact = {
             "id": new_id("art"),
@@ -224,6 +225,8 @@ class JobRunner:
             "delivery_level": delivery_level,
             "guidance_authorized": False,
         }
+        if spatial_metadata is not None:
+            artifact["spatial_metadata"] = spatial_metadata
         self.store.insert("artifacts", artifact)
         return artifact
 
@@ -293,6 +296,7 @@ class JobRunner:
         from scripts.preliminary_section_capacity import check_reach_capacities, validate_capacity_release
         from scripts.preliminary_backwater_profile import calculate_standard_step_profiles, validate_profile_release
         from scripts.preliminary_overflow_path_screening import screen_overflow_paths, validate_overflow_path_release
+        from scripts.overflow_geojson import export_overflow_geojson
 
         project = self.store.get("projects", run["project_id"])
         if project is None:
@@ -632,7 +636,11 @@ class JobRunner:
                 elevation_tolerance_m=float(configuration.get("overflow_path_elevation_tolerance_m", 0.05)),
             )
             validate_overflow_path_release(overflow_path_result)
+            source_crs = request.get("spatial_reference_snapshot", {}).get("horizontal_crs")
+            geographic_paths = export_overflow_geojson(overflow_path_result["paths"], source_crs)
             overflow_path_result.update({
+                "source_horizontal_crs": source_crs,
+                "source_vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
                 "schema_version": "1.0.0",
                 "manifest_type": "PRELIMINARY_OVERFLOW_PATH_SCREENING_RESULT",
                 "project_id": project["id"], "run_id": run["id"],
@@ -654,18 +662,19 @@ class JobRunner:
                 ) + "\n", encoding="utf-8",
             )
             overflow_geojson = overflow_dir / "caminhos_extravasamento.geojson"
-            overflow_geojson.write_text(json.dumps({
-                "type": "FeatureCollection",
-                "features": [{
-                    "type": "Feature",
-                    "properties": {key: item[key] for key in ("id", "reach_id", "receiver_id", "length_m", "elevation_drop_m", "screening_status")},
-                    "geometry": {"type": "LineString", "coordinates": item["coordinates"]},
-                } for item in overflow_path_result["paths"]],
-            }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            overflow_geojson.write_text(json.dumps(geographic_paths, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             overflow_plot = overflow_dir / "mapa_caminhos_extravasamento.png"
             self._plot_overflow_paths(overflow_path_result, receivers, configuration.get("spatial_barriers") or [], overflow_plot)
             for path in (overflow_json, overflow_csv, overflow_geojson, overflow_plot):
-                self._artifact(run, path, "PCX6_OVERFLOW_PATH_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION")
+                self._artifact(
+                    run, path, "PCX6_OVERFLOW_PATH_SCREENING", "GENERATED_FROM_CLIENT_CONFIGURATION",
+                    spatial_metadata={
+                        "label": "Caminhos de extravasamento", "format": "RFC7946",
+                        "horizontal_crs": "OGC:CRS84", "geometry_type": "LineString",
+                        "geometry_dimensions": 2, "source_horizontal_crs": source_crs,
+                        "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
+                    } if path == overflow_geojson else None,
+                )
         self._set(
             run["id"],
             progress=95,

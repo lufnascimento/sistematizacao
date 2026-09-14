@@ -211,17 +211,19 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
                     product_blockers.append("SECTION_CAPACITY_DEPENDENCY_REQUIRED")
                 if hydrology.get("profile_enabled") is not True:
                     product_blockers.append("PROFILE_CONFIGURATION_NOT_ENABLED")
+                if any(item.get("length_m") in (None, "") for item in hydrology.get("routing_reaches") or []):
+                    product_blockers.append("REACH_LENGTHS_REQUIRED")
+                if any(item.get("downstream_water_depth_m") is None or item.get("downstream_water_depth_m") <= 0 for item in hydrology.get("reach_sections") or []):
+                    product_blockers.append("DOWNSTREAM_DEPTHS_REQUIRED")
             if product_id == "PCX6_OVERFLOW_PATH_SCREENING":
+                if not project.get("crs"):
+                    product_blockers.append("OVERFLOW_SOURCE_CRS_REQUIRED")
                 if "PCX5_WATER_SURFACE_PROFILE_SCREENING" not in selected_product_ids:
                     product_blockers.append("WATER_PROFILE_DEPENDENCY_REQUIRED")
                 if not hydrology.get("overflow_path_screening_enabled"):
                     product_blockers.append("OVERFLOW_PATH_CONFIGURATION_NOT_ENABLED")
                 if not hydrology.get("spatial_receivers") or not hydrology.get("overflow_paths"):
                     product_blockers.append("OVERFLOW_PATH_GEOMETRY_REQUIRED")
-                if any(item.get("length_m") in (None, "") for item in hydrology.get("routing_reaches") or []):
-                    product_blockers.append("REACH_LENGTHS_REQUIRED")
-                if any(item.get("downstream_water_depth_m") is None for item in hydrology.get("reach_sections") or []):
-                    product_blockers.append("DOWNSTREAM_DEPTHS_REQUIRED")
         if product_id in {"SULCATION_E0", "CF0_CONTINUOUS", "C1_EMBEDDED_SCREENING"}:
             if not configuration["topography"].get("field_id_column"):
                 product_blockers.append("FIELD_ID_COLUMN_REQUIRED")
@@ -321,6 +323,7 @@ def build_readiness(store: LocalStore, project: dict[str, Any]) -> dict[str, Any
 
 
 _BLOCKER_MESSAGES = {
+    "OVERFLOW_SOURCE_CRS_REQUIRED": "Informe o sistema de referencia projetado em metros do projeto.",
     "FIELD_BOUNDARY_MISSING": "Envie os poligonos dos talhoes em um pacote vetorial completo.",
     "ELEVATION_SOURCE_MISSING": "Envie LAS/LAZ ou MDE/MDT.",
     "FIELD_ID_COLUMN_REQUIRED": "Informe a coluna identificadora dos talhoes antes de gerar sulcacao E0, CF0 ou a triagem C1.",

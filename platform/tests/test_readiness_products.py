@@ -59,6 +59,18 @@ class ProductReadinessTests(unittest.TestCase):
         self.assertEqual(readiness["summary"]["blocking_count"], 0)
         self.assertIn("TOPOGRAPHY_E0", readiness["summary"]["available_product_ids"])
 
+    def test_profile_and_overflow_report_missing_geometry_in_legacy_configuration(self) -> None:
+        hydrology = self.project["configuration"]["hydrology_screening"]
+        hydrology["routing_reaches"] = [{"id": "T1", "length_m": None}]
+        for depth in (None, 0):
+            hydrology["reach_sections"] = [{"id": "T1", "downstream_water_depth_m": depth}]
+            readiness = build_readiness(self.store, self.project)
+            for product_id in ("PCX5_WATER_SURFACE_PROFILE_SCREENING", "PCX6_OVERFLOW_PATH_SCREENING"):
+                with self.subTest(depth=depth, product=product_id):
+                    blockers = self.product(readiness, product_id)["blockers"]
+                    self.assertIn("REACH_LENGTHS_REQUIRED", blockers)
+                    self.assertIn("DOWNSTREAM_DEPTHS_REQUIRED", blockers)
+
     def test_pcx1_requires_complete_explicit_event_configuration(self) -> None:
         readiness = build_readiness(self.store, self.project)
         product = self.product(readiness, "PCX1_RUNOFF_SCREENING")

@@ -39,6 +39,27 @@ class OverflowPathScreeningTests(unittest.TestCase):
         )
         self.assertEqual(result["paths"][0]["receiver_connection_status"], "NOT_CONNECTED")
 
+    def test_densification_cannot_hide_an_adverse_rise(self):
+        for vertices in (
+            [[0, 0, 10], [4, 0, 10.12], [5, 0, 9]],
+            [[0, 0, 10], [1, 0, 10.03], [2, 0, 10.06], [3, 0, 10.09], [4, 0, 10.12], [5, 0, 9]],
+        ):
+            with self.subTest(vertices=len(vertices)):
+                result = screen_overflow_paths(
+                    [{"id": "P", "reach_id": "T", "receiver_id": "R", "coordinates": vertices}],
+                    [{"id": "R", "coordinate": [5, 0, 9]}],
+                )
+                self.assertEqual(result["paths"][0]["screening_status"], "REQUIRES_REVIEW")
+                self.assertAlmostEqual(result["paths"][0]["maximum_accumulated_adverse_rise_m"], 0.12)
+
+    def test_adverse_rise_uses_local_low_after_descent(self):
+        result = screen_overflow_paths(
+            [{"id": "P", "reach_id": "T", "receiver_id": "R", "coordinates": [[0, 0, 20], [1, 0, 10], [2, 0, 10.04], [3, 0, 10.08], [4, 0, 9]]}],
+            [{"id": "R", "coordinate": [4, 0, 9]}],
+        )
+        self.assertEqual(result["paths"][0]["screening_status"], "REQUIRES_REVIEW")
+        self.assertAlmostEqual(result["paths"][0]["maximum_accumulated_adverse_rise_m"], 0.08)
+
     def test_invalid_geometry_is_rejected(self):
         with self.assertRaises(ValueError):
             screen_overflow_paths([{"id": "P1", "reach_id": "T1", "receiver_id": "R1", "coordinates": [[0, 0, 1]]}], [{"id": "R1", "coordinate": [0, 0, 1]}])

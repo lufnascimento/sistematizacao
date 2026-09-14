@@ -16,9 +16,21 @@ O produto transforma a declaracao textual de extravasamento em uma geometria 3D 
 
 - comprimento e queda total;
 - menor declividade de segmento e maior subida adversa;
+- maior subida acumulada em relacao a qualquer ponto anterior mais baixo; densificar uma subida em segmentos curtos nao evita a revisao;
 - distancia horizontal e diferenca vertical ate o receptor;
 - cruzamentos ou aproximacoes dentro da faixa de cada barreira;
-- JSON auditavel, CSV, GeoJSON 3D e mapa de triagem.
+- JSON auditavel em XYZ original, CSV, GeoJSON em longitude/latitude e mapa de triagem.
+
+O CRS horizontal e congelado no pedido. A exportacao web usa pyproj/PROJ
+com ordem longitude/latitude explicita e rejeita CRS ausente, geografico ou
+com unidades diferentes de metros na entrada. As cotas originais ficam em
+atributos, com datum vertical nao informado; nao sao publicadas como altura
+elipsoidal WGS84. Pedidos antigos sem CRS congelado precisam ser recompilados.
+Arquivos ja publicados nao sao reescritos: gere uma nova rodada para obter
+o GeoJSON corrigido. A conversao nao comprova a exatidao do levantamento.
+
+Referencias: [RFC 7946](https://www.rfc-editor.org/rfc/rfc7946.html) e
+[pyproj Transformer](https://pyproj4.github.io/pyproj/stable/api/transformer.html).
 
 `Sem conflito detectado` significa apenas que a geometria declarada passou por essas verificacoes. Nao aprova o receptor, nao calcula sua capacidade, nao propaga o hidrograma extravasado e nao substitui levantamento completo, vistoria ou projeto executivo.
 

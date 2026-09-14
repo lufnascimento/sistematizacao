@@ -274,6 +274,12 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(run["result_summary"]["overflow_path_screened_count"], 1)
         self.assertEqual(run["result_summary"]["overflow_path_clear_count"], 1)
         self.assertEqual(run["result_summary"]["overflow_path_barrier_conflict_count"], 0)
+        layers_response = self.client.get(f"/api/runs/{run['id']}/map-layers")
+        self.assertEqual(layers_response.status_code, 200)
+        layers = layers_response.json()
+        self.assertEqual(layers["ready_count"], 1)
+        self.assertEqual(layers["layers"][0]["name"], "Caminhos de extravasamento")
+        self.assertEqual(layers["layers"][0]["spatial_metadata"]["geometry_dimensions"], 2)
         self.assertNotIn("PCX_SECTION_CAPACITY_NOT_EVALUATED", run["result_summary"]["blocker_codes"])
         logs = self.client.get(f"/api/runs/{run['id']}/logs").json()["items"]
         self.assertTrue(any("somente por escoamento uniforme" in item["message"] for item in logs))
