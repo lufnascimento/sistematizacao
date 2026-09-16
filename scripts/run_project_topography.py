@@ -400,8 +400,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     try:
         from scripts.terrain_web_mesh import generate_terrain_mesh
+        from scripts.contours_web import export_contours
     except ModuleNotFoundError:
         from terrain_web_mesh import generate_terrain_mesh
+        from contours_web import export_contours
     terrain_mesh_path = output_dir / "terrain_inspection_mesh.json"
     try:
         generate_terrain_mesh(dtm, terrain_mesh_path)
@@ -410,7 +412,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     except ValueError as exc:
         terrain_mesh_status = {"status": "UNAVAILABLE", "reason": str(exc), "inspection_only": True}
 
+    try:
+        contours_web_path = output_dir / "contours_inspection.geojson"
+        export_contours(contours, dtm, contours_web_path)
+        outputs["contours_inspection"] = artifact(contours_web_path)
+        contours_web_status = {"status": "AVAILABLE", "inspection_only": True}
+    except ValueError as exc:
+        contours_web_status = {"status": "UNAVAILABLE", "reason": str(exc), "inspection_only": True}
+
     manifest = {
+        "contours_web": contours_web_status,
         "terrain_mesh": terrain_mesh_status,
         "schema_version": SCHEMA_VERSION,
         "artifact_id": "terraflux-project-topography-package",

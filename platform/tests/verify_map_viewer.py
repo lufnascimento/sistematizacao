@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--url", required=True)
     parser.add_argument("--output", default="platform_runtime/browser_checks")
     parser.add_argument("--terrain", action="store_true")
+    parser.add_argument("--contours", action="store_true")
     args = parser.parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
@@ -27,6 +28,18 @@ def main():
             toggle.wait_for()
             assert toggle.is_enabled()
             canvas = page.locator("canvas")
+            contour_toggle = None
+            if args.contours:
+                contour_toggle = page.get_by_role("checkbox", name="Curvas de nivel do terreno", exact=True)
+                assert contour_toggle.is_enabled()
+                for view in ("2D", "3D"):
+                    page.get_by_role("button", name=view, exact=True).click()
+                    with_contours = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                    contour_toggle.uncheck()
+                    without_contours = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                    assert ImageChops.difference(with_contours, without_contours).getbbox(), f"Contours absent in {view}"
+                    contour_toggle.check()
+                contour_toggle.uncheck()
             if args.terrain:
                 page.get_by_role("button", name="3D", exact=True).click()
                 assert page.get_by_role("button", name="3D", exact=True).get_attribute("aria-pressed") == "true"
@@ -52,7 +65,7 @@ def main():
             changed = next((x, y) for y in rows for x in columns if any(diff.getpixel((x, y))))
             canvas.click(position={"x": changed[0], "y": changed[1]})
             assert ("Cota interpolada" if args.terrain else "Comprimento original") in page.locator("#selection").inner_text()
-            opacity = page.get_by_role("slider")
+            opacity = page.get_by_role("slider").first
             opacity.fill("0")
             transparent = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
             # Footer coordinates may change after picking; compare only the line's bounding box.
@@ -69,9 +82,43 @@ def main():
                 assert ImageChops.difference(before_rotation, after_rotation).getbbox(), "Orbit did not change canvas pixels"
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             assert not errors, errors
+            if contour_toggle is not None:
+                contour_toggle.check()
             page.screenshot(path=str(output / f"map-viewer-{'terrain-' if args.terrain else ''}{name}.png"), full_page=True)
             print(name, "PASS: layer pixels, zoom, selection, opacity, layout")
             page.close()
+        if args.contours:
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+            def mismatch_terrain(route):
+                response = route.fetch()
+                data = response.json()
+                if data.get("type") == "FeatureCollection":
+                    data["terrain_sha256"] = "different-terrain"
+                route.fulfill(response=response, json=data)
+
+            page.route("**/api/artifacts/*/download", mismatch_terrain)
+            page.goto(args.url, wait_until="networkidle")
+            contour_toggle = page.get_by_role("checkbox", name="Curvas de nivel do terreno", exact=True)
+            assert contour_toggle.is_enabled()
+            assert "somente em planta" in page.locator("#layers").inner_text()
+            page.get_by_role("button", name="3D", exact=True).click()
+            canvas = page.locator("canvas")
+            checked = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+            scene_bounds = (0, 90, checked.width, checked.height - 40)
+            checked = checked.crop(scene_bounds)
+            contour_toggle.uncheck()
+            unchecked = Image.open(BytesIO(canvas.screenshot())).convert("RGB").crop(scene_bounds)
+            mismatch_diff = ImageChops.difference(checked, unchecked).convert("L").point(lambda value: 255 if value > 15 else 0)
+            if mismatch_diff.getbbox():
+                checked.save(output / "provenance-checked.png")
+                unchecked.save(output / "provenance-unchecked.png")
+            assert not mismatch_diff.getbbox(), "Mismatched terrain heights leaked into 3D"
+            contour_toggle.check()
+            rechecked = Image.open(BytesIO(canvas.screenshot())).convert("RGB").crop(scene_bounds)
+            assert not ImageChops.difference(checked, rechecked).convert("L").point(lambda value: 255 if value > 15 else 0).getbbox(), "Toggle bypassed vertical reference gate"
+            page.close()
+            print("provenance PASS: mismatched terrain cannot position contours in 3D")
         page = browser.new_page()
         page.goto(args.url.split("?")[0], wait_until="networkidle")
         assert page.locator("#empty").is_visible()

@@ -897,7 +897,12 @@ class JobRunner:
                     "horizontal_crs": "OGC:CRS84", "geometry_type": "Mesh",
                     "geometry_dimensions": 3, "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
                     "inspection_only": True,
-                } if path.name == "terrain_inspection_mesh.json" else None,
+                } if path.name == "terrain_inspection_mesh.json" else {
+                    "label": "Curvas de nivel do terreno", "format": "RFC7946",
+                    "horizontal_crs": "OGC:CRS84", "geometry_type": "LineString",
+                    "geometry_dimensions": 2, "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
+                    "inspection_only": True, "elevation_policy": "SOURCE_CONTOUR_HEIGHTS",
+                } if path.name == "contours_inspection.geojson" else None,
             )
         self._artifact(run, manifest_path, "TOPOGRAPHY_E0", "GENERATED_FROM_CLIENT_DATA")
         if run.get("engine_id") == "project_topography":

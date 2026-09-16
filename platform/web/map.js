@@ -15,6 +15,7 @@ let origin = [0, 0];
 let span = 100;
 let mode3d = false;
 let terrainLoaded = false;
+let terrainHash = null;
 let elevationOrigin = 0;
 let elevationScale = 1;
 const objects = [];
@@ -60,11 +61,15 @@ async function getJSON(url) {
 function showSelection(properties) {
   const list = document.querySelector("#selection");
   list.replaceChildren();
-  for (const [name, value] of [
+  const entries = properties.kind === "CONTOUR" ? [
+    ["Curva de nivel", properties.id], ["Cota original (m)", properties.elevation_m],
+    ["Uso", "Inspecao topografica"],
+  ] : [
     ["Caminho", properties.id], ["Trecho", properties.reach_id], ["Receptor", properties.receiver_id],
     ["Comprimento original (m)", properties.length_m], ["Queda original (m)", properties.elevation_drop_m],
     ["Analise", properties.screening_status === "SCREENED_CLEAR" ? "Sem conflito detectado" : "Requer revisao"],
-  ]) {
+  ];
+  for (const [name, value] of entries) {
     const term = document.createElement("dt"); term.textContent = name;
     const detail = document.createElement("dd"); detail.textContent = String(value ?? "Nao informado");
     list.append(term, detail);
@@ -87,7 +92,9 @@ async function start() {
   new ResizeObserver(resize).observe(viewport);
   let featureCount = 0;
   let loaded = 0;
-  for (const [index, layer] of manifest.layers.entries()) {
+  // Establish the shared vertical frame before placing any source-height lines.
+  const orderedLayers = [...manifest.layers].sort((a, b) => Number(b.spatial_metadata.format === "TERRAIN_INSPECTION_MESH") - Number(a.spatial_metadata.format === "TERRAIN_INSPECTION_MESH"));
+  for (const [index, layer] of orderedLayers.entries()) {
     const row = document.createElement("div"); row.className = "layer";
     const label = document.createElement("label");
     const toggle = document.createElement("input"); toggle.type = "checkbox"; toggle.disabled = true;
@@ -100,6 +107,7 @@ async function start() {
       if (layer.size_bytes > 20 * 1024 * 1024) throw new Error("Camada excede 20 MB; requer carregamento progressivo.");
       const data = await getJSON(layer.source_url);
       if (layer.spatial_metadata.format === "TERRAIN_INSPECTION_MESH") {
+        if (terrainLoaded) throw new Error("Apenas um MDT por rodada pode definir a referencia 3D.");
         if (data.type !== "TerrainInspectionMesh" || !Array.isArray(data.vertices) || !data.vertices.length || data.vertices.length > 66049 || !Array.isArray(data.triangles) || !data.triangles.length || data.triangles.length > 131072) throw new Error("Malha fora dos limites de exibicao.");
         if (data.vertices.some(p => !Array.isArray(p) || p.length !== 3 || !p.every(Number.isFinite) || Math.abs(p[0]) > 180 || Math.abs(p[1]) > 85) || data.triangles.some(t => !Array.isArray(t) || t.length !== 3 || t.some(i => !Number.isInteger(i) || i < 0 || i >= data.vertices.length))) throw new Error("Malha com coordenadas ou indices invalidos.");
         if (!featureCount) origin = project(data.vertices[0]);
@@ -122,7 +130,7 @@ async function start() {
         const group = new THREE.Group(); group.add(mesh); groups.push(group); objects.push(mesh); scene.add(group);
         const light = new THREE.DirectionalLight(0xffffff, 1.4); light.position.set(-1000, -1000, 2000); scene.add(light);
         scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-        loaded++; featureCount++; terrainLoaded = true;
+        loaded++; featureCount++; terrainLoaded = true; terrainHash = data.source_sha256;
         toggle.disabled = false; toggle.checked = true;
         toggle.addEventListener("change", () => { group.visible = toggle.checked; render(); });
         const opacity = document.createElement("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "1"; opacity.step = "0.05"; opacity.value = "1";
@@ -133,28 +141,34 @@ async function start() {
       }
       if (data.type !== "FeatureCollection" || !Array.isArray(data.features)) throw new Error("Geometria indisponivel.");
       const group = new THREE.Group();
+      const sourceHeights = layer.spatial_metadata.elevation_policy === "SOURCE_CONTOUR_HEIGHTS";
+      const aligned3d = sourceHeights && terrainLoaded && typeof terrainHash === "string" && data.terrain_sha256 === terrainHash;
+      group.userData.planOnly = !aligned3d;
+      group.userData.toggle = toggle;
       let vertices = 0;
       for (const feature of data.features) {
         const points = feature.geometry?.coordinates;
         if (feature.geometry?.type !== "LineString" || !Array.isArray(points) || points.length < 2 || points.some(point => !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1]) || Math.abs(point[0]) > 180 || Math.abs(point[1]) > 85)) throw new Error("Coordenadas fora da cobertura do visualizador.");
         vertices += points.length;
         if (vertices > 200000) throw new Error("Camada requer simplificacao para exibicao.");
+        if (sourceHeights && (!Array.isArray(feature.properties?.source_elevations_m) || feature.properties.source_elevations_m.length !== points.length || !feature.properties.source_elevations_m.every(Number.isFinite))) throw new Error("Cotas da curva ausentes ou invalidas.");
       }
       for (const feature of data.features) {
         const coordinates = feature.geometry.coordinates.map(project);
         if (!featureCount) origin = coordinates[0];
-        const geometry = new THREE.BufferGeometry().setFromPoints(coordinates.map(([x, y]) => new THREE.Vector3(x - origin[0], y - origin[1], 0)));
-        const material = new THREE.LineBasicMaterial({ color: palette[index % palette.length], transparent: true });
+        const geometry = new THREE.BufferGeometry().setFromPoints(coordinates.map(([x, y], vertex) => new THREE.Vector3(x - origin[0], y - origin[1], aligned3d ? (feature.properties.source_elevations_m[vertex] - elevationOrigin) * elevationScale : 0)));
+        const material = new THREE.LineBasicMaterial({ color: palette[index % palette.length], transparent: true, depthTest: false });
         const line = new THREE.Line(geometry, material); line.userData = feature.properties || {};
+        line.renderOrder = 1;
         group.add(line); objects.push(line); featureCount++;
       }
       groups.push(group); scene.add(group); loaded++;
       toggle.disabled = false; toggle.checked = true;
-      toggle.addEventListener("change", () => { group.visible = toggle.checked; render(); });
+      toggle.addEventListener("change", () => { group.visible = toggle.checked && !(mode3d && group.userData.planOnly); render(); });
       const opacity = document.createElement("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "1"; opacity.step = "0.05"; opacity.value = "1";
       opacity.setAttribute("aria-label", `Opacidade de ${layer.name}`);
       opacity.addEventListener("input", () => { group.children.forEach(line => { line.material.opacity = Number(opacity.value); }); render(); });
-      row.append(opacity); detail.textContent = `${data.features.length} ${data.features.length === 1 ? "linha" : "linhas"}`;
+      row.append(opacity); detail.textContent = `${data.features.length} ${data.features.length === 1 ? "linha" : "linhas"}${aligned3d ? " / cotas do MDT original" : " / somente em planta"}`;
     } catch (error) { detail.textContent = error.message; }
   }
   status.textContent = `${loaded} ${loaded === 1 ? "camada carregada" : "camadas carregadas"} / ${featureCount} ${terrainLoaded ? featureCount === 1 ? "objeto" : "objetos" : featureCount === 1 ? "linha" : "linhas"}`;
@@ -167,6 +181,12 @@ async function start() {
   for (const id of ["plan", "orbit"]) document.getElementById(id).onclick = () => {
     mode3d = id === "orbit" && terrainLoaded;
     controls.enableRotate = mode3d;
+    for (const group of groups) {
+      if (group.userData.toggle) {
+        group.visible = group.userData.toggle.checked && !(mode3d && group.userData.planOnly);
+        group.children.forEach(line => { line.material.depthTest = mode3d; });
+      }
+    }
     controls.mouseButtons.LEFT = mode3d ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
     document.querySelector("#plan").setAttribute("aria-pressed", String(!mode3d));
     document.querySelector("#orbit").setAttribute("aria-pressed", String(mode3d));
@@ -184,13 +204,17 @@ async function start() {
     raycaster.params.Line.threshold = span / camera.zoom / rect.height * 8;
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(objects.filter(object => object.parent.visible && object.material.opacity > 0));
+    if (!mode3d) {
+      const lineIndex = hits.findIndex(hit => !hit.object.userData.terrain);
+      if (lineIndex > 0) hits.unshift(hits.splice(lineIndex, 1)[0]);
+    }
     if (hits.length && hits[0].object.userData.terrain) {
       const list = document.querySelector("#selection"); list.replaceChildren();
       const title = document.createElement("dt"); title.textContent = "Cota interpolada da malha (m)";
       const value = document.createElement("dd"); value.textContent = (hits[0].point.z / elevationScale + elevationOrigin).toFixed(2);
       list.append(title, value);
     } else if (hits.length) showSelection(hits[0].object.userData);
-    const point = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
+    const point = hits[0]?.point || raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
     if (point) { const [lon, lat] = unproject(point.x + origin[0], point.y + origin[1]); document.querySelector("#position").textContent = `${lon.toFixed(6)}, ${lat.toFixed(6)}`; }
   });
   window.addEventListener("pagehide", () => { controls.dispose(); objects.forEach(line => { line.geometry.dispose(); line.material.dispose(); }); renderer.dispose(); }, { once: true });

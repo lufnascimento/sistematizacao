@@ -46,3 +46,37 @@ Validacao local: python platform/tests/verify_map_viewer.py --url URL --terrain
 verifica pixels, visibilidade, zoom, selecao, opacidade, rotacao e layout nos
 viewports desktop e mobile. tests/test_terrain_web_mesh.py executa no Python
 QGIS/GDAL e verifica cotas e uma lacuna NoData entre vertices amostrados.
+
+## Curvas de nivel da mesma rodada
+
+Novas execucoes topograficas tambem publicam contours_inspection.geojson.
+As geometrias RFC 7946 permanecem 2D; source_elevations_m preserva a cota
+original de cada vertice. O exportador exige LineString 3D com cota constante,
+CRS metrico e coordenadas finitas. Nao transforma o datum vertical nem
+simplifica silenciosamente: acima de 200 mil vertices registra indisponibilidade
+do derivado no manifesto, mantendo o GeoPackage original.
+
+O campo terrain_sha256 vincula as curvas ao MDT utilizado. O visualizador
+carrega primeiro a malha e so usa cotas para posicionamento 3D quando esse
+checksum coincide com source_sha256 da malha. Sem essa correspondencia,
+a camada continua disponivel apenas em planta. Visibilidade e opacidade
+sao independentes por camada. O clique diferencia curva topografica de
+caminho de extravasamento e mostra a cota original, sem autorizar sulcacao.
+
+Em planta, as linhas sao sobrepostas ao terreno para leitura. Em 3D, usam
+as cotas originais e oclusao real: a simplificacao da malha pode encobrir
+trechos. Drapeamento visual sobre a malha, com preservacao separada das
+cotas de origem, ainda esta pendente. Limites dos talhoes e linhas de
+sulcacao tambem ainda nao foram convertidos nesta etapa.
+
+Validacao adicional: --terrain --contours no verificador de navegador
+testa alteracao de pixels ao alternar curvas nos dois modos, em desktop
+e mobile. tests/test_contours_web.py verifica cotas, eixo geografico,
+rejeicao de linhas 2D e limite sem publicacao parcial.
+
+Validacao da fazenda: rodada run_fbdfc41570764ba2b94335be080afd22,
+com 224 curvas e malha de 28.304 triangulos. Revalidada em 2026-09-16:
+48 testes da plataforma, 11 geoespaciais e verificacao visual desktop/mobile.
+O ensaio de checksum divergente modifica apenas a resposta no navegador de
+teste; nao altera artefatos publicados. Confere que alternar a camada nao
+contorna o bloqueio de posicionamento 3D sem referencia correspondente.
