@@ -63,11 +63,9 @@ a camada continua disponivel apenas em planta. Visibilidade e opacidade
 sao independentes por camada. O clique diferencia curva topografica de
 caminho de extravasamento e mostra a cota original, sem autorizar sulcacao.
 
-Em planta, as linhas sao sobrepostas ao terreno para leitura. Em 3D, usam
-as cotas originais e oclusao real: a simplificacao da malha pode encobrir
-trechos. Drapeamento visual sobre a malha, com preservacao separada das
-cotas de origem, ainda esta pendente. Limites dos talhoes e linhas de
-sulcacao tambem ainda nao foram convertidos nesta etapa.
+Em planta, as linhas sao sobrepostas ao terreno para leitura. A implementacao
+seguinte substitui o posicionamento pelas cotas originais na cena 3D pelo
+drapeamento visual descrito abaixo. Os arquivos originais nao sao alterados.
 
 Validacao adicional: --terrain --contours no verificador de navegador
 testa alteracao de pixels ao alternar curvas nos dois modos, em desktop
@@ -80,3 +78,49 @@ com 224 curvas e malha de 28.304 triangulos. Revalidada em 2026-09-16:
 O ensaio de checksum divergente modifica apenas a resposta no navegador de
 teste; nao altera artefatos publicados. Confere que alternar a camada nao
 contorna o bloqueio de posicionamento 3D sem referencia correspondente.
+
+## Talhoes, alternativas e altura visual
+
+field_boundaries_inspection.geojson preserva a identidade dos talhoes e
+aneis internos. O derivado densifica apenas uma copia da geometria e amostra
+o pixel do MDT em cada vertice. Falta de cobertura fica null e reduz a
+cobertura de cotas, sem inventar altitude zero. O contorno completo permanece
+visivel em planta; a cena 3D e limitada a superficie efetivamente publicada.
+
+O pipeline de cenarios gera derivados web de sulcation_lines, continuous_rows
+e diagnostic_rows. Cada arquivo tem no maximo 100 mil vertices, sem simplificar
+as linhas nem truncar uma alternativa. Linhas individuais acima desse limite
+ou camadas acima de dois milhoes de vertices produzem indisponibilidade
+explicita do derivado, mantendo os produtos originais. O manifesto guarda
+checksum do GeoPackage e do MDT, quantidade de partes e identidade do cenario.
+O publicador verifica esses hashes, caminhos e tamanhos antes de expor camadas.
+
+O seletor Alternativa mostra nomes compreensiveis, filtra apenas as linhas
+da alternativa escolhida e mantem terreno, curvas e talhoes em comum.
+Diagnosticos ficam desligados inicialmente. Selecionar ou mostrar uma linha
+nao aprova hidraulica, mecanizacao ou implantacao. Os atributos conservam
+comprimento, raio, greide, estados e motivos originais; a cena nao recalcula
+essas metricas pela projecao de exibicao.
+
+O carregamento agora e sob demanda por camada: a abertura busca somente
+topografia e linhas inicialmente visiveis da alternativa escolhida. As demais
+alternativas sao buscadas ao selecionar e os diagnosticos somente ao ativar.
+O seletor fica indisponivel enquanto a alternativa carrega; erros permanecem
+na camada e permitem nova tentativa. Isso evita baixar os mais de 130 MB de
+diagnosticos da rodada de teste durante a abertura do mapa.
+
+Em 3D, vetores com a mesma origem comprovada do MDT sao recortados contra os
+triangulos da malha e recebem altura interpolada nessa superficie. O recorte
+e por intersecao segmento/triangulo, nao por preencher vazios entre extremos.
+Ha elevacao visual de 0,02 m para evitar conflito de profundidade; isso nao e
+movimento de terra. Atributos de selecao identificam a altura visual. As cotas
+de origem continuam nos derivados GeoJSON e os GeoPackages nao sao alterados.
+O cache e criado somente para grupos exibidos em 3D. Sem checksum correspondente,
+a camada continua limitada a planta.
+
+node platform/tests/test_terrain_surface.mjs verifica interpolacao, recorte,
+ordem dos vertices e lacunas. O verificador de navegador aceita --boundaries
+e --scenarios para testar alternancia de limites e alternativas. Ainda faltam
+carregamento espacial por nivel de detalhe, ortomosaico, nuvem de pontos, perfis,
+comparacao lado a lado e medicao. Este contrato nao encerra os solvers
+conservacionistas nem os requisitos de operacao comercial da auditoria.

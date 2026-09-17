@@ -5,7 +5,6 @@ import math
 import os
 import queue
 import shutil
-import subprocess
 import sys
 import threading
 import traceback
@@ -17,6 +16,7 @@ from .catalog import ENGINE_CATALOG, PRODUCTS, demo_artifact_path
 from .services import build_readiness, canonical_sha256, file_sha256, new_id, utc_now
 from .storage import LocalStore
 from .uploads import safe_filename
+from .process_runner import EngineCancelled, run_engine
 
 
 class JobRunner:
@@ -27,6 +27,7 @@ class JobRunner:
         self.workspace_root = workspace_root.resolve()
         self._queue: queue.Queue[str | None] = queue.Queue()
         self._thread: threading.Thread | None = None
+        self._stopping = threading.Event()
         self._engines: dict[str, Callable[[dict[str, Any]], None]] = {
             "validate_uploads": self._validate_uploads,
             "project_topography": self._project_topography,
@@ -41,12 +42,15 @@ class JobRunner:
         if self._thread and self._thread.is_alive():
             return
         queued_run_ids = self._recover_orphaned_runs()
+        self._stopping.clear()
+        self._queue = queue.Queue()
         self._thread = threading.Thread(target=self._work, name="terraflux-local-worker", daemon=True)
         self._thread.start()
         for run_id in queued_run_ids:
             self._queue.put(run_id)
 
     def stop(self) -> None:
+        self._stopping.set()
         self._queue.put(None)
         if self._thread:
             self._thread.join(timeout=10)
@@ -54,6 +58,7 @@ class JobRunner:
     def submit(self, run_id: str) -> None:
         if not self._thread or not self._thread.is_alive():
             self.start()
+            return  # start() recovered every persisted QUEUED run, including this one.
         self._queue.put(run_id)
 
     def _log(self, run_id: str, level: str, message: str) -> None:
@@ -66,7 +71,7 @@ class JobRunner:
     def _work(self) -> None:
         while True:
             run_id = self._queue.get()
-            if run_id is None:
+            if run_id is None or self._stopping.is_set():
                 self._queue.task_done()
                 return
             try:
@@ -118,6 +123,10 @@ class JobRunner:
                     {"status": "RESULTS_AVAILABLE", "updated_at": utc_now()},
                 )
                 self._log(run_id, "INFO", "Execucao concluida e artefatos registrados.")
+        except EngineCancelled as exc:
+            self._discard_run_publications(run_id)
+            self._set(run_id, status="CANCELLED", finished_at=utc_now())
+            self._log(run_id, "WARN", str(exc))
         except Exception as exc:  # worker boundary: preserve failure and trace locally
             self._discard_run_publications(run_id)
             self._set(
@@ -902,7 +911,12 @@ class JobRunner:
                     "horizontal_crs": "OGC:CRS84", "geometry_type": "LineString",
                     "geometry_dimensions": 2, "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
                     "inspection_only": True, "elevation_policy": "SOURCE_CONTOUR_HEIGHTS",
-                } if path.name == "contours_inspection.geojson" else None,
+                } if path.name == "contours_inspection.geojson" else {
+                    "label": "Limites dos talhoes", "format": "RFC7946",
+                    "horizontal_crs": "OGC:CRS84", "geometry_type": "LineString",
+                    "geometry_dimensions": 2, "vertical_reference": "UNSPECIFIED_SOURCE_DATUM",
+                    "inspection_only": True, "elevation_policy": "SOURCE_TERRAIN_SAMPLE",
+                } if path.name == "field_boundaries_inspection.geojson" else None,
             )
         self._artifact(run, manifest_path, "TOPOGRAPHY_E0", "GENERATED_FROM_CLIENT_DATA")
         if run.get("engine_id") == "project_topography":
@@ -1008,6 +1022,8 @@ class JobRunner:
             "--minimum-work-path-radius-m", str(sulcation.get("min_turn_radius_m", 12.0)),
             "--minimum-shot-length-m", str(sulcation.get("min_shot_length_m", 50.0)),
             "--nominal-speed-kmh", str(sulcation.get("nominal_speed_kmh", 5.0)),
+            "--maneuver-time-s", str(sulcation.get("maneuver_time_s", 38.5)),
+            "--max-cross-slope-pct", str(sulcation.get("max_cross_slope_pct", 12.0)),
             "--power-status", "DECLARED_NONE",
             "--constraint-review-status", review_status,
             "--no-cross-field",
@@ -1059,6 +1075,7 @@ class JobRunner:
             for path in (e0_gpkg, e0_map, e0_metrics):
                 self._artifact(run, path, "SULCATION_E0", "GENERATED_FROM_CLIENT_DATA")
                 published += 1
+            published += self._publish_row_web(run, e0_gpkg, topography_dir / "dtm.tif", "SULCATION_E0")
             scenario_count += self._publish_e0_scenarios(
                 run, metrics, configuration, engine_request_sha256
             )
@@ -1094,6 +1111,7 @@ class JobRunner:
             for path in (cf0_gpkg, cf0_map, cf0_manifest_path, *sorted(cf0_rasters.glob("*.tif"))):
                 self._artifact(run, path, "CF0_CONTINUOUS", "GENERATED_FROM_CLIENT_DATA")
                 published += 1
+            published += self._publish_row_web(run, cf0_gpkg, topography_dir / "dtm.tif", "CF0_CONTINUOUS")
             scenario_count += self._publish_cf0_scenarios(
                 run, manifest, configuration, engine_request_sha256
             )
@@ -1305,22 +1323,12 @@ class JobRunner:
         )
 
     def _run_process(self, run: dict[str, Any], command: list[str], label: str) -> None:
-        completed = subprocess.run(
-            command,
-            cwd=self.workspace_root,
-            check=False,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        run_engine(
+            command, self.workspace_root, label,
+            cancelled=lambda: self._stopping.is_set() or bool((self.store.get("runs", run["id"]) or {}).get("cancel_requested")),
+            log=lambda level, message: self._log(run["id"], level, message),
+            timeout_seconds=float(os.getenv("TERRAFLUX_ENGINE_TIMEOUT_S", "21600")),
         )
-        for line in (completed.stdout or "").splitlines():
-            self._log(run["id"], "INFO", line)
-        for line in (completed.stderr or "").splitlines()[-60:]:
-            self._log(run["id"], "ENGINE", line)
-        if completed.returncode != 0:
-            raise RuntimeError(f"{label} engine exited with code {completed.returncode}")
 
     def _verify_manifest_file(
         self,
@@ -1385,6 +1393,37 @@ class JobRunner:
         actual_rasters = {path.resolve() for path in raster_dir.glob("*.tif")}
         if declared_rasters != actual_rasters:
             raise RuntimeError("CF0 raster bundle differs from its signed manifest")
+
+    def _publish_row_web(self, run, source, terrain, product_id):
+        output_dir = source.parent / "web"
+        self._run_process(run, [str(self._qgis_python_launcher()),
+                               str(self.workspace_root / "scripts" / "rows_web.py"),
+                               "--source", str(source), "--terrain", str(terrain),
+                               "--output-dir", str(output_dir)], "row inspection layers")
+        manifest_path = output_dir / "rows_web_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self._artifact(run, manifest_path, product_id, "GENERATED_FROM_CLIENT_DATA")
+        if manifest.get("status") == "UNAVAILABLE":
+            self._log(run["id"], "WARNING", f"Mapa de linhas indisponivel: {manifest.get('reason')}")
+            return 1
+        if manifest.get("status") != "AVAILABLE" or manifest.get("source_sha256") != file_sha256(source) or manifest.get("terrain_sha256") != file_sha256(terrain):
+            raise RuntimeError("row inspection source lineage mismatch")
+        for record in manifest["outputs"]:
+            path = self._declared_path(record)
+            self._verify_manifest_file(record, path, output_dir, "row inspection")
+            diagnostic = record["inspection_status"] == "DIAGNOSTIC"
+            label = "Linhas de diagnostico" if diagnostic else "Sulcacao preliminar"
+            if record["part_count"] > 1:
+                label += f" ({record['part']}/{record['part_count']})"
+            self._artifact(run, path, product_id, "GENERATED_FROM_CLIENT_DATA", spatial_metadata={
+                "label": label, "format": "RFC7946", "horizontal_crs": "OGC:CRS84",
+                "geometry_type": "LineString", "geometry_dimensions": 2,
+                "vertical_reference": "UNSPECIFIED_SOURCE_DATUM", "elevation_policy": "SOURCE_ROW_HEIGHTS",
+                "scenario_key": record["scenario_key"], "scenario_name": record["scenario_name"],
+                "inspection_only": True, "default_visible": not diagnostic,
+                "color": "#c64e59" if diagnostic else "#147547",
+            })
+        return 1 + len(manifest["outputs"])
 
     def _publish_e0_scenarios(
         self,

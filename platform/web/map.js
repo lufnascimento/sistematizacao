@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "./vendor/three/OrbitControls.js";
+import { TerrainSurface } from "./terrain-surface.mjs";
 
 const viewport = document.querySelector("#viewport");
 const status = document.querySelector("#status");
@@ -16,16 +17,48 @@ let span = 100;
 let mode3d = false;
 let terrainLoaded = false;
 let terrainHash = null;
+let terrainSurface = null;
 let elevationOrigin = 0;
 let elevationScale = 1;
 const objects = [];
 const groups = [];
+const layerRows = [];
+let selectedScenario = "";
 const radius = 6378137;
 const radians = Math.PI / 180;
 const project = ([lon, lat]) => [radius * lon * radians, radius * Math.log(Math.tan(Math.PI / 4 + lat * radians / 2))];
 const unproject = (x, y) => [x / radius / radians, (2 * Math.atan(Math.exp(y / radius)) - Math.PI / 2) / radians];
 
 function render() { renderer.render(scene, camera); }
+function prepareDrape(group) {
+  if (!terrainSurface || group.userData.drapePrepared || !group.userData.drapeFeatures) return;
+  for (const feature of group.userData.drapeFeatures) {
+    for (const part of terrainSurface.drape(feature.points)) {
+      // Two centimetres of display-only lift avoids z-fighting, not earthwork.
+      const geometry = new THREE.BufferGeometry().setFromPoints(part.map(p => new THREE.Vector3(p[0], p[1], p[2] + .02 * elevationScale)));
+      const material = group.children[0].material.clone(); material.depthTest = true;
+      const line = new THREE.Line(geometry, material);
+      line.userData = { ...feature.properties, view: "3d", display_height: "MESH_INTERPOLATION" };
+      line.renderOrder = 1; group.add(line); objects.push(line);
+    }
+  }
+  group.userData.drapePrepared = true;
+  group.userData.drapeFeatures = null;
+}
+function updateLayerVisibility() {
+  for (const { group, row, toggle, scenario } of layerRows) {
+    const selected = !scenario || scenario === selectedScenario;
+    row.hidden = !selected;
+    if (group) {
+      group.visible = selected && toggle.checked && !(mode3d && group.userData.planOnly);
+      if (mode3d && group.visible) prepareDrape(group);
+      if (group.userData.toggle) group.children.forEach(line => {
+        line.material.depthTest = mode3d;
+        line.visible = mode3d ? line.userData.view !== "plan" : line.userData.view !== "3d";
+      });
+    }
+  }
+}
 function resize() {
   const width = viewport.clientWidth;
   const height = viewport.clientHeight;
@@ -64,11 +97,22 @@ function showSelection(properties) {
   const entries = properties.kind === "CONTOUR" ? [
     ["Curva de nivel", properties.id], ["Cota original (m)", properties.elevation_m],
     ["Uso", "Inspecao topografica"],
+  ] : properties.kind === "FIELD_BOUNDARY" ? [
+    ["Talhao", properties.field_id], ["Limite", properties.interior_ring ? "Exclusao interna" : "Externo"],
+    ["Cobertura de cotas", properties.height_coverage_complete ? "Completa" : "Parcial"],
+  ] : properties.kind === "SULCATION_ROW" ? [
+    ["Linha", properties.row_id || properties.line_id || properties.id],
+    ["Talhao", properties.field_id || properties.field_code], ["Comprimento original (m)", properties.length_m],
+    ["Raio minimo (m)", properties.min_radius_m ?? properties.min_radius],
+    ["Greide maximo (%)", properties.max_abs_grade_pct ?? properties.grade_max],
+    ["Uso", properties.inspection_status === "DIAGNOSTIC" ? "Diagnostico; nao liberada" : "Estudo preliminar; nao liberada"],
+    ["Pendencias", properties.blocker_codes || "Consultar relatorio da alternativa"],
   ] : [
     ["Caminho", properties.id], ["Trecho", properties.reach_id], ["Receptor", properties.receiver_id],
     ["Comprimento original (m)", properties.length_m], ["Queda original (m)", properties.elevation_drop_m],
     ["Analise", properties.screening_status === "SCREENED_CLEAR" ? "Sem conflito detectado" : "Requer revisao"],
   ];
+  if (properties.display_height === "MESH_INTERPOLATION") entries.push(["Altura na cena", "Interpolacao visual da malha"]);
   for (const [name, value] of entries) {
     const term = document.createElement("dt"); term.textContent = name;
     const detail = document.createElement("dd"); detail.textContent = String(value ?? "Nao informado");
@@ -78,6 +122,32 @@ function showSelection(properties) {
 async function start() {
   if (!runId) throw new Error("Selecione uma rodada nos resultados.");
   const manifest = await getJSON(`/api/runs/${encodeURIComponent(runId)}/map-layers`);
+  const alternatives = new Map();
+  const scenarioRecords = new Map();
+  const scenarioResponse = await getJSON(`/api/runs/${encodeURIComponent(runId)}/scenarios`);
+  for (const scenario of scenarioResponse.items || []) {
+    if (scenario.run_id === runId && scenario.project_id === manifest.project_id) scenarioRecords.set(scenario.code, scenario);
+  }
+  for (const layer of manifest.layers) {
+    if (layer.status === "READY" && layer.spatial_metadata.scenario_key) alternatives.set(layer.spatial_metadata.scenario_key, layer.spatial_metadata.scenario_name);
+  }
+  const selector = document.querySelector("#scenario");
+  selector.disabled = true;
+  for (const [key, name] of [["", "Somente topografia"], ...alternatives]) {
+    const option = document.createElement("option"); option.value = key; option.textContent = name; selector.append(option);
+  }
+  const requestedScenario = new URLSearchParams(location.search).get("scenario");
+  selectedScenario = requestedScenario === "" || alternatives.has(requestedScenario) ? requestedScenario : alternatives.keys().next().value || "";
+  selector.value = selectedScenario;
+  const updateScenarioStatus = () => {
+    const scenario = scenarioRecords.get(selectedScenario);
+    document.querySelector("#scenario-status").textContent = !selectedScenario ? "" :
+      scenario?.status === "CF0_PARTIAL_GEOMETRIC_SCREENING" ? "Geometria parcial. Ha blocos reprovados; implantacao nao liberada." :
+      scenario?.status?.includes("DIAGNOSTIC") ? "Alternativa de diagnostico; implantacao nao liberada." :
+      "Estudo preliminar; hidraulica e implantacao nao liberadas.";
+  };
+  updateScenarioStatus();
+  document.querySelector("#scenario-control").hidden = !alternatives.size;
   document.querySelector("#back").href = `/#/projects/${encodeURIComponent(manifest.project_id)}/results`;
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -92,17 +162,34 @@ async function start() {
   new ResizeObserver(resize).observe(viewport);
   let featureCount = 0;
   let loaded = 0;
+  const refreshStatus = () => { status.textContent = `${loaded} ${loaded === 1 ? "camada carregada" : "camadas carregadas"} / ${featureCount} objetos`; };
   // Establish the shared vertical frame before placing any source-height lines.
-  const orderedLayers = [...manifest.layers].sort((a, b) => Number(b.spatial_metadata.format === "TERRAIN_INSPECTION_MESH") - Number(a.spatial_metadata.format === "TERRAIN_INSPECTION_MESH"));
+  const layerOrder = layer => layer.status !== "READY" ? 4 : layer.spatial_metadata.format === "TERRAIN_INSPECTION_MESH" ? 0 : layer.spatial_metadata.scenario_key ? 3 : 1;
+  const orderedLayers = [...manifest.layers].sort((a, b) => layerOrder(a) - layerOrder(b));
   for (const [index, layer] of orderedLayers.entries()) {
+    status.textContent = `Carregando camadas: ${loaded}/${manifest.ready_count}`;
+    const color = layer.spatial_metadata.color || { SOURCE_TERRAIN_SAMPLE: "#b38b00", SOURCE_ROW_HEIGHTS: "#147547" }[layer.spatial_metadata.elevation_policy] || palette[index % palette.length];
     const row = document.createElement("div"); row.className = "layer";
     const label = document.createElement("label");
     const toggle = document.createElement("input"); toggle.type = "checkbox"; toggle.disabled = true;
-    const swatch = document.createElement("span"); swatch.className = "swatch"; swatch.style.background = palette[index % palette.length];
+    const swatch = document.createElement("span"); swatch.className = "swatch"; swatch.style.background = color;
     const title = document.createElement("span"); title.textContent = layer.name;
     const detail = document.createElement("small"); detail.textContent = "Conversao espacial pendente";
-    label.append(toggle, swatch, title); row.append(label, detail); document.querySelector("#layers").append(row);
+    label.append(toggle, swatch, title); row.append(label, detail);
+    document.querySelector(layer.status === "READY" ? "#layers" : "#native-layers").append(row);
+    if (layer.status !== "READY") document.querySelector("#technical-layers").hidden = false;
+    const layerRow = { group: null, row, toggle, scenario: layer.spatial_metadata.scenario_key };
+    layerRows.push(layerRow);
+    row.hidden = Boolean(layerRow.scenario && layerRow.scenario !== selectedScenario);
     if (layer.status !== "READY") continue;
+    toggle.checked = layer.default_visible !== false;
+    toggle.disabled = false;
+    detail.textContent = "Nao carregada";
+    const load = async () => {
+      if (layerRow.group) return;
+      if (layerRow.loading) return layerRow.loading;
+      row.setAttribute("aria-busy", "true"); toggle.disabled = true;
+      layerRow.loading = (async () => {
     try {
       if (layer.size_bytes > 20 * 1024 * 1024) throw new Error("Camada excede 20 MB; requer carregamento progressivo.");
       const data = await getJSON(layer.source_url);
@@ -125,55 +212,92 @@ async function start() {
         geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
         geometry.setIndex(data.triangles.flat()); geometry.computeVertexNormals();
+        terrainSurface = new TerrainSurface(geometry.attributes.position.array, geometry.index.array);
         const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true });
         const mesh = new THREE.Mesh(geometry, material); mesh.userData = { terrain: true };
         const group = new THREE.Group(); group.add(mesh); groups.push(group); objects.push(mesh); scene.add(group);
+        layerRow.group = group;
         const light = new THREE.DirectionalLight(0xffffff, 1.4); light.position.set(-1000, -1000, 2000); scene.add(light);
         scene.add(new THREE.AmbientLight(0xffffff, 1.4));
         loaded++; featureCount++; terrainLoaded = true; terrainHash = data.source_sha256;
-        toggle.disabled = false; toggle.checked = true;
-        toggle.addEventListener("change", () => { group.visible = toggle.checked; render(); });
         const opacity = document.createElement("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "1"; opacity.step = "0.05"; opacity.value = "1";
         opacity.setAttribute("aria-label", `Opacidade de ${layer.name}`);
         opacity.addEventListener("input", () => { material.opacity = Number(opacity.value); render(); });
         row.append(opacity); detail.textContent = `${data.triangles.length.toLocaleString("pt-BR")} triangulos / ${elevationOrigin.toFixed(1)} a ${maximum.toFixed(1)} m`;
-        continue;
+        return;
       }
       if (data.type !== "FeatureCollection" || !Array.isArray(data.features)) throw new Error("Geometria indisponivel.");
       const group = new THREE.Group();
-      const sourceHeights = layer.spatial_metadata.elevation_policy === "SOURCE_CONTOUR_HEIGHTS";
+      const sampledHeights = layer.spatial_metadata.elevation_policy === "SOURCE_TERRAIN_SAMPLE";
+      const sourceHeights = sampledHeights || ["SOURCE_CONTOUR_HEIGHTS", "SOURCE_ROW_HEIGHTS"].includes(layer.spatial_metadata.elevation_policy);
       const aligned3d = sourceHeights && terrainLoaded && typeof terrainHash === "string" && data.terrain_sha256 === terrainHash;
       group.userData.planOnly = !aligned3d;
       group.userData.toggle = toggle;
+      if (aligned3d) group.userData.drapeFeatures = [];
       let vertices = 0;
       for (const feature of data.features) {
         const points = feature.geometry?.coordinates;
         if (feature.geometry?.type !== "LineString" || !Array.isArray(points) || points.length < 2 || points.some(point => !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1]) || Math.abs(point[0]) > 180 || Math.abs(point[1]) > 85)) throw new Error("Coordenadas fora da cobertura do visualizador.");
         vertices += points.length;
         if (vertices > 200000) throw new Error("Camada requer simplificacao para exibicao.");
-        if (sourceHeights && (!Array.isArray(feature.properties?.source_elevations_m) || feature.properties.source_elevations_m.length !== points.length || !feature.properties.source_elevations_m.every(Number.isFinite))) throw new Error("Cotas da curva ausentes ou invalidas.");
+        if (sourceHeights && (!Array.isArray(feature.properties?.source_elevations_m) || feature.properties.source_elevations_m.length !== points.length || !feature.properties.source_elevations_m.every(z => Number.isFinite(z) || (sampledHeights && z === null)))) throw new Error("Cotas da linha ausentes ou invalidas.");
       }
       for (const feature of data.features) {
         const coordinates = feature.geometry.coordinates.map(project);
         if (!featureCount) origin = coordinates[0];
-        const geometry = new THREE.BufferGeometry().setFromPoints(coordinates.map(([x, y], vertex) => new THREE.Vector3(x - origin[0], y - origin[1], aligned3d ? (feature.properties.source_elevations_m[vertex] - elevationOrigin) * elevationScale : 0)));
-        const material = new THREE.LineBasicMaterial({ color: palette[index % palette.length], transparent: true, depthTest: false });
-        const line = new THREE.Line(geometry, material); line.userData = feature.properties || {};
-        line.renderOrder = 1;
-        group.add(line); objects.push(line); featureCount++;
+        const addLine = (points, heights, view = "both") => {
+          const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y], vertex) => new THREE.Vector3(x - origin[0], y - origin[1], heights ? (heights[vertex] - elevationOrigin) * elevationScale : 0)));
+          const material = new THREE.LineBasicMaterial({ color, transparent: true, depthTest: false });
+          const line = new THREE.Line(geometry, material); line.userData = { ...feature.properties, view };
+          line.visible = view !== "3d"; line.renderOrder = 1;
+          group.add(line); objects.push(line);
+        };
+        if (aligned3d) {
+          addLine(coordinates, null, "plan");
+          group.userData.drapeFeatures.push({ points: coordinates.map(([x, y]) => [x - origin[0], y - origin[1]]), properties: feature.properties });
+        } else addLine(coordinates, null);
+        featureCount++;
       }
       groups.push(group); scene.add(group); loaded++;
-      toggle.disabled = false; toggle.checked = true;
-      toggle.addEventListener("change", () => { group.visible = toggle.checked && !(mode3d && group.userData.planOnly); render(); });
+      layerRow.group = group;
       const opacity = document.createElement("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "1"; opacity.step = "0.05"; opacity.value = "1";
       opacity.setAttribute("aria-label", `Opacidade de ${layer.name}`);
       opacity.addEventListener("input", () => { group.children.forEach(line => { line.material.opacity = Number(opacity.value); }); render(); });
-      row.append(opacity); detail.textContent = `${data.features.length} ${data.features.length === 1 ? "linha" : "linhas"}${aligned3d ? " / cotas do MDT original" : " / somente em planta"}`;
-    } catch (error) { detail.textContent = error.message; }
+      row.append(opacity); detail.textContent = `${data.features.length} ${data.features.length === 1 ? "linha" : "linhas"}${aligned3d ? " / altura visual na malha" : " / somente em planta"}`;
+    } catch (error) { detail.textContent = error.message; toggle.checked = false; }
+      })();
+      try { await layerRow.loading; }
+      finally {
+        layerRow.loading = null; toggle.disabled = false; row.setAttribute("aria-busy", "false");
+        updateLayerVisibility(); refreshStatus(); render();
+      }
+    };
+    layerRow.load = load;
+    toggle.addEventListener("change", async () => {
+      if (toggle.checked) await load();
+      updateLayerVisibility(); render();
+    });
+    if (toggle.checked && !row.hidden) await load();
   }
-  status.textContent = `${loaded} ${loaded === 1 ? "camada carregada" : "camadas carregadas"} / ${featureCount} ${terrainLoaded ? featureCount === 1 ? "objeto" : "objetos" : featureCount === 1 ? "linha" : "linhas"}`;
+  refreshStatus();
   if (!featureCount) { empty.hidden = false; empty.textContent = "Nenhuma camada vetorial disponivel nesta rodada."; }
-  fit(); resize();
+  updateLayerVisibility(); fit(); resize();
+  selector.disabled = false;
+  selector.addEventListener("change", async () => {
+    selector.disabled = true;
+    selectedScenario = selector.value;
+    updateScenarioStatus();
+    const url = new URL(location.href);
+    url.searchParams.set("scenario", selectedScenario); history.replaceState(null, "", url);
+    document.querySelector("#selection").replaceChildren();
+    updateLayerVisibility(); render();
+    try {
+      for (const layerRow of layerRows) {
+        if (layerRow.scenario === selectedScenario && layerRow.toggle.checked && layerRow.load) await layerRow.load();
+      }
+    } finally { selector.disabled = false; }
+    updateLayerVisibility(); render();
+  });
   if (terrainLoaded) {
     document.querySelector("#terrain-status").textContent = "MDT simplificado / datum vertical nao informado";
     document.querySelector("#orbit").disabled = false;
@@ -181,15 +305,10 @@ async function start() {
   for (const id of ["plan", "orbit"]) document.getElementById(id).onclick = () => {
     mode3d = id === "orbit" && terrainLoaded;
     controls.enableRotate = mode3d;
-    for (const group of groups) {
-      if (group.userData.toggle) {
-        group.visible = group.userData.toggle.checked && !(mode3d && group.userData.planOnly);
-        group.children.forEach(line => { line.material.depthTest = mode3d; });
-      }
-    }
     controls.mouseButtons.LEFT = mode3d ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
     document.querySelector("#plan").setAttribute("aria-pressed", String(!mode3d));
     document.querySelector("#orbit").setAttribute("aria-pressed", String(mode3d));
+    updateLayerVisibility();
     fit();
   };
   document.querySelector("#fit").onclick = fit;
@@ -203,7 +322,7 @@ async function start() {
     const pointer = new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
     raycaster.params.Line.threshold = span / camera.zoom / rect.height * 8;
     raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects(objects.filter(object => object.parent.visible && object.material.opacity > 0));
+    const hits = raycaster.intersectObjects(objects.filter(object => object.visible && object.parent.visible && object.material.opacity > 0));
     if (!mode3d) {
       const lineIndex = hits.findIndex(hit => !hit.object.userData.terrain);
       if (lineIndex > 0) hits.unshift(hits.splice(lineIndex, 1)[0]);

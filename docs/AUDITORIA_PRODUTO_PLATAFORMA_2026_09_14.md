@@ -16,6 +16,14 @@ espacial continuam pendentes; o modo 3D ja nao e uma pendencia integral.
 
 ## Conclusao
 
+Atualizacao de implementacao em 2026-09-16: derivados de curvas de nivel,
+limites de talhoes e linhas E0/CF0 foram integrados ao pipeline e ao mapa,
+com seletor de alternativa, diagnosticos separados e drapeamento visual
+limitado aos triangulos validos do MDT. Tempo de manobra e limite transversal
+configurados agora sao materializados no pedido do motor. A validacao da
+rodada real e registrada no contrato de camadas e nos testes. Isso nao
+transforma as tres familias conservacionistas especificadas em solvers completos.
+
 Existe uma plataforma local de estudos preliminares, com cadastro, upload, configuracao, pedidos imutaveis, fila, artefatos, revisao e comparacao. Ainda nao existe o produto completo de sistematizacao conservacionista com tres familias dimensionadas e visualizacao geoespacial 3D integrada. Testes de software aprovados nao comprovam desempenho agronomico ou qualidade das linhas em campo.
 
 Evidencias principais: platform/terraflux_api/catalog.py, models.py, jobs.py, services.py e storage.py; platform/web/app.js e api.js; config/catalogo_capacidades_motor.json e inventario_insumos_dataset_atual.json.
@@ -107,6 +115,42 @@ Aceite: terreno real e linhas alinhados no desktop e celular; ligar/desligar mud
 - Execucao reproduzivel do ambiente GDAL/QGIS, dependencias e testes em CI.
 
 ## Insumos que o sistema pode e nao pode inferir
+
+### Evidencia incremental em 2026-09-17
+
+A rodada `run_920fbee7039740b2aafc32375a6633d4` concluiu o fluxo publico de
+upload, configuracao, pedido e processamento dos talhoes 65918 e 65923
+(46,659 ha), usando MDT de 1 m e declaracao explicita de ausencia de rede eletrica.
+Publicou 76 artefatos, nove alternativas e dossie PDF de sete paginas.
+Quatro alternativas E0 sao elegiveis para comparacao geometrica, duas sao
+diagnosticas e as tres CF0 possuem geometria parcial. Os seis blocos aprovados
+geometricamente nao constituem aprovacao da fazenda nem validacao hidraulica.
+
+O mapa foi verificado no navegador em desktop e celular, alternando as nove
+alternativas, camadas, planta/3D, zoom, rotacao e selecao. Foram verificadas a
+ausencia de download inicial dos diagnosticos e a recusa de sobreposicao 3D
+quando a origem do terreno nao corresponde. A malha tem aproximadamente
+27.800 triangulos, com 767 curvas de nivel e 140 aneis de limites e ilhas;
+esses aneis nao representam 140 talhoes. Ha 33 camadas espaciais publicadas.
+
+Testes locais: 56 testes da plataforma, 16 testes geoespaciais, 15 testes de
+pedido/dossie e testes JavaScript de interpolacao e lacunas da malha aprovados.
+O PDF foi aberto e a pagina de comparacao visual inspecionada. Ele e um dossie
+de resumo com mapas, nao um atlas vetorial detalhado de cada alternativa.
+
+Tempo de manobra e declividade lateral configurados agora chegam ao pedido do
+motor, com teste de regressao. A rodada acima antecede essa correcao; ela nao
+comprova o uso desses dois overrides. O raio de suavizacao apresentado na
+configuracao ainda precisa ter semantica alinhada ao sigma usado pelo motor;
+nao considerar esse controle validado de ponta a ponta.
+
+As listas anteriores registram a auditoria original e nao sao uma declaracao
+de que tudo permanece ausente. Inspecao 2D/3D, derivados vetoriais, logs ao vivo
+e cancelamento da arvore de processos avancaram nesta rodada. Permanecem
+pendentes os tres metodos conservacionistas completos, continuidade entre
+talhoes/propriedades, corte por rede eletrica, POA dinamico, atlas detalhado,
+validacao de campo e operacao multiusuario. CI geoespacial foi configurada;
+resultado remoto ainda deve ser conferido apos publicacao.
 
 Poligonos e nuvem de solo classificada permitem geometria e derivados topograficos conforme cobertura e qualidade. Ortoimagem isolada nao fornece terreno. Chuva de projeto, propriedades hidraulicas do solo, estrutura de travessias, condicao de receptor, frota e permissao de passagem precisam de fonte declarada. Modelos de referencia devem ser selecionaveis com procedencia e possibilidade de sobrescrita, sem preencher medidas locais como se fossem observadas.
 

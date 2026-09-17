@@ -8,7 +8,7 @@ from pathlib import Path
 from osgeo import ogr, osr
 
 
-def _read_features(layer, max_vertices):
+def _read_features(layer, max_vertices, contours=True):
     reference = layer.GetSpatialRef()
     if reference is None or not reference.IsProjected() or not math.isclose(reference.GetLinearUnits(), 1.0):
         raise ValueError("Contours require a projected metric CRS")
@@ -37,12 +37,16 @@ def _read_features(layer, max_vertices):
                 raise ValueError("Contour outside viewer coverage")
             coordinates.append([lon, lat])
             heights.append(z)
-        if any(not math.isclose(z, heights[0], rel_tol=0, abs_tol=1e-6) for z in heights):
+        if contours and any(not math.isclose(z, heights[0], rel_tol=0, abs_tol=1e-6) for z in heights):
             raise ValueError("Contour elevation must be constant")
+        properties = {"id": str(feature.GetFID()), "kind": "CONTOUR", "elevation_m": heights[0]} if contours else {
+            **feature.items(), "id": str(feature.GetFID()), "kind": "SULCATION_ROW",
+            "guidance_authorized": False,
+        }
+        properties["source_elevations_m"] = heights
         features.append({
             "type": "Feature", "geometry": {"type": "LineString", "coordinates": coordinates},
-            "properties": {"id": str(feature.GetFID()), "kind": "CONTOUR",
-                           "source_elevations_m": heights, "elevation_m": heights[0]},
+            "properties": properties,
         })
     return features
 

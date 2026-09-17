@@ -121,3 +121,31 @@ reais. A integracao C1 permanece `CONCEPT_ONLY` mesmo quando o job e concluido.
 Ao reiniciar o worker, rodadas que estavam apenas enfileiradas voltam para a
 fila. Rodadas que estavam em processamento sao marcadas como interrompidas e
 suas publicacoes parciais sao removidas; o usuario deve iniciar uma nova rodada.
+
+## Inspecao espacial e processamento
+
+Em Resultados, `Abrir mapa` preserva a alternativa selecionada. O mapa oferece
+terreno, limites dos talhoes (incluindo ilhas), curvas de nivel e linhas de
+sulcacao em planta e 3D, com selecao, visibilidade e opacidade. Alternativas
+parciais e diagnosticas sao identificadas; nao representam autorizacao de campo.
+Camadas de outras alternativas e linhas diagnosticas so sao baixadas quando
+solicitadas. Os arquivos tecnicos originais permanecem disponiveis para download.
+
+Em 3D, as linhas sao ajustadas visualmente aos triangulos do mesmo MDT, com
+afastamento visual de 2 cm. Esse ajuste nao altera cotas, metricas ou exportacoes
+originais. Lacunas do terreno nao sao preenchidas. A correspondencia entre
+camada e terreno depende do checksum, nao apenas do nome do arquivo.
+
+O worker transmite logs durante a execucao e interrompe a arvore de processos
+do motor ao cancelar. `TERRAFLUX_ENGINE_TIMEOUT_S` configura o limite por processo
+(padrao: 21600 segundos). Cancelamento remove publicacoes parciais da rodada.
+
+Smoke de um projeto proprio pela API (o exemplo declara ausencia de rede eletrica):
+
+```powershell
+python platform/tests/run_project_smoke.py --boundary dataset/Contorno.shp --terrain dataset/derived/dtm_1m.tif --crs EPSG:31982 --field-id-column cd_upnivel --resolution-m 1 --power-network-declared-none
+```
+
+Para acompanhar uma rodada existente sem reenviar os dados, use
+`python platform/tests/run_project_smoke.py --resume-run ID_DA_RODADA`.
+Os dados locais do exemplo nao acompanham o repositorio.

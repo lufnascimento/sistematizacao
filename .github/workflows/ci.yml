@@ -48,6 +48,9 @@ jobs:
       - name: Run public preset lineage tests
         run: python -m unittest -v tests.test_compile_project_request_from_presets
 
+      - name: Run platform parameter binding tests
+        run: python -m unittest -v tests.test_build_platform_engine_request
+
       - name: Run PCE0 and PCX0 contract tests
         run: python -m unittest -v tests.test_pce_pcx tests.test_run_pce_pcx_screening
 
@@ -68,3 +71,17 @@ jobs:
 
       - name: Run preliminary overflow-path tests
         run: python -m unittest -v tests.test_preliminary_overflow_path_screening tests.test_overflow_geojson
+
+  geospatial-inspection:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install system geospatial test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gdal python3-numpy python3-matplotlib python3-pandas python3-scipy python3-shapely nodejs
+      - name: Verify terrain and vector derivatives
+        run: /usr/bin/python3 -m unittest -v tests.test_terrain_web_mesh tests.test_terrain_coverage tests.test_contours_web tests.test_boundaries_web tests.test_rows_web
+      - name: Verify mesh clipping and interpolation
+        run: node platform/tests/test_terrain_surface.mjs

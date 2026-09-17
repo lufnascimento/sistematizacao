@@ -1066,7 +1066,8 @@ async function renderResultsStep(project) {
   bindResultActions(project, successful, artifacts, scenarios);
   const mapLink = document.createElement("a");
   mapLink.className = "button";
-  mapLink.href = `/map.html?run=${encodeURIComponent(successful.id)}`;
+  const mapScenario = scenarios.find((item) => item.id === state.selectedScenarioId);
+  mapLink.href = `/map.html?run=${encodeURIComponent(successful.id)}${mapScenario ? `&scenario=${encodeURIComponent(mapScenario.code)}` : ""}`;
   mapLink.textContent = "Abrir mapa de camadas";
   main.querySelector(".section-head")?.append(mapLink);
 }

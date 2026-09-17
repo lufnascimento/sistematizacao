@@ -33,7 +33,7 @@ except ModuleNotFoundError:  # Supports ``python -m scripts...`` from the reposi
 
 
 REQUEST_SCHEMA_VERSION = "1.0.0"
-SYSTEM_MODEL_REVISION = "platform-e0-request-model-1.0.0"
+SYSTEM_MODEL_REVISION = "platform-e0-request-model-1.1.0"
 SUPPORTED_BOUNDARY_FORMATS = {
     ".shp": "SHP",
     ".gpkg": "GPKG",
@@ -69,6 +69,8 @@ class RequestInputs:
     cross_property: bool
     cross_property_permission: str
     expected_yield_t_ha: float | None = None
+    maneuver_time_s: float | None = None
+    max_cross_slope_pct: float | None = None
     constraint_review_status: str = "NOT_REVIEWED"
     created_at: str | None = None
     input_qa_status: str = "UPLOADED"
@@ -336,6 +338,8 @@ def _validate_inputs(inputs: RequestInputs) -> RequestInputs:
         cross_property=bool(inputs.cross_property),
         cross_property_permission=cross_property_permission,
         expected_yield_t_ha=expected_yield,
+        maneuver_time_s=None if inputs.maneuver_time_s is None else _finite(inputs.maneuver_time_s, "maneuver_time_s", minimum=0),
+        max_cross_slope_pct=None if inputs.max_cross_slope_pct is None else _finite(inputs.max_cross_slope_pct, "max_cross_slope_pct", minimum=0),
         constraint_review_status=inputs.constraint_review_status,
         created_at=created_at,
         input_qa_status=inputs.input_qa_status,
@@ -534,6 +538,18 @@ def build_request(
             method="SYSTEM_MODEL E0 speed assumption selected in user configuration; not operational evidence",
         ),
     ]
+    if resolved.maneuver_time_s is not None:
+        parameter_values.append(parameters.make(
+            "e0.maneuver_time_s", resolved.maneuver_time_s, source_kind="SYSTEM_MODEL",
+            confidence="LOW", applicability="SCENARIO",
+            method="SYSTEM_MODEL preliminary maneuver duration selected in user configuration; not telemetry",
+        ))
+    if resolved.max_cross_slope_pct is not None:
+        parameter_values.append(parameters.make(
+            "fleet.max_cross_slope_pct", {"FURROW": resolved.max_cross_slope_pct}, source_kind="USER_CONFIG",
+            origin="RULE_PACK", confidence="LOW", applicability="FLEET",
+            method="USER_CONFIG preliminary transverse slope restriction; not engineer approval or fleet evidence",
+        ))
     if resolved.expected_yield_t_ha is not None:
         parameter_values.append(
             parameters.make(
@@ -788,6 +804,8 @@ def _inputs_from_args(args: argparse.Namespace) -> RequestInputs:
         cross_property=args.cross_property,
         cross_property_permission=args.cross_property_permission,
         expected_yield_t_ha=args.expected_yield_t_ha,
+        maneuver_time_s=args.maneuver_time_s,
+        max_cross_slope_pct=args.max_cross_slope_pct,
         constraint_review_status=args.constraint_review_status,
         created_at=args.created_at,
         input_qa_status="VALIDATED" if manifest is not None else "UPLOADED",
@@ -829,6 +847,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--minimum-shot-length-m", type=float, required=True)
     parser.add_argument("--nominal-speed-kmh", type=float, required=True)
     parser.add_argument("--expected-yield-t-ha", type=float)
+    parser.add_argument("--maneuver-time-s", type=float)
+    parser.add_argument("--max-cross-slope-pct", type=float)
     parser.add_argument(
         "--power-status",
         choices=["DECLARED_NONE", "NOT_REVIEWED"],

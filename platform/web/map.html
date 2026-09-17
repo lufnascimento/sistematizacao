@@ -11,7 +11,7 @@
 <body>
   <header><a id="back" href="/">Voltar aos resultados</a><strong>TerraFlux / Mapa da rodada</strong><span id="status" role="status">Carregando</span></header>
   <main>
-    <aside aria-label="Camadas"><h1>Camadas</h1><div id="layers"></div><h2>Objeto selecionado</h2><dl id="selection"><dt>Selecao</dt><dd>Nenhum objeto</dd></dl></aside>
+    <aside aria-label="Camadas"><h1>Camadas</h1><div id="scenario-control" hidden><label for="scenario">Alternativa</label><select id="scenario"></select><p id="scenario-status" role="status"></p></div><div id="layers"></div><details id="technical-layers" hidden><summary>Arquivos tecnicos</summary><div id="native-layers"></div></details><h2>Objeto selecionado</h2><dl id="selection"><dt>Selecao</dt><dd>Nenhum objeto</dd></dl></aside>
     <section id="viewport" aria-label="Mapa dos produtos">
       <div class="toolbar">
         <button id="fit" type="button" title="Enquadrar camadas" aria-label="Enquadrar camadas"><i data-lucide="scan"></i></button>

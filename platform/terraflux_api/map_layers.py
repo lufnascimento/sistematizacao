@@ -37,7 +37,7 @@ def build_map_layers(run, artifacts):
             "status": "READY" if ready else "UNAVAILABLE", "reason": reason,
             "source_url": f"/api/artifacts/{artifact['id']}/download" if ready else None,
             "spatial_metadata": spatial,
-            "default_visible": ready, "default_opacity": 1.0,
+            "default_visible": ready and spatial.get("default_visible", True), "default_opacity": 1.0,
         })
     return {
         "schema_version": "1.0.0", "run_id": run["id"], "project_id": run["project_id"],

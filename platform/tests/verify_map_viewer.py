@@ -5,7 +5,7 @@ from io import BytesIO
 from pathlib import Path
 
 from PIL import Image, ImageChops
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 
 def main():
@@ -14,6 +14,8 @@ def main():
     parser.add_argument("--output", default="platform_runtime/browser_checks")
     parser.add_argument("--terrain", action="store_true")
     parser.add_argument("--contours", action="store_true")
+    parser.add_argument("--boundaries", action="store_true")
+    parser.add_argument("--scenarios", action="store_true")
     args = parser.parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
@@ -23,11 +25,48 @@ def main():
             page = browser.new_page(viewport={"width": width, "height": height})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.goto(args.url, wait_until="networkidle")
+            page.goto(args.url, wait_until="networkidle", timeout=120000)
             toggle = page.get_by_role("checkbox").first
             toggle.wait_for()
             assert toggle.is_enabled()
             canvas = page.locator("canvas")
+            boundary_toggle = None
+            if args.scenarios:
+                selector = page.get_by_label("Alternativa", exact=True)
+                assert selector.is_visible()
+                expect(selector).to_be_enabled(timeout=120000)
+                layer_manifest = page.request.get(args.url.split("/map.html")[0] + "/api/runs/" + args.url.split("run=")[1].split("&")[0] + "/map-layers").json()
+                requested = page.evaluate("performance.getEntriesByType('resource').map(item => item.name)")
+                for layer in layer_manifest["layers"]:
+                    if layer["status"] == "READY" and not layer["default_visible"]:
+                        assert not any(url.endswith(layer["source_url"]) for url in requested), "Hidden diagnostic downloaded during initial load"
+                options = selector.locator("option").evaluate_all("items => items.map(item => ({value: item.value, name: item.textContent}))")
+                assert len(options) > 1
+                selector.select_option("")
+                baseline = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                bounds = (0, 90, baseline.width, baseline.height - 40)
+                for option in options[1:]:
+                    selector.select_option(option["value"])
+                    expect(selector).to_be_enabled(timeout=120000)
+                    assert "CF0" not in option["name"] and "E0" not in option["name"], "Internal code used as scenario name"
+                    # Diagnostics require an explicit choice and never imply approval.
+                    for diagnostic in page.get_by_role("checkbox", name="Linhas de diagnostico").all():
+                        if diagnostic.is_visible():
+                            assert not diagnostic.is_checked()
+                    alternative = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                    assert ImageChops.difference(baseline.crop(bounds), alternative.crop(bounds)).getbbox(), f"Alternative has no visible rows: {option['name']}"
+                selector.select_option("")
+            if args.boundaries:
+                boundary_toggle = page.get_by_role("checkbox", name="Limites dos talhoes", exact=True)
+                for view in ("2D", "3D"):
+                    page.get_by_role("button", name=view, exact=True).click()
+                    with_boundary = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                    boundary_toggle.uncheck()
+                    without_boundary = Image.open(BytesIO(canvas.screenshot())).convert("RGB")
+                    bounds = (0, 90, with_boundary.width, with_boundary.height - 40)
+                    assert ImageChops.difference(with_boundary.crop(bounds), without_boundary.crop(bounds)).getbbox(), f"Field outlines absent in {view}"
+                    boundary_toggle.check()
+                boundary_toggle.uncheck()
             contour_toggle = None
             if args.contours:
                 contour_toggle = page.get_by_role("checkbox", name="Curvas de nivel do terreno", exact=True)
@@ -84,6 +123,10 @@ def main():
             assert not errors, errors
             if contour_toggle is not None:
                 contour_toggle.check()
+            if boundary_toggle is not None:
+                boundary_toggle.check()
+            if args.scenarios:
+                page.get_by_label("Alternativa", exact=True).select_option(options[1]["value"])
             page.screenshot(path=str(output / f"map-viewer-{'terrain-' if args.terrain else ''}{name}.png"), full_page=True)
             print(name, "PASS: layer pixels, zoom, selection, opacity, layout")
             page.close()
@@ -98,7 +141,10 @@ def main():
                 route.fulfill(response=response, json=data)
 
             page.route("**/api/artifacts/*/download", mismatch_terrain)
-            page.goto(args.url, wait_until="networkidle")
+            page.goto(args.url, wait_until="networkidle", timeout=120000)
+            if args.scenarios:
+                expect(page.get_by_label("Alternativa", exact=True)).to_be_enabled(timeout=120000)
+                page.get_by_label("Alternativa", exact=True).select_option("")
             contour_toggle = page.get_by_role("checkbox", name="Curvas de nivel do terreno", exact=True)
             assert contour_toggle.is_enabled()
             assert "somente em planta" in page.locator("#layers").inner_text()

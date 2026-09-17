@@ -92,6 +92,16 @@ class PlatformEngineRequestBuilderTests(unittest.TestCase):
                 {item["parameter_id"] for item in request["parameter_values"]},
             )
 
+    def test_user_maneuver_and_cross_slope_reach_engine(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            request = build_request(self.make_inputs(root, maneuver_time_s=72, max_cross_slope_pct=8))
+            output = root / "request.json"
+            write_validated_request(request, output)
+            resolved = load_project_request(output)
+            self.assertEqual(resolved.engine_parameter_overrides()["assumed_turn_seconds"], 72)
+            self.assertEqual(resolved.conservative_operation_limit("fleet.max_cross_slope_pct", "min"), 8)
+
     def test_cross_property_requires_cross_field_permission_and_two_properties(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

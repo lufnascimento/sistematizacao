@@ -401,9 +401,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     try:
         from scripts.terrain_web_mesh import generate_terrain_mesh
         from scripts.contours_web import export_contours
+        from scripts.boundaries_web import export_boundaries
     except ModuleNotFoundError:
         from terrain_web_mesh import generate_terrain_mesh
         from contours_web import export_contours
+        from boundaries_web import export_boundaries
     terrain_mesh_path = output_dir / "terrain_inspection_mesh.json"
     try:
         generate_terrain_mesh(dtm, terrain_mesh_path)
@@ -420,7 +422,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     except ValueError as exc:
         contours_web_status = {"status": "UNAVAILABLE", "reason": str(exc), "inspection_only": True}
 
+    try:
+        boundary_web_path = output_dir / "field_boundaries_inspection.geojson"
+        export_boundaries(boundary, dtm, boundary_web_path)
+        outputs["field_boundaries_inspection"] = artifact(boundary_web_path)
+        boundary_web_status = {"status": "AVAILABLE", "inspection_only": True}
+    except ValueError as exc:
+        boundary_web_status = {"status": "UNAVAILABLE", "reason": str(exc), "inspection_only": True}
+
     manifest = {
+        "boundaries_web": boundary_web_status,
         "contours_web": contours_web_status,
         "terrain_mesh": terrain_mesh_status,
         "schema_version": SCHEMA_VERSION,
