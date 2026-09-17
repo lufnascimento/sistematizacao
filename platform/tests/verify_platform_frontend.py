@@ -19,6 +19,7 @@ EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-url", default=BASE_URL)
     parser.add_argument(
         "--project-id",
         default=os.environ.get("TERRAFLUX_FRONTEND_PROJECT_ID"),
@@ -66,6 +67,7 @@ def verify_scenarios(page, project_id: str) -> dict[str, int]:
     if recommended:
         selected = page.locator(".scenario-tab.is-active").get_attribute("data-scenario-tab")
         assert selected == recommended[0]["id"], (selected, recommended[0]["id"])
+        assert recommended[0]["name"] in page.locator(".comparison-table thead").inner_text()
 
     ineligible_count = 0
     cf0_count = 0
@@ -88,11 +90,17 @@ def verify_scenarios(page, project_id: str) -> dict[str, int]:
             assert page.locator('[data-map-product="sulcation_scenarios_map.png"]').count() == 1
 
     assert page.locator('td.is-best[data-scenario-eligible="false"]').count() == 0
+    length_row = page.locator(".comparison-table tbody tr").filter(has_text="Comprimento publicado (km)")
+    assert length_row.count() == 1
+    assert "Não calculado" not in length_row.inner_text(), length_row.inner_text()
+    assert length_row.locator(".is-best").count() == 0
     return {"scenario_count": len(scenarios), "ineligible_count": ineligible_count, "cf0_count": cf0_count}
 
 
 def main() -> None:
+    global BASE_URL
     args = parse_args()
+    BASE_URL = args.base_url.rstrip("/")
     boundary_zip = ROOT / "platform_runtime" / "browser_inputs" / "Contorno.zip"
     terrain = ROOT / "dataset" / "DEM.tif"
     if not EDGE.is_file() or (not args.project_id and (not boundary_zip.is_file() or not terrain.is_file())):
@@ -163,6 +171,10 @@ def main() -> None:
         assert page.locator('.artifact-card img[src*="/api/artifacts/"]').count() >= 2
         assert page.locator(".artifact-card a[download]").count() == artifact_count
         scenario_summary = verify_scenarios(page, project_id) if args.expect_scenarios else {}
+        if args.expect_scenarios:
+            output = ROOT / "platform_runtime" / "browser_checks"
+            output.mkdir(parents=True, exist_ok=True)
+            page.locator("#comparison-table").screenshot(path=str(output / "comparison-table-desktop.png"))
         desktop_geometry = page.evaluate(
             """() => ({width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
             cards: document.querySelectorAll('.artifact-card').length})"""

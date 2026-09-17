@@ -144,6 +144,15 @@ parciais e diagnosticas sao identificadas; nao representam autorizacao de campo.
 Camadas de outras alternativas e linhas diagnosticas so sao baixadas quando
 solicitadas. Os arquivos tecnicos originais permanecem disponiveis para download.
 
+A comparacao usa o comprimento publicado pelo motor (`total_line_km`), mostra
+area util, cobertura estimada, blocos aceitos/avaliados e impedimentos. Valores
+ausentes aparecem como nao calculados. Medias ponderadas dos percentis locais
+nao sao apresentadas como percentis globais. Os destaques numericos exigem ao
+menos duas alternativas E0 elegiveis da mesma rodada, pedido e conjunto de
+talhoes. Comprimento total, cobertura e contagem de blocos nao recebem destaque
+de melhor valor; nao equivalem isoladamente a ganho agronomico ou operacional.
+Estados desconhecidos ou contraditorios nao conferem elegibilidade.
+
 Em 3D, as linhas sao ajustadas visualmente aos triangulos do mesmo MDT, com
 afastamento visual de 2 cm. Esse ajuste nao altera cotas, metricas ou exportacoes
 originais. Lacunas do terreno nao sao preenchidas. A correspondencia entre

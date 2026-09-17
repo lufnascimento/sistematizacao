@@ -1,4 +1,5 @@
 import { api, ApiError, systemCatalog } from "./api.js";
+import { scenarioIsGeometryEligible, scenarioMetric, bestMetricIndexes } from "./scenario-comparison.mjs";
 
 const main = document.querySelector("#main-content");
 const breadcrumb = document.querySelector("#breadcrumb");
@@ -101,14 +102,6 @@ function badge(status, overrideLabel = null) {
 function statusLabel(status) {
   const normalized = String(status || "PENDING").toUpperCase();
   return statusMap[normalized]?.[0] || normalized.replaceAll("_", " ");
-}
-
-function scenarioIsGeometryEligible(scenario) {
-  if (typeof scenario?.geometry_eligible === "boolean") return scenario.geometry_eligible;
-  const status = String(scenario?.status || "").toUpperCase();
-  if (["CF0_NO_FEASIBLE_FAMILY", "CF0_PARTIAL_GEOMETRIC_SCREENING", "CONCEPT_ONLY", "BLOCKED"].includes(status)) return false;
-  if (status.includes("INFEASIBLE") || status.includes("DIAGNOSTIC_ONLY")) return false;
-  return true;
 }
 
 function scenarioIsRecommended(scenario) {
@@ -1041,7 +1034,10 @@ async function renderResultsStep(project) {
   const packageArtifact = findPackageArtifact(artifacts);
   state.compareIds = state.compareIds.filter((id) => scenarios.some((item) => item.id === id));
   if (state.compareIds.length < 2) {
-    const eligibleFirst = [...scenarios].sort((left, right) => Number(scenarioIsGeometryEligible(right)) - Number(scenarioIsGeometryEligible(left)));
+    const eligibleFirst = [...scenarios].sort((left, right) =>
+      Number(scenarioIsGeometryEligible(right)) - Number(scenarioIsGeometryEligible(left))
+      || Number(right.selected_for_review === true) - Number(left.selected_for_review === true)
+      || Number(scenarioIsRecommended(right)) - Number(scenarioIsRecommended(left)));
     state.compareIds = eligibleFirst.slice(0, Math.min(3, eligibleFirst.length)).map((item) => item.id);
   }
   const persistedReviewRepresentative = scenarios.find((item) => item.selected_for_review === true);
@@ -1155,10 +1151,10 @@ function renderScenarioFocus(scenario, artifacts) {
     </div>
     <aside class="content-aside">
       <section class="panel"><div class="panel-header"><div><h3>${escapeHtml(scenario.code)} · ${escapeHtml(scenario.name)}</h3><p>${escapeHtml(scenario.family)}</p></div>${badge(scenario.status)}</div><div class="panel-body"><div class="metric-list">
-        ${metricBar("Conservação", metrics.conservation_score)}
-        ${metricBar("Colheitabilidade", metrics.harvestability_score)}
-        ${metricBar("Performance", metrics.operational_score)}
-      </div><ul class="summary-list" style="margin-top:13px"><li><span>Tiro médio</span><strong>${formatScenarioMetric(metrics.average_shot_m, " m")}</strong></li><li><span>Tiro P95</span><strong>${formatScenarioMetric(metrics.p95_shot_m, " m")}</strong></li><li><span>Manobras/ha</span><strong>${formatScenarioMetric(metrics.maneuvers_per_ha)}</strong></li><li><span>Declividade transversal P95</span><strong>${formatScenarioMetric(metrics.cross_slope_p95_pct, "%")}</strong></li></ul></div></section>
+        ${metricBar("Indicador de conservação", metrics.conservation_score)}
+        ${metricBar("Indicador de colheitabilidade", metrics.harvestability_score)}
+        ${metricBar("Indicador de performance", metrics.operational_score)}
+      </div><ul class="summary-list" style="margin-top:13px"><li><span>Tiro médio</span><strong>${formatScenarioMetric(metrics.average_shot_m, " m")}</strong></li><li><span>Média ponderada dos tiros P90</span><strong>${formatScenarioMetric(metrics.shot_p90_weighted_m, " m")}</strong></li><li><span>Comprimento publicado</span><strong>${formatScenarioMetric(metrics.total_line_km, " km")}</strong></li><li><span>Manobras/ha</span><strong>${formatScenarioMetric(metrics.maneuvers_per_ha)}</strong></li><li><span>Média ponderada das declividades transversais P95</span><strong>${formatScenarioMetric(metrics.cross_slope_p95_pct, "%")}</strong></li></ul></div></section>
       <section class="panel"><div class="panel-header"><h3>Decisão</h3></div><div class="panel-body" data-scenario-decision="${geometryIneligible ? "ineligible" : scenarioIsRecommended(scenario) ? "recommended" : cf0HydraulicPending ? "hydraulic-pending" : "comparable"}" data-selected-for-review="${selectedForReview}">${selectedForReview ? `<div class="callout is-success">${icon("clipboard-check")}<div><strong>Representante encaminhado</strong>Selecionado para revisão técnica em ${escapeHtml(formatDate(scenario.selected_at, true))}. Esta decisão não autoriza guiamento de máquinas.</div></div>` : geometryIneligible ? `<div class="callout is-danger">${icon("ban")}<div><strong>Diagnóstico não elegível</strong>Falhou em gates geométricos desta rodada${blockerText ? `: ${escapeHtml(blockerText)}` : ""}. Não pode ser recomendado.</div></div>` : scenarioIsRecommended(scenario) ? `<div class="callout is-success">${icon("badge-check")}<div><strong>Melhor pontuação da triagem</strong>Melhor compromisso matemático dentro dos objetivos e gates avaliados nesta rodada E0. Não representa autorização hidráulica ou de campo.</div></div>` : cf0HydraulicPending ? `<div class="callout is-warning">${icon("shield-alert")}<div><strong>Geometria CF0 aprovada</strong>A validação hidráulica permanece não confirmada. Não pode representar a rodada.</div></div>` : `<div class="callout is-info">${icon("scale")}<div><strong>Alternativa comparável</strong>Revise os trade-offs antes de selecionar.</div></div>`}${selectedForReview ? `<button class="button" style="width:100%;margin-top:12px" data-select-scenario="${escapeHtml(scenario.id)}" data-selected-state="true" type="button">${icon("clipboard-x")} Retirar da revisão</button>` : selectableForReview ? `<button class="button is-primary" style="width:100%;margin-top:12px" data-select-scenario="${escapeHtml(scenario.id)}" data-selected-state="false" type="button">${icon("clipboard-check")} Encaminhar para revisão</button>` : `<button class="button" style="width:100%;margin-top:12px" type="button" disabled aria-disabled="true">${icon("ban")} Não elegível à representação</button>`}</div></section>
     </aside>
   </div>`;
@@ -1182,28 +1178,32 @@ function renderComparisonTable(scenarios) {
     ["Família", "family", false],
     ["Elegibilidade geométrica", "geometry_eligible", false],
     ["Status geométrico", "status", false],
+    ["Impedimentos registrados", "blocker_codes", false],
+    ["Área útil avaliada (ha)", "usable_area_ha", true],
+    ["Cobertura estimada (%)", "coverage_proxy_percent", true],
+    ["Blocos com geometria aceita", "geometric_pass_count", true],
+    ["Blocos avaliados", "work_block_count", true],
     ["Tiro médio (m)", "average_shot_m", true, "max"],
-    ["Tiro P95 (m)", "p95_shot_m", true, "max"],
+    ["Média ponderada dos tiros P90 (m)", "shot_p90_weighted_m", true, "max"],
     ["Manobras por ha", "maneuvers_per_ha", true, "min"],
-    ["Decliv. transversal P95 (%)", "cross_slope_p95_pct", true, "min"],
-    ["Comprimento total (km)", "row_length_km", true, "max"],
-    ["Conservação (0–100)", "conservation_score", true, "max"],
-    ["Colheitabilidade (0–100)", "harvestability_score", true, "max"],
-    ["Performance (0–100)", "operational_score", true, "max"],
+    ["Média ponderada das declividades transversais P95 (%)", "cross_slope_p95_pct", true, "min"],
+    ["Comprimento publicado (km)", "total_line_km", true],
+    ["Indicador de conservação (0–100)", "conservation_score", true, "max"],
+    ["Indicador de colheitabilidade (0–100)", "harvestability_score", true, "max"],
+    ["Indicador de performance (0–100)", "operational_score", true, "max"],
   ];
   return `<div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>Métrica</th>${scenarios.map((item) => `<th>${escapeHtml(item.code)}<small style="display:block;margin-top:3px;text-transform:none">${escapeHtml(item.name)}</small></th>`).join("")}</tr></thead><tbody>${rows.map(([label, key, numeric, preference]) => {
     const values = scenarios.map((item) => {
       if (key === "family") return item.family;
       if (key === "geometry_eligible") return scenarioIsGeometryEligible(item) ? "Elegível para comparação" : "Somente diagnóstico";
       if (key === "status") return statusLabel(item.status);
-      const raw = item.metrics?.[key];
-      return raw === null || raw === undefined || raw === "" || !Number.isFinite(Number(raw)) ? null : Number(raw);
+      if (key === "blocker_codes") return item.blocker_codes?.length ? item.blocker_codes.join(", ") : "Nenhum informado";
+      return scenarioMetric(item, key);
     });
-    const availableValues = numeric ? values.filter((value, index) => value !== null && scenarioIsGeometryEligible(scenarios[index])) : [];
-    const best = availableValues.length ? (preference === "min" ? Math.min(...availableValues) : Math.max(...availableValues)) : null;
+    const best = numeric ? bestMetricIndexes(scenarios, key, preference) : new Set();
     return `<tr><td><strong>${escapeHtml(label)}</strong></td>${values.map((value, index) => {
       const eligible = scenarioIsGeometryEligible(scenarios[index]);
-      return `<td data-scenario-eligible="${eligible}" class="${numeric && eligible && value !== null && value === best ? "is-best" : ""}">${numeric ? value === null ? "—" : value.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : escapeHtml(value || "—")}</td>`;
+      return `<td data-scenario-eligible="${eligible}" class="${best.has(index) ? "is-best" : ""}">${numeric ? value === null ? "Não calculado" : value.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : escapeHtml(value || "—")}</td>`;
     }).join("")}</tr>`;
   }).join("")}</tbody></table></div>`;
 }

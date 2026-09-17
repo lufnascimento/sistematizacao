@@ -116,6 +116,20 @@ Aceite: terreno real e linhas alinhados no desktop e celular; ligar/desligar mud
 
 ## Insumos que o sistema pode e nao pode inferir
 
+### Comparacao de resultados
+
+Corrigida a leitura do comprimento total na tabela: o campo correto dos
+produtos reais e `total_line_km`, nao o antigo campo exclusivo da demonstracao.
+Percentis locais agregados agora aparecem como medias ponderadas. A tabela
+inclui cobertura, area util, blocos e impedimentos; nao classifica maior
+comprimento isoladamente como melhor solucao. O destaque de valores exige
+duas ou mais alternativas E0 elegiveis com rodada, pedido e talhoes iguais.
+Status desconhecido, bloqueadores ou inelegibilidade explicita impedem destaque.
+O verificador de navegador passou nos nove cenarios reais, 76 produtos,
+desktop 1440 px e celular 390 px; cinco alternativas ficaram fora dos destaques
+por diagnostico ou geometria parcial. Essas correcoes sao de leitura e
+comparacao, sem recalcular motores ou conferir aprovacao hidraulica.
+
 ### Evidencia incremental em 2026-09-17
 
 A rodada `run_920fbee7039740b2aafc32375a6633d4` concluiu o fluxo publico de

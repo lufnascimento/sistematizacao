@@ -85,3 +85,5 @@ jobs:
         run: /usr/bin/python3 -m unittest -v tests.test_terrain_web_mesh tests.test_terrain_coverage tests.test_contours_web tests.test_boundaries_web tests.test_rows_web
       - name: Verify mesh clipping and interpolation
         run: node platform/tests/test_terrain_surface.mjs
+      - name: Verify scenario comparison eligibility and scope
+        run: node platform/tests/test_scenario_comparison.mjs
