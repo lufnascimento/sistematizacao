@@ -145,6 +145,24 @@ class PlatformApiTests(unittest.TestCase):
         self.assertEqual(request["configuration_snapshot"]["topography"]["resolution_m"], 1.0)
         self.assertEqual(request["configuration_snapshot"]["sulcation"]["row_spacing_m"], 1.5)
 
+    def test_smoothing_configuration_is_frozen_in_request(self) -> None:
+        project_id = self.create_project()["id"]
+        endpoint = f"/api/projects/{project_id}/configuration"
+        configuration = self.client.get(endpoint).json()
+        configuration["sulcation"]["terrain_smoothing_sigma_m"] = 2.5
+        saved = self.client.put(endpoint, json=configuration)
+        self.assertEqual(saved.status_code, 200, saved.text)
+        response = self.client.post(f"/api/projects/{project_id}/requests", json={
+            "name": "Suavizacao explicita", "product_ids": ["SULCATION_E0", "CF0_CONTINUOUS"],
+        })
+        self.assertEqual(response.status_code, 201, response.text)
+        request = response.json()
+        self.assertEqual(request["configuration_snapshot"]["sulcation"]["terrain_smoothing_sigma_m"], 2.5)
+        configuration["sulcation"]["terrain_smoothing_sigma_m"] = 0
+        self.assertEqual(self.client.put(endpoint, json=configuration).status_code, 200)
+        frozen = self.app.state.store.get("generation_requests", request["id"])
+        self.assertEqual(frozen["configuration_snapshot"]["sulcation"]["terrain_smoothing_sigma_m"], 2.5)
+
     def test_pcx1_configuration_runs_from_immutable_request_and_publishes_products(self) -> None:
         project_id = self.create_project()["id"]
         configuration = self.client.get(f"/api/projects/{project_id}/configuration").json()

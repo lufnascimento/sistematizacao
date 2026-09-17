@@ -1568,6 +1568,18 @@
       "default": {"policy": "NO_DEFAULT"}
     },
     {
+      "id": "terrain.smoothing_sigma_m",
+      "category": "terrain",
+      "parameter_class": "OPTIMIZER",
+      "label": "Desvio padrao da suavizacao gaussiana do terreno",
+      "value_schema": {"type": "number", "minimum": 0, "maximum": 100},
+      "unit": "m",
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "OPTIONAL_E0",
+      "default": {"policy": "NO_DEFAULT"}
+    },
+    {
       "id": "e0.nominal_field_speed_kmh",
       "category": "e0",
       "parameter_class": "E0_ASSUMPTION",

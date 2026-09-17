@@ -257,6 +257,13 @@
   ],
   "standalone_parameter_profiles": [
     {
+      "parameter_id": "terrain.smoothing_sigma_m",
+      "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+      "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],
+      "custom_mode": {"enabled": true, "preserve_provenance": true, "validate_against_parameter_schema": true},
+      "release_effect": "DOES_NOT_RESOLVE_PROJECT_EVIDENCE"
+    },
+    {
       "parameter_id": "connections.max_nonworking_gap_m",
       "default_model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
       "selectable_model_ids": ["SYS-OPTIMIZER-LOCAL-TEMPLATE"],

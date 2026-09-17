@@ -102,6 +102,26 @@ class PlatformEngineRequestBuilderTests(unittest.TestCase):
             self.assertEqual(resolved.engine_parameter_overrides()["assumed_turn_seconds"], 72)
             self.assertEqual(resolved.conservative_operation_limit("fleet.max_cross_slope_pct", "min"), 8)
 
+    def test_smoothing_sigma_reaches_engine_with_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for sigma in (0, 2.5, 100):
+                with self.subTest(sigma=sigma):
+                    request = build_request(self.make_inputs(root, terrain_smoothing_sigma_m=sigma))
+                    output = root / "request.json"
+                    write_validated_request(request, output)
+                    resolved = load_project_request(output)
+                    self.assertEqual(resolved.engine_parameter_overrides()["terrain_smoothing_sigma_m"], sigma)
+                    provenance = resolved.parameter("terrain.smoothing_sigma_m")["provenance"]
+                    self.assertEqual(provenance["origin"], "DECLARED")
+                    self.assertIn("Gaussian standard deviation", provenance["method"])
+
+    def test_invalid_smoothing_sigma_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for sigma in (-1, float("nan"), float("inf")):
+                with self.subTest(sigma=sigma), self.assertRaises(RequestBuildError):
+                    build_request(self.make_inputs(Path(temporary), terrain_smoothing_sigma_m=sigma))
+
     def test_cross_property_requires_cross_field_permission_and_two_properties(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

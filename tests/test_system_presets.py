@@ -58,13 +58,13 @@ class SystemPresetCatalogTests(unittest.TestCase):
             self.package_profiles,
             self.standalone_profiles,
         )
-        self.assertEqual(151, report["summary"]["parameter_count"])
-        self.assertEqual(139, report["summary"]["configurable_parameter_count"])
+        self.assertEqual(152, report["summary"]["parameter_count"])
+        self.assertEqual(140, report["summary"]["configurable_parameter_count"])
         self.assertEqual(129, report["summary"]["external_parameter_count"])
         self.assertEqual(12, report["summary"]["calculated_parameter_count"])
         self.assertEqual(26, report["summary"]["evidence_package_count"])
         self.assertEqual(65, report["summary"]["reference_model_count"])
-        self.assertEqual(139, report["summary"]["custom_value_supported_count"])
+        self.assertEqual(140, report["summary"]["custom_value_supported_count"])
         self.assertEqual(0, report["summary"]["project_evidence_resolved_by_presets"])
         self.assertEqual(
             {parameter_id for parameter_id, item in self.parameters.items() if item["parameter_class"] != "CALCULATED"},

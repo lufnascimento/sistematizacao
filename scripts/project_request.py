@@ -48,6 +48,7 @@ ENGINE_PARAMETER_BINDINGS = {
     "conservation.max_furrow_grade_pct": "reference_alert_grade_percent",
     "e0.nominal_field_speed_kmh": "assumed_work_speed_kmh",
     "e0.maneuver_time_s": "assumed_turn_seconds",
+    "terrain.smoothing_sigma_m": "terrain_smoothing_sigma_m",
 }
 
 E0_METADATA_PARAMETERS = {

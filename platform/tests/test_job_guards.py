@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 from pathlib import Path
+from unittest.mock import patch
 
 
 import sys
@@ -34,6 +36,38 @@ class JobGuardTests(unittest.TestCase):
         )
         self.assertIsNone(selected_terrain)
         self.assertEqual(cloud, selected_cloud)
+
+    def test_worker_passes_sigma_without_using_legacy_radius(self) -> None:
+        project = {"id": "prj-sigma", "name": "Sigma test"}
+        self.store.insert("projects", project)
+        for suffix, sulcation, expected in (
+            ("zero", {"terrain_smoothing_sigma_m": 0, "terrain_smoothing_radius_m": 17}, "0"),
+            ("custom", {"terrain_smoothing_sigma_m": 2.5}, "2.5"),
+            ("legacy", {"terrain_smoothing_radius_m": 17}, "4.0"),
+        ):
+            with self.subTest(case=suffix):
+                run = {"id": f"run-{suffix}", "project_id": project["id"],
+                       "request_id": f"req-{suffix}", "product_ids": ["SULCATION_E0"]}
+                self.store.insert("generation_requests", {
+                    "id": run["request_id"], "project_id": project["id"],
+                    "configuration_snapshot": {
+                        "sulcation": sulcation, "topography": {"field_id_column": "field_id"},
+                        "constraints": {"power_network_state": "DECLARED_NONE"},
+                    },
+                })
+                output = self.store.project_dir(project["id"]) / "runs" / run["id"] / "products" / "topography_e0"
+                output.mkdir(parents=True)
+                (output / "topography_manifest.json").write_text(json.dumps({
+                    "resolution_provenance": {"output_grid_resolution_m": 1.0},
+                }), encoding="utf-8")
+                with patch.object(self.runner, "_project_topography"), patch.object(
+                    self.runner, "_run_process", side_effect=RuntimeError("captured-command")
+                ) as execute:
+                    with self.assertRaisesRegex(RuntimeError, "captured-command"):
+                        self.runner._project_pipeline_e0(run)
+                    command = execute.call_args.args[1]
+                    self.assertEqual(command[command.index("--terrain-smoothing-sigma-m") + 1], expected)
+                    self.assertNotIn("--terrain-smoothing-radius-m", command)
 
     def test_immutable_request_hash_is_revalidated_before_execution(self) -> None:
         request = {"id": "req-1", "project_id": "prj-1", "product_ids": ["SULCATION_E0"]}

@@ -1489,6 +1489,7 @@
       "applicability": {"country": ["ALL"], "crop": ["SUGARCANE"], "jurisdiction": ["ALL"], "conditions": ["optimization requested"]},
       "source_ids": ["TF_PARAMETER_CATALOG_1.2"],
       "parameter_candidates": [
+        {"parameter_id": "terrain.smoothing_sigma_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
         {"parameter_id": "connections.max_nonworking_gap_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
         {"parameter_id": "connections.minimum_preferred_shot_length_m", "resolution_mode": "MODEL_TEMPLATE", "unit": "m", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},
         {"parameter_id": "poa.maximum_site_count", "resolution_mode": "MODEL_TEMPLATE", "unit": "count", "confidence": "HIGH", "evidence_state": "TEMPLATE_ONLY", "requires_user_confirmation": true},

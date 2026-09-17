@@ -8,16 +8,16 @@
     "state": "SP",
     "crop": "SUGARCANE"
   },
-  "generated_at": "2026-09-01T16:59:11.456476Z",
+  "generated_at": "2026-09-17T11:32:16.077255Z",
   "requested_delivery_level": "E0_TRIAGEM",
   "summary": {
-    "configurable_parameter_count": 139,
+    "configurable_parameter_count": 140,
     "parameter_status_counts": {
       "CUSTOM_VALUE_PENDING_EVIDENCE_VALIDATION": 6,
       "FAIL_CLOSED": 16,
       "FAIL_CLOSED_OR_LOCAL_INPUT_REQUIRED": 20,
       "LOCAL_INPUT_REQUIRED": 16,
-      "MODEL_TEMPLATE_REQUIRED": 65,
+      "MODEL_TEMPLATE_REQUIRED": 66,
       "REFERENCE_ASSEMBLY_REQUIRED": 2,
       "REFERENCE_LOOKUP_PENDING": 4,
       "REFERENCE_SELECTED_E0": 3,
@@ -738,6 +738,11 @@
       "parameter_id": "e0.maneuver_time_s",
       "mode": "SYSTEM_MODEL",
       "model_id": "SYS-OP-TURN-HARVESTER-38P5S-E0"
+    },
+    {
+      "parameter_id": "terrain.smoothing_sigma_m",
+      "mode": "SYSTEM_DEFAULT",
+      "model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE"
     },
     {
       "parameter_id": "connections.max_nonworking_gap_m",
@@ -4187,6 +4192,42 @@
         "maintenance plan",
         "pilot acceptance",
         "uncertainty"
+      ],
+      "project_evidence_resolved": false,
+      "release_ceiling": "E0_TRIAGEM"
+    },
+    {
+      "parameter_id": "terrain.smoothing_sigma_m",
+      "label": "Desvio padrao da suavizacao gaussiana do terreno",
+      "parameter_class": "OPTIMIZER",
+      "unit": "m",
+      "safety_critical": false,
+      "owner_package_id": null,
+      "status": "MODEL_TEMPLATE_REQUIRED",
+      "proposed_value": null,
+      "custom_provenance": null,
+      "selected_model_ids": [
+        "SYS-OPTIMIZER-LOCAL-TEMPLATE"
+      ],
+      "contributions": [
+        {
+          "model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+          "model_title": "Preferencias operacionais e logisticas do cliente",
+          "resolution_mode": "MODEL_TEMPLATE",
+          "value": null,
+          "unit": "m",
+          "source_ids": [
+            "TF_PARAMETER_CATALOG_1.2"
+          ],
+          "release_ceiling": "E0_TRIAGEM",
+          "requires_user_confirmation": true
+        }
+      ],
+      "source_ids": [
+        "TF_PARAMETER_CATALOG_1.2"
+      ],
+      "required_actions": [
+        "client preference or Pareto mode"
       ],
       "project_evidence_resolved": false,
       "release_ceiling": "E0_TRIAGEM"

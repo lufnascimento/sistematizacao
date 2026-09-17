@@ -1,12 +1,15 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from osgeo import gdal, osr
 from shapely.geometry import box
 
 from scripts.generate_sulcation_scenarios import Terrain
+from scripts import generate_sulcation_scenarios as e0
 
 
 class TerrainCoverageTests(unittest.TestCase):
@@ -32,6 +35,28 @@ class TerrainCoverageTests(unittest.TestCase):
             self.assertEqual(result["status"], "PASS_COMPLETE_VALID_CELL_COVERAGE")
             self.assertEqual(result["invalid_or_nodata_cell_count"], 0)
             terrain.dataset = None
+
+    def test_sigma_changes_calculation_without_changing_source_or_nodata(self):
+        with tempfile.TemporaryDirectory() as name:
+            values = np.full((21, 21), 100.0)
+            values[10, 10] = 120
+            values[3, 3] = -9999
+            path = self.make_raster(Path(name), values)
+            original = path.read_bytes()
+            with patch.object(e0, "PARAMS", replace(e0.PARAMS, terrain_smoothing_sigma_m=0)):
+                unsmoothed = Terrain(path)
+            with patch.object(e0, "PARAMS", replace(e0.PARAMS, terrain_smoothing_sigma_m=2)):
+                smoothed = Terrain(path)
+            try:
+                self.assertEqual(unsmoothed.elevation[10, 10], 120)
+                self.assertLess(smoothed.elevation[10, 10], 120)
+                self.assertGreater(smoothed.elevation[10, 10], 100)
+                np.testing.assert_array_equal(unsmoothed.valid, smoothed.valid)
+                self.assertFalse(smoothed.valid[3, 3])
+                self.assertEqual(path.read_bytes(), original)
+            finally:
+                unsmoothed.dataset = None
+                smoothed.dataset = None
 
     def test_geometry_outside_raster_fails(self):
         with tempfile.TemporaryDirectory() as name:

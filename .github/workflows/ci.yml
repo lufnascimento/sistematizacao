@@ -46,7 +46,7 @@ jobs:
         run: python -m unittest discover -s tests -p "test_generate_platform_run_dossier.py" -v
 
       - name: Run public preset lineage tests
-        run: python -m unittest -v tests.test_compile_project_request_from_presets
+        run: python -m unittest -v tests.test_system_presets tests.test_compile_project_request_from_presets
 
       - name: Run platform parameter binding tests
         run: python -m unittest -v tests.test_build_platform_engine_request

@@ -33,7 +33,7 @@ except ModuleNotFoundError:  # Supports ``python -m scripts...`` from the reposi
 
 
 REQUEST_SCHEMA_VERSION = "1.0.0"
-SYSTEM_MODEL_REVISION = "platform-e0-request-model-1.1.0"
+SYSTEM_MODEL_REVISION = "platform-e0-request-model-1.2.0"
 SUPPORTED_BOUNDARY_FORMATS = {
     ".shp": "SHP",
     ".gpkg": "GPKG",
@@ -71,6 +71,7 @@ class RequestInputs:
     expected_yield_t_ha: float | None = None
     maneuver_time_s: float | None = None
     max_cross_slope_pct: float | None = None
+    terrain_smoothing_sigma_m: float | None = None
     constraint_review_status: str = "NOT_REVIEWED"
     created_at: str | None = None
     input_qa_status: str = "UPLOADED"
@@ -340,6 +341,7 @@ def _validate_inputs(inputs: RequestInputs) -> RequestInputs:
         expected_yield_t_ha=expected_yield,
         maneuver_time_s=None if inputs.maneuver_time_s is None else _finite(inputs.maneuver_time_s, "maneuver_time_s", minimum=0),
         max_cross_slope_pct=None if inputs.max_cross_slope_pct is None else _finite(inputs.max_cross_slope_pct, "max_cross_slope_pct", minimum=0),
+        terrain_smoothing_sigma_m=None if inputs.terrain_smoothing_sigma_m is None else _finite(inputs.terrain_smoothing_sigma_m, "terrain_smoothing_sigma_m", minimum=0),
         constraint_review_status=inputs.constraint_review_status,
         created_at=created_at,
         input_qa_status=inputs.input_qa_status,
@@ -538,6 +540,12 @@ def build_request(
             method="SYSTEM_MODEL E0 speed assumption selected in user configuration; not operational evidence",
         ),
     ]
+    if resolved.terrain_smoothing_sigma_m is not None:
+        parameter_values.append(parameters.make(
+            "terrain.smoothing_sigma_m", resolved.terrain_smoothing_sigma_m,
+            source_kind="USER_CONFIG", applicability="SCENARIO",
+            method="USER_CONFIG Gaussian standard deviation in metres; zero disables smoothing; not an axial orientation radius or hydraulic conditioning",
+        ))
     if resolved.maneuver_time_s is not None:
         parameter_values.append(parameters.make(
             "e0.maneuver_time_s", resolved.maneuver_time_s, source_kind="SYSTEM_MODEL",
@@ -806,6 +814,7 @@ def _inputs_from_args(args: argparse.Namespace) -> RequestInputs:
         expected_yield_t_ha=args.expected_yield_t_ha,
         maneuver_time_s=args.maneuver_time_s,
         max_cross_slope_pct=args.max_cross_slope_pct,
+        terrain_smoothing_sigma_m=args.terrain_smoothing_sigma_m,
         constraint_review_status=args.constraint_review_status,
         created_at=args.created_at,
         input_qa_status="VALIDATED" if manifest is not None else "UPLOADED",
@@ -849,6 +858,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--expected-yield-t-ha", type=float)
     parser.add_argument("--maneuver-time-s", type=float)
     parser.add_argument("--max-cross-slope-pct", type=float)
+    parser.add_argument("--terrain-smoothing-sigma-m", type=float)
     parser.add_argument(
         "--power-status",
         choices=["DECLARED_NONE", "NOT_REVIEWED"],

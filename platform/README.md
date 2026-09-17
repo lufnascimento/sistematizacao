@@ -124,6 +124,19 @@ suas publicacoes parciais sao removidas; o usuario deve iniciar uma nova rodada.
 
 ## Inspecao espacial e processamento
 
+A configuracao `sulcation.terrain_smoothing_sigma_m` controla o desvio padrao
+gaussiano do terreno usado no calculo E0/CF0: padrao de 4 m, intervalo 0 a 100 m,
+zero desliga o filtro. O valor e congelado no pedido e registrado com procedencia
+como `terrain.smoothing_sigma_m`. Nao e raio de suporte, suavizacao axial do CF0,
+condicionamento hidrologico nem correcao da acuracia do levantamento. O MDT
+original e sua mascara de validade nao sao alterados.
+
+O antigo `terrain_smoothing_radius_m` nunca chegou ao motor. Permanece somente
+para leitura de configuracoes historicas e compatibilidade de arquivos, marcado
+como obsoleto no contrato da API, sem efeito no calculo. Nao ha conversao
+implicita de raio para sigma: projetos antigos mostram o padrao efetivo de 4 m
+no novo controle, e pedidos ja emitidos permanecem imutaveis.
+
 Em Resultados, `Abrir mapa` preserva a alternativa selecionada. O mapa oferece
 terreno, limites dos talhoes (incluindo ilhas), curvas de nivel e linhas de
 sulcacao em planta e 3D, com selecao, visibilidade e opacidade. Alternativas
@@ -149,3 +162,7 @@ python platform/tests/run_project_smoke.py --boundary dataset/Contorno.shp --ter
 Para acompanhar uma rodada existente sem reenviar os dados, use
 `python platform/tests/run_project_smoke.py --resume-run ID_DA_RODADA`.
 Os dados locais do exemplo nao acompanham o repositorio.
+
+Verificacao do controle de suavizacao pelo navegador (cria um projeto QA e
+dois pedidos, sem iniciar motores):
+`python platform/tests/verify_smoothing_configuration.py --base-url http://127.0.0.1:8003`.

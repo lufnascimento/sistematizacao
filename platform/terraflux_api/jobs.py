@@ -1024,6 +1024,7 @@ class JobRunner:
             "--nominal-speed-kmh", str(sulcation.get("nominal_speed_kmh", 5.0)),
             "--maneuver-time-s", str(sulcation.get("maneuver_time_s", 38.5)),
             "--max-cross-slope-pct", str(sulcation.get("max_cross_slope_pct", 12.0)),
+            "--terrain-smoothing-sigma-m", str(sulcation.get("terrain_smoothing_sigma_m", 4.0)),
             "--power-status", "DECLARED_NONE",
             "--constraint-review-status", review_status,
             "--no-cross-field",

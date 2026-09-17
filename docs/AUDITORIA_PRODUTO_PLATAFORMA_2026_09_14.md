@@ -138,11 +138,23 @@ pedido/dossie e testes JavaScript de interpolacao e lacunas da malha aprovados.
 O PDF foi aberto e a pagina de comparacao visual inspecionada. Ele e um dossie
 de resumo com mapas, nao um atlas vetorial detalhado de cada alternativa.
 
+Atualizacao posterior na mesma data: a suavizacao foi corrigida com o novo
+parametro `terrain.smoothing_sigma_m`, ligado ao sigma gaussiano usado pelos
+motores E0/CF0. Padrao efetivo de 4 m, zero desliga o filtro. O campo antigo
+de raio foi retirado da tela e preservado apenas como legado sem efeito, sem
+conversao implicita. Testes cobrem configuracao, pedido imutavel, comando do
+worker, contrato do motor e efeito numerico, preservando fonte e mascara NoData.
+A rodada e o PDF citados acima nao foram recalculados por essa alteracao.
+Regressao desta correcao: 61 testes da plataforma, 42 de presets/pedido/dossie
+e cinco de cobertura/suavizacao do terreno aprovados. O navegador verificou
+salvar e reabrir sigma zero e 2,5 m, congelar ambos em pedidos separados e
+mostrar o formulario em desktop/celular, sem iniciar processamento da fazenda.
+
 Tempo de manobra e declividade lateral configurados agora chegam ao pedido do
 motor, com teste de regressao. A rodada acima antecede essa correcao; ela nao
-comprova o uso desses dois overrides. O raio de suavizacao apresentado na
-configuracao ainda precisa ter semantica alinhada ao sigma usado pelo motor;
-nao considerar esse controle validado de ponta a ponta.
+comprova o uso desses dois overrides. Na auditoria inicial desta rodada, o raio
+de suavizacao ainda nao tinha semantica alinhada ao sigma; a correcao e seus
+limites estao registrados na atualizacao posterior acima.
 
 As listas anteriores registram a auditoria original e nao sao uma declaracao
 de que tudo permanece ausente. Inspecao 2D/3D, derivados vetoriais, logs ao vivo
