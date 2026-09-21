@@ -44,6 +44,9 @@ def main():
             page.goto(f"{base}/#/runs/{runs[0]}")
             page.locator("#open-run-results").click()
             expect(page.locator("#result-run")).to_have_value(runs[0])
+            page.get_by_role("heading", name="Validação dos insumos").wait_for()
+            assert page.get_by_role("heading", name="Topografia E0").count() == 0
+            assert page.get_by_role("link", name="Abrir mapa de camadas").count() == 0
             assert f"run={runs[0]}" in page.url
             expect(page.locator("#download-delivery")).to_have_attribute("href", f"/api/runs/{runs[0]}/delivery")
             with page.expect_download() as downloaded:
@@ -61,6 +64,7 @@ def main():
             page.reload()
             expect(page.locator("#result-run")).to_have_value(runs[1])
             page.set_viewport_size({"width": 390, "height": 844})
+            page.wait_for_function("document.querySelector('#sidebar').getBoundingClientRect().right <= 0.5")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(output / "result-delivery-mobile.png"), full_page=True)
             page.goto(f"{base}/#/projects/{project_id}/results?run=another-project-run")

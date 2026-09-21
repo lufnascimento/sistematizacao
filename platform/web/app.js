@@ -1087,10 +1087,14 @@ async function renderResultsStep(project) {
   const mapScenario = scenarios.find((item) => item.id === state.selectedScenarioId);
   mapLink.href = `/map.html?run=${encodeURIComponent(successful.id)}${mapScenario ? `&scenario=${encodeURIComponent(mapScenario.code)}` : ""}`;
   mapLink.textContent = "Abrir mapa de camadas";
-  main.querySelector(".section-head")?.append(mapLink);
+  if (successful.engine_id !== "validate_uploads") main.querySelector(".section-head")?.append(mapLink);
 }
 
 function renderNoScenarioFocus(artifacts, run) {
+  if (run.engine_id === "validate_uploads") {
+    const blocked = String(run.result || "").startsWith("BLOCKED");
+    return `<section class="section"><div class="section-head"><h2>Validação dos insumos</h2>${badge(blocked ? "BLOCKED" : "PARTIAL", blocked ? "Insumos incompletos" : "Verificação espacial pendente")}</div><p>Topografia e sulcação não processadas nesta rodada.</p></section>`;
+  }
   if (run.engine_id === "project_hydrology_screening") return renderHydrologyFocus(run);
   const topography = renderTopographyFocus(artifacts);
   if (run.engine_id !== "project_pipeline_e0") return topography;

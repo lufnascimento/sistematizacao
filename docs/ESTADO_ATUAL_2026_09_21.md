@@ -30,6 +30,8 @@ sulcacao preliminar em planta e 3D. Nenhum desses recursos autoriza implantacao.
   Limpeza apos encerramento abrupto do servidor ainda precisa de manutencao
   programada; nao ha fila distribuida ou quota por cliente.
 - Busca de arquivos e filtro por produto operam sobre a rodada selecionada.
+- Rodadas de validacao de arquivos sao identificadas como verificacao de
+  insumos; nao recebem o titulo de topografia publicada nem atalho para mapa.
 - Falha de API ou acesso negado nao ativa demonstracao. Ha estado indisponivel
   e tentativa de reconexao. Demonstracao exige habilitacao explicita.
 
