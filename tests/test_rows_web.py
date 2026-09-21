@@ -40,6 +40,8 @@ class RowsWebTests(unittest.TestCase):
                 payload = json.loads(Path(record["path"]).read_text())
                 feature = payload["features"][0]
                 self.assertEqual(feature["properties"]["source_elevations_m"], [100, 101])
+                self.assertEqual(feature["properties"]["source_chainages_m"], [0, 10])
+                self.assertEqual(feature["properties"]["chainage_reference"], "SOURCE_PROJECTED_METRIC_XY")
                 self.assertEqual(feature["properties"]["blocker_codes"], "RECEIVER_NOT_REVIEWED")
                 self.assertEqual(payload["terrain_sha256"], result["terrain_sha256"])
                 self.assertFalse(feature["properties"]["guidance_authorized"])

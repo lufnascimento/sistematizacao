@@ -44,6 +44,12 @@ def _read_features(layer, max_vertices, contours=True):
             "guidance_authorized": False,
         }
         properties["source_elevations_m"] = heights
+        if not contours:
+            chainages = [0.0]
+            for previous, current in zip(points, points[1:]):
+                chainages.append(chainages[-1] + math.hypot(current[0] - previous[0], current[1] - previous[1]))
+            properties["source_chainages_m"] = chainages
+            properties["chainage_reference"] = "SOURCE_PROJECTED_METRIC_XY"
         features.append({
             "type": "Feature", "geometry": {"type": "LineString", "coordinates": coordinates},
             "properties": properties,

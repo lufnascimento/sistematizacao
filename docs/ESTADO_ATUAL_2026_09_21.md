@@ -75,6 +75,23 @@ sulcacao preliminar em planta e 3D. Nenhum desses recursos autoriza implantacao.
 
 ## Evidencias de verificacao
 
+### Perfil longitudinal de inspecao
+
+Novas exportacoes web de sulcacao incluem distancias acumuladas calculadas
+no XY da projecao metrica de origem, preservando as cotas dos vertices.
+Ao selecionar a linha, o mapa apresenta perfil, extensao amostrada, cotas,
+desnivel final menos inicial e maior greide absoluto entre vertices.
+Nao utiliza distancias do mapa Mercator nem alturas interpoladas da malha
+visual para essas medidas. O greide entre vertices nao substitui o QA do
+motor, amostragem mais densa do terreno ou validacao hidraulica.
+
+Rodadas antigas sem distancias acumuladas mostram perfil indisponivel;
+nenhum artefato da fazenda foi alterado ou recalculado nesta etapa. Perfil
+e selecao foram verificados com dados QA interceptados no navegador, em
+desktop e celular, incluindo troca de alternativa e dados antigos. O link
+de retorno do mapa preserva agora a rodada em analise. Ainda faltam limites
+configurados e trechos de falha localizaveis no perfil/mapa.
+
 Na verificacao de 2026-09-21, passaram 70 testes da plataforma e
 211 testes dos scripts no ambiente QGIS, incluindo contratos e geometrias.
 Os verificadores de navegador exercitaram historico com duas rodadas QA,

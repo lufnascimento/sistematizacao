@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "./vendor/three/OrbitControls.js";
 import { TerrainSurface } from "./terrain-surface.mjs";
+import { lineProfile } from "./line-profile.mjs";
 
 const viewport = document.querySelector("#viewport");
 const status = document.querySelector("#status");
@@ -113,6 +114,33 @@ function showSelection(properties) {
     ["Analise", properties.screening_status === "SCREENED_CLEAR" ? "Sem conflito detectado" : "Requer revisao"],
   ];
   if (properties.display_height === "MESH_INTERPOLATION") entries.push(["Altura na cena", "Interpolacao visual da malha"]);
+  const oldProfile = document.querySelector("#line-profile");
+  oldProfile?.remove();
+  if (properties.kind === "SULCATION_ROW") {
+    const profile = lineProfile(properties);
+    if (profile) {
+      const number = value => value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+      entries.push(["Extensao amostrada (m)", number(profile.length)],
+        ["Desnivel final - inicial (m)", number(profile.difference)],
+        ["Maior greide entre vertices (%)", number(profile.maximumGrade)],
+        ["Cotas originais (m)", `${number(profile.minimum)} a ${number(profile.maximum)}`],
+        ["Perfil", "Geometria de origem; nao constitui validacao hidraulica"]);
+      const figure = document.createElement("figure"); figure.id = "line-profile";
+      const caption = document.createElement("figcaption"); caption.textContent = "Perfil longitudinal / cotas de origem";
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 240 120"); svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", `Perfil longitudinal de ${number(profile.length)} metros, cotas de ${number(profile.minimum)} a ${number(profile.maximum)} metros`);
+      const path = document.createElementNS(svg.namespaceURI, "polyline");
+      const range = profile.maximum - profile.minimum;
+      path.setAttribute("points", profile.stations.map((station, i) => `${10 + 220 * station / profile.length},${range ? 110 - 100 * (profile.heights[i] - profile.minimum) / range : 60}`).join(" "));
+      path.setAttribute("fill", "none"); path.setAttribute("stroke", "#147547"); path.setAttribute("stroke-width", "2");
+      svg.append(path);
+      const axis = document.createElement("div"); axis.className = "profile-axis";
+      const start = document.createElement("span"); start.textContent = "0 m";
+      const end = document.createElement("span"); end.textContent = `${number(profile.length)} m`;
+      axis.append(start, end); figure.append(caption, svg, axis); list.after(figure);
+    } else entries.push(["Perfil longitudinal", "Indisponivel: distancias ou cotas de origem ausentes/invalidas"]);
+  }
   for (const [name, value] of entries) {
     const term = document.createElement("dt"); term.textContent = name;
     const detail = document.createElement("dd"); detail.textContent = String(value ?? "Nao informado");
@@ -148,7 +176,7 @@ async function start() {
   };
   updateScenarioStatus();
   document.querySelector("#scenario-control").hidden = !alternatives.size;
-  document.querySelector("#back").href = `/#/projects/${encodeURIComponent(manifest.project_id)}/results`;
+  document.querySelector("#back").href = `/#/projects/${encodeURIComponent(manifest.project_id)}/results?run=${encodeURIComponent(runId)}`;
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   viewport.prepend(renderer.domElement);
@@ -290,6 +318,7 @@ async function start() {
     const url = new URL(location.href);
     url.searchParams.set("scenario", selectedScenario); history.replaceState(null, "", url);
     document.querySelector("#selection").replaceChildren();
+    document.querySelector("#line-profile")?.remove();
     updateLayerVisibility(); render();
     try {
       for (const layerRow of layerRows) {
@@ -328,6 +357,7 @@ async function start() {
       if (lineIndex > 0) hits.unshift(hits.splice(lineIndex, 1)[0]);
     }
     if (hits.length && hits[0].object.userData.terrain) {
+      document.querySelector("#line-profile")?.remove();
       const list = document.querySelector("#selection"); list.replaceChildren();
       const title = document.createElement("dt"); title.textContent = "Cota interpolada da malha (m)";
       const value = document.createElement("dd"); value.textContent = (hits[0].point.z / elevationScale + elevationOrigin).toFixed(2);
