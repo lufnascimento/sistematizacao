@@ -1,5 +1,6 @@
 import { api, ApiError, systemCatalog } from "./api.js";
 import { scenarioIsGeometryEligible, scenarioMetric, bestMetricIndexes } from "./scenario-comparison.mjs";
+import { selectResultRun } from "./result-runs.mjs";
 
 const main = document.querySelector("#main-content");
 const breadcrumb = document.querySelector("#breadcrumb");
@@ -207,9 +208,12 @@ function updateConnectionUi({ mode, reason = null }) {
     environmentStatus.innerHTML = `<span class="status-dot is-online"></span><span><strong>API conectada</strong><small>Dados persistentes</small></span>`;
     connectionBanner.hidden = true;
   } else if (mode === "mock") {
-    environmentStatus.innerHTML = `<span class="status-dot is-demo"></span><span><strong>Modo demonstrativo</strong><small>API indisponível</small></span>`;
+    environmentStatus.innerHTML = `<span class="status-dot is-demo"></span><span><strong>Modo demonstrativo</strong><small>Exemplos locais</small></span>`;
     connectionBanner.hidden = false;
-    connectionBanner.title = reason?.message || "A API não respondeu. Alterações ficam apenas neste navegador.";
+    connectionBanner.title = "Demonstração habilitada explicitamente. Alterações ficam apenas neste navegador.";
+  } else if (mode === "unavailable") {
+    environmentStatus.innerHTML = `<span class="status-dot"></span><span><strong>API indisponível</strong><small>Dados não carregados</small></span>`;
+    connectionBanner.hidden = true;
   } else {
     environmentStatus.innerHTML = `<span class="status-dot is-checking"></span><span><strong>Verificando API</strong><small>Aguarde um instante</small></span>`;
   }
@@ -238,9 +242,9 @@ function navigate(path) {
 
 function parseRoute() {
   const clean = (window.location.hash || "#/projects").replace(/^#\/?/, "");
-  const [pathname] = clean.split("?");
+  const [pathname, query] = clean.split("?");
   const parts = pathname.split("/").filter(Boolean).map(decodeURIComponent);
-  if (parts[0] === "projects" && parts[1]) return { name: "project", projectId: parts[1], step: steps.some((item) => item.id === parts[2]) ? parts[2] : "overview" };
+  if (parts[0] === "projects" && parts[1]) return { name: "project", projectId: parts[1], step: steps.some((item) => item.id === parts[2]) ? parts[2] : "overview", runId: new URLSearchParams(query || "").get("run") };
   if (parts[0] === "runs" && parts[1]) return { name: "run-detail", runId: parts[1] };
   if (parts[0] === "runs") return { name: "runs" };
   if (parts[0] === "library") return { name: "library" };
@@ -433,10 +437,12 @@ function showCreateProjectDialog() {
 }
 
 async function renderProject(projectId, activeStep) {
+  const viewHash = window.location.hash;
   setActiveNav("projects");
   setLoading("Abrindo o projeto...");
   try {
     const project = await api.getProject(projectId);
+    if (window.location.hash !== viewHash) return;
     state.currentProject = project;
     setBreadcrumb(["Projetos", project.name, steps.find((item) => item.id === activeStep)?.label || "Visão geral"]);
     if (activeStep === "data") await renderDataStep(project);
@@ -448,6 +454,7 @@ async function renderProject(projectId, activeStep) {
     bindStepper(project.id);
     hydrateIcons(main);
   } catch (error) {
+    if (window.location.hash !== viewHash) return;
     showError(error, () => renderProject(projectId, activeStep));
   }
 }
@@ -1011,13 +1018,21 @@ function renderJobCard(run) {
 }
 
 async function renderResultsStep(project) {
+  const viewHash = window.location.hash;
   const runs = await api.listRuns(project.id);
-  const successful = runs.find((item) => item.status === "SUCCEEDED");
+  if (window.location.hash !== viewHash) return;
+  const requestedId = parseRoute().runId;
+  const selectedRun = selectResultRun(runs, requestedId);
+  const successful = selectedRun?.status === "SUCCEEDED" ? selectedRun : null;
+  const selector = runs.length ? `<div class="form-field" style="margin-bottom:16px;min-width:0"><label for="result-run">Rodada</label><select class="select" id="result-run" style="min-width:0;max-width:100%">${!selectedRun ? '<option value="">Rodada indisponível</option>' : ""}${runs.map((run) => `<option value="${escapeHtml(run.id)}" ${run.id === selectedRun?.id ? "selected" : ""}>${escapeHtml(formatDate(run.created_at || run.started_at, true))} · ${escapeHtml(run.name)} · ${escapeHtml(statusLabel(run.status))} · ${escapeHtml(run.id.slice(-8))}</option>`).join("")}</select></div>` : "";
+  const bindRunSelector = () => document.querySelector("#result-run")?.addEventListener("change", (event) => {
+    if (event.target.value) navigate(`/projects/${project.id}/results?run=${encodeURIComponent(event.target.value)}`);
+  });
   if (!successful) {
-    const latest = runs[0];
+    const latest = selectedRun;
     const terminalWithoutResults = ["FAILED", "BLOCKED", "CANCELLED"].includes(latest?.status);
     const cancelled = latest?.status === "CANCELLED";
-    const title = terminalWithoutResults
+    const title = requestedId && !selectedRun ? "Rodada indisponível neste projeto" : terminalWithoutResults
       ? cancelled ? "A rodada foi cancelada" : "A rodada não publicou resultados"
       : latest ? "A rodada ainda está em processamento" : "Ainda não há resultados";
     const detail = terminalWithoutResults
@@ -1025,12 +1040,14 @@ async function renderResultsStep(project) {
         ? "Nenhum produto final foi publicado. O pedido pode ser executado novamente quando necessário."
         : "Consulte os logs para identificar o gate ou erro de processamento antes de executar novamente."
       : latest ? "Os produtos aparecerão aqui somente depois da publicação concluída." : "Execute uma rodada para comparar cenários e baixar os produtos.";
-    main.innerHTML = `${projectHead(project, "results")}<div class="panel empty-state"><span class="empty-icon">${icon(terminalWithoutResults ? cancelled ? "ban" : "circle-alert" : latest ? "loader-circle" : "package-open")}</span><h3>${title}</h3><p>${detail}</p>${latest ? `<button class="button is-primary" data-open-pending-run="${escapeHtml(latest.id)}" type="button">${icon("scroll-text")} Abrir execução</button>` : `<button class="button is-primary" data-go-step="run" type="button">${icon("play")} Ir para execução</button>`}</div>`;
+    main.innerHTML = `${projectHead(project, "results")}${selector}<div class="panel empty-state"><span class="empty-icon">${icon(terminalWithoutResults ? cancelled ? "ban" : "circle-alert" : latest ? "loader-circle" : "package-open")}</span><h3>${title}</h3><p>${requestedId && !selectedRun ? "Nenhum produto foi carregado para esta referência." : detail}</p>${latest ? `<button class="button is-primary" data-open-pending-run="${escapeHtml(latest.id)}" type="button">${icon("scroll-text")} Abrir execução</button>` : `<button class="button is-primary" data-go-step="run" type="button">${icon("play")} Ir para execução</button>`}</div>`;
+    bindRunSelector();
     bindGoSteps(project.id);
     document.querySelector("[data-open-pending-run]")?.addEventListener("click", (event) => navigate(`/runs/${event.currentTarget.dataset.openPendingRun}`));
     return;
   }
   const [artifacts, scenarios] = await Promise.all([api.listArtifacts(successful.id), api.listScenarios(successful.id)]);
+  if (window.location.hash !== viewHash) return;
   const packageArtifact = findPackageArtifact(artifacts);
   state.compareIds = state.compareIds.filter((id) => scenarios.some((item) => item.id === id));
   if (state.compareIds.length < 2) {
@@ -1046,6 +1063,8 @@ async function renderResultsStep(project) {
     : persistedReviewRepresentative?.id || scenarios.find(scenarioIsRecommended)?.id || scenarios.find(scenarioIsGeometryEligible)?.id || scenarios[0]?.id;
   main.innerHTML = `
     ${projectHead(project, "results", `<button class="button" data-open-run="${escapeHtml(successful.id)}" type="button">${icon("scroll-text")} Logs da rodada</button>${packageArtifact ? `<button class="button is-primary" id="download-package" type="button">${icon("download")} ${packageArtifact.format === "PDF" ? "Baixar dossiê" : "Baixar manifesto"}</button>` : ""}`)}
+    ${selector}
+    ${api.mode === "live" && successful.engine_id !== "demo_current_dataset" && artifacts.length ? `<div class="inline-actions" style="margin-bottom:16px"><a class="button" id="download-delivery" href="${safeUrl(`${api.baseUrl}/runs/${encodeURIComponent(successful.id)}/delivery`)}" target="_blank" rel="noopener" download>${icon("archive")} Baixar produtos da rodada (ZIP)</a></div>` : ""}
     ${scenarios.length ? `<div class="scenario-tablist" role="tablist" aria-label="Cenários publicados">${scenarios.map((scenario) => {
       const selected = scenario.id === state.selectedScenarioId;
       const eligible = scenarioIsGeometryEligible(scenario);
@@ -1057,9 +1076,12 @@ async function renderResultsStep(project) {
     </section>` : renderNoScenarioFocus(artifacts, successful)}
     <section class="section">
       <div class="section-head"><div><h2>Produtos publicados</h2><p>Downloads preservam formato, verificador e checksum da rodada.</p></div><span class="badge is-success">${artifacts.length} artefatos</span></div>
+      ${renderArtifactFilters(artifacts)}
       ${renderArtifacts(artifacts)}
     </section>`;
   bindResultActions(project, successful, artifacts, scenarios);
+  bindArtifactFilters();
+  bindRunSelector();
   const mapLink = document.createElement("a");
   mapLink.className = "button";
   const mapScenario = scenarios.find((item) => item.id === state.selectedScenarioId);
@@ -1208,6 +1230,29 @@ function renderComparisonTable(scenarios) {
   }).join("")}</tbody></table></div>`;
 }
 
+function renderArtifactFilters(artifacts) {
+  if (!artifacts.length) return "";
+  const products = [...new Set(artifacts.map((item) => item.product_id).filter(Boolean))];
+  return `<div class="form-grid" style="margin-bottom:14px"><div class="form-field"><label for="artifact-search">Buscar arquivo</label><input class="input" id="artifact-search" type="search" /></div><div class="form-field"><label for="artifact-product">Produto</label><select class="select" id="artifact-product"><option value="">Todos os produtos</option>${products.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(systemCatalog.products.find((item) => item.id === id)?.name || id)}</option>`).join("")}</select></div></div><p id="artifact-filter-count" role="status" aria-live="polite">${artifacts.length} arquivos</p>`;
+}
+
+function bindArtifactFilters() {
+  const search = document.querySelector("#artifact-search");
+  const product = document.querySelector("#artifact-product");
+  if (!search || !product) return;
+  const update = () => {
+    const query = search.value.trim().toLocaleLowerCase("pt-BR");
+    const cards = [...document.querySelectorAll(".artifact-card")];
+    for (const card of cards) {
+      card.hidden = Boolean((product.value && card.dataset.productId !== product.value)
+        || (query && !card.querySelector("h3").textContent.toLocaleLowerCase("pt-BR").includes(query)));
+    }
+    document.querySelector("#artifact-filter-count").textContent = `${cards.filter((card) => !card.hidden).length} de ${cards.length} arquivos`;
+  };
+  search.addEventListener("input", update);
+  product.addEventListener("change", update);
+}
+
 function renderArtifacts(artifacts) {
   if (!artifacts.length) return `<div class="panel empty-state" style="min-height:220px"><span class="empty-icon">${icon("package-open")}</span><h3>Nenhum artefato publicado</h3><p>Consulte os logs e o manifesto da execução.</p></div>`;
   return `<div class="artifact-grid">${artifacts.map((artifact) => `<article class="artifact-card" data-product-id="${escapeHtml(artifact.product_id || artifact.artifact_type || "")}" data-artifact-format="${escapeHtml(artifact.format || "")}">${artifact.preview_url ? `<div class="artifact-preview"><img src="${safeUrl(artifact.preview_url)}" alt="Prévia de ${escapeHtml(artifact.name)}" loading="lazy" /></div>` : `<div class="artifact-preview">${icon(artifact.format === "PDF" ? "file-text" : artifact.format === "GPKG" ? "database" : "file-json")}</div>`}<div class="card-title-row"><h3>${escapeHtml(artifact.name)}</h3>${badge(artifact.status)}</div><p>${escapeHtml(artifact.format || artifact.kind)} · ${formatBytes(artifact.size)}${artifact.pages ? ` · ${artifact.pages} páginas` : ""}</p><div class="artifact-meta"><span class="mono">${escapeHtml(artifact.checksum || "sem hash")}</span><span>${formatDate(artifact.created_at)}</span></div><div class="artifact-actions">${artifact.download_url ? `<a class="button is-small" href="${safeUrl(artifact.download_url)}" target="_blank" rel="noopener" download>${icon("download")} Baixar</a>` : `<button class="button is-small" type="button" disabled aria-disabled="true">${icon("download")} Indisponível no mock</button>`}<button class="button is-small" data-review-artifact="${escapeHtml(artifact.id)}" type="button">${icon("clipboard-check")} Revisar</button></div></article>`).join("")}</div>`;
@@ -1336,7 +1381,7 @@ async function renderRunDetail(runId, preserveScroll = false) {
         showToast("Falha ao cancelar", error.message, "error");
       }
     });
-    document.querySelector("#open-run-results")?.addEventListener("click", () => navigate(`/projects/${run.project_id}/results`));
+    document.querySelector("#open-run-results")?.addEventListener("click", () => navigate(`/projects/${run.project_id}/results?run=${encodeURIComponent(run.id)}`));
     document.querySelector("#copy-logs")?.addEventListener("click", async () => {
       const text = (run.logs || []).map((log) => `${log.timestamp} ${log.level} ${log.message}`).join("\n");
       await navigator.clipboard.writeText(text);
@@ -1379,7 +1424,7 @@ function renderLibrary() {
 function renderSettings() {
   setActiveNav("settings");
   setBreadcrumb(["Configurações"]);
-  main.innerHTML = `<div class="page-head"><div><span class="eyebrow">Ambiente</span><h1>Configurações</h1><p>Conexão, modo de operação e informações desta estação de trabalho.</p></div></div><div class="content-grid"><div><section class="panel"><div class="panel-header"><div><h2>API TerraFlux</h2><p>Contrato central usado pela aplicação web.</p></div>${badge(api.mode === "live" ? "AVAILABLE" : "PARTIAL", api.mode === "live" ? "Conectada" : "Demonstração")}</div><div class="panel-body"><div class="form-field"><label>Base da API</label><input class="input mono" value="${escapeHtml(api.baseUrl)}" readonly /><p class="field-help">Defina <span class="mono">window.__TERRAFLUX_API_BASE__</span> antes de carregar o módulo para usar outra origem.</p></div>${api.mode === "mock" ? `<div class="callout is-warning" style="margin-top:14px">${icon("flask-conical")}<div><strong>Fallback local ativo.</strong>Os dados demonstrativos ficam somente no localStorage deste navegador e não executam motores geoespaciais.</div></div>` : `<div class="callout is-success" style="margin-top:14px">${icon("server-cog")}<div><strong>Backend conectado.</strong>Projetos e ações são persistidos pela API.</div></div>`}</div></section><section class="panel"><div class="panel-header"><h2>Sobre esta versão</h2></div><div class="panel-body"><ul class="summary-list"><li><span>Frontend</span><strong>Vanilla ES Modules</strong></li><li><span>Contrato</span><strong>/api</strong></li><li><span>Idioma</span><strong>Português (Brasil)</strong></li><li><span>Fuso</span><strong>America/Sao_Paulo</strong></li></ul></div></section></div><aside class="content-aside"><section class="panel"><div class="panel-header"><h3>Dados demonstrativos</h3></div><div class="panel-body"><p style="margin:0;color:var(--ink-600);font-size:10px;line-height:1.5">Restaure os exemplos originais e descarte projetos criados localmente.</p><button class="button is-danger" id="reset-demo" type="button" style="width:100%;margin-top:12px" ${api.mode !== "mock" ? "disabled" : ""}>${icon("rotate-ccw")} Restaurar demonstração</button></div></section></aside></div>`;
+  main.innerHTML = `<div class="page-head"><div><span class="eyebrow">Ambiente</span><h1>Configurações</h1><p>Conexão, modo de operação e informações desta estação de trabalho.</p></div></div><div class="content-grid"><div><section class="panel"><div class="panel-header"><div><h2>API TerraFlux</h2><p>Contrato central usado pela aplicação web.</p></div>${badge(api.mode === "live" ? "AVAILABLE" : "PARTIAL", api.mode === "live" ? "Conectada" : "Demonstração")}</div><div class="panel-body"><div class="form-field"><label>Base da API</label><input class="input mono" value="${escapeHtml(api.baseUrl)}" readonly /><p class="field-help">Defina <span class="mono">window.__TERRAFLUX_API_BASE__</span> antes de carregar o módulo para usar outra origem.</p></div>${api.mode === "mock" ? `<div class="callout is-warning" style="margin-top:14px">${icon("flask-conical")}<div><strong>Demonstração explícita ativa.</strong>Os dados demonstrativos ficam somente no localStorage deste navegador e não executam motores geoespaciais.</div></div>` : `<div class="callout is-success" style="margin-top:14px">${icon("server-cog")}<div><strong>Backend conectado.</strong>Projetos e ações são persistidos pela API.</div></div>`}</div></section><section class="panel"><div class="panel-header"><h2>Sobre esta versão</h2></div><div class="panel-body"><ul class="summary-list"><li><span>Frontend</span><strong>Vanilla ES Modules</strong></li><li><span>Contrato</span><strong>/api</strong></li><li><span>Idioma</span><strong>Português (Brasil)</strong></li><li><span>Fuso</span><strong>America/Sao_Paulo</strong></li></ul></div></section></div><aside class="content-aside"><section class="panel"><div class="panel-header"><h3>Dados demonstrativos</h3></div><div class="panel-body"><p style="margin:0;color:var(--ink-600);font-size:10px;line-height:1.5">Restaure os exemplos originais e descarte projetos criados localmente.</p><button class="button is-danger" id="reset-demo" type="button" style="width:100%;margin-top:12px" ${api.mode !== "mock" ? "disabled" : ""}>${icon("rotate-ccw")} Restaurar demonstração</button></div></section></aside></div>`;
   document.querySelector("#reset-demo")?.addEventListener("click", () => {
     if (!window.confirm("Restaurar os dados demonstrativos? Projetos criados neste navegador serão removidos.")) return;
     api.resetDemo();
@@ -1394,6 +1439,10 @@ async function route() {
   closeMobileMenu();
   const routeInfo = parseRoute();
   state.route = routeInfo;
+  if (api.mode === "unavailable") {
+    renderConnectionFailure();
+    return;
+  }
   try {
     if (routeInfo.name === "project") await renderProject(routeInfo.projectId, routeInfo.step);
     else if (routeInfo.name === "runs") await renderRuns();
@@ -1404,6 +1453,21 @@ async function route() {
   } finally {
     main.focus({ preventScroll: true });
   }
+}
+
+function renderConnectionFailure() {
+  main.innerHTML = `<div class="panel empty-state"><span class="empty-icon">${icon("unplug")}</span><h1>Conexão com a API indisponível</h1><p>Nenhum projeto foi carregado. Os dados existentes não foram alterados.</p><button class="button is-primary" id="retry-api" type="button">${icon("refresh-cw")} Tentar novamente</button></div>`;
+  document.querySelector("#retry-api").addEventListener("click", async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+      await api.initialize();
+      await route();
+    } catch (error) {
+      renderConnectionFailure();
+      showToast("API indisponível", error.message, "error");
+    }
+  });
+  hydrateIcons(main);
 }
 
 function bindGlobalEvents() {
@@ -1433,10 +1497,10 @@ async function initialize() {
   try {
     await api.initialize();
   } catch (error) {
-    showToast("Acesso à API negado", error.message, "error", 8000);
+    showToast("Não foi possível acessar a API", error.message, "error", 8000);
   }
   if (api.mode === "mock") {
-    showToast("Modo demonstrativo", "A API está indisponível. Os dados exibidos são exemplos locais e não executam os motores.", "warning", 8500);
+    showToast("Modo demonstrativo", "Demonstração habilitada: os exemplos locais não executam os motores.", "warning", 8500);
   }
   hydrateIcons();
   await route();

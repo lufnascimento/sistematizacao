@@ -124,6 +124,26 @@ suas publicacoes parciais sao removidas; o usuario deve iniciar uma nova rodada.
 
 ## Inspecao espacial e processamento
 
+O inventario funcional e a sequencia de desenvolvimento estao em
+[Estado atual do sistema](../docs/ESTADO_ATUAL_2026_09_21.md).
+
+Resultados permitem selecionar rodadas pelo campo `Rodada`; o link conserva
+`?run=ID` dentro da rota do projeto. `Ver resultados` em uma execucao abre
+exatamente aquela rodada, inclusive quando existem execucoes posteriores.
+Busca e filtro por produto restringem os arquivos visiveis, sem remover dados.
+
+`GET /api/runs/{run_id}/delivery` entrega um ZIP de uma rodada concluida:
+produtos, manifesto de checksums, pedido, cenarios e registros de revisao.
+Tamanho e SHA-256 sao verificados durante a copia. Arquivos de outras rodadas,
+ausentes ou alterados bloqueiam o pacote. Limites: 2 GiB de produtos, 2.000
+arquivos e duas montagens simultaneas. Demonstracoes externas ao diretorio da
+rodada nao sao empacotadas. O download nao inclui os uploads originais.
+
+Indisponibilidade da API nao ativa dados demonstrativos. A tela oferece
+reconexao e nao substitui projetos reais por exemplos. Para testes de
+demonstracao, defina explicitamente `window.__TERRAFLUX_DEMO__ = true` antes
+de carregar o modulo da aplicacao; esse modo nao processa dados reais.
+
 A configuracao `sulcation.terrain_smoothing_sigma_m` controla o desvio padrao
 gaussiano do terreno usado no calculo E0/CF0: padrao de 4 m, intervalo 0 a 100 m,
 zero desliga o filtro. O valor e congelado no pedido e registrado com procedencia

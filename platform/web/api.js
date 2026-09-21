@@ -1315,6 +1315,10 @@ class ApiClient {
   }
 
   async initialize() {
+    if (window.__TERRAFLUX_DEMO__ === true) {
+      this.setMode("mock");
+      return this.mode;
+    }
     try {
       try {
         await this.request("/health", { timeout: 2500 });
@@ -1324,11 +1328,8 @@ class ApiClient {
       }
       this.setMode("live");
     } catch (error) {
-      if (error.status === 401 || error.status === 403) {
-        this.setMode("live", error);
-        throw error;
-      }
-      this.setMode("mock", error);
+      this.setMode("unavailable", error);
+      throw error;
     }
     return this.mode;
   }

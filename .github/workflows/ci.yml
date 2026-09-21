@@ -87,3 +87,5 @@ jobs:
         run: node platform/tests/test_terrain_surface.mjs
       - name: Verify scenario comparison eligibility and scope
         run: node platform/tests/test_scenario_comparison.mjs
+      - name: Verify historical result selection
+        run: node platform/tests/test_result_runs.mjs

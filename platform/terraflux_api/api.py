@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
@@ -11,9 +12,11 @@ from fastapi import Body, FastAPI, File, Form, HTTPException, Query, UploadFile,
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 
 from .catalog import ENGINE_CATALOG, PRODUCTS, public_catalog
 from .jobs import JobRunner
+from .delivery import DeliveryError, build_delivery
 from .map_layers import build_map_layers
 from .models import (
     ArtifactReviewCreate,
@@ -49,6 +52,7 @@ def create_app(
     store = LocalStore(Path(data_root or DEFAULT_DATA_ROOT))
     workspace = Path(workspace_root or WORKSPACE_ROOT).resolve()
     runner = JobRunner(store, workspace)
+    delivery_slots = threading.BoundedSemaphore(2)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -360,6 +364,20 @@ def create_app(
     def run_scenarios(run_id: str) -> dict[str, Any]:
         _require(store, "runs", run_id, "run")
         return {"items": store.list("scenarios", lambda item: item["run_id"] == run_id)}
+
+    @api.get("/runs/{run_id}/delivery")
+    def download_delivery(run_id: str) -> FileResponse:
+        _require(store, "runs", run_id, "run")
+        if not delivery_slots.acquire(blocking=False):
+            raise HTTPException(status_code=429, detail={"code": "DELIVERY_BUSY"})
+        try:
+            path = build_delivery(store.snapshot(), run_id, store.root)
+        except DeliveryError as exc:
+            raise HTTPException(status_code=409, detail={"code": str(exc)}) from exc
+        finally:
+            delivery_slots.release()
+        return FileResponse(path, media_type="application/zip", filename=f"TerraFlux_{run_id}.zip",
+                            background=BackgroundTask(path.unlink, missing_ok=True))
 
     @api.get("/runs/{run_id}/map-layers")
     def run_map_layers(run_id: str) -> dict[str, Any]:

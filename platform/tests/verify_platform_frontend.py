@@ -170,6 +170,15 @@ def main() -> None:
         assert page.get_by_text("Dossie_Tecnico_Rodada_E0_CF0.pdf", exact=True).count() == 1
         assert page.locator('.artifact-card img[src*="/api/artifacts/"]').count() >= 2
         assert page.locator(".artifact-card a[download]").count() == artifact_count
+        page.locator("#artifact-search").fill("Dossie_Tecnico")
+        assert page.locator(".artifact-card:visible").count() == 1
+        page.locator("#artifact-search").fill("no-such-product-qa")
+        assert page.locator(".artifact-card:visible").count() == 0
+        page.locator("#artifact-search").fill("")
+        page.locator("#artifact-product").select_option("COMPLETE_DOSSIER")
+        assert page.locator(".artifact-card:visible").count() == page.locator('.artifact-card[data-product-id="COMPLETE_DOSSIER"]').count()
+        page.locator("#artifact-product").select_option("")
+        assert page.locator(".artifact-card:visible").count() == artifact_count
         scenario_summary = verify_scenarios(page, project_id) if args.expect_scenarios else {}
         if args.expect_scenarios:
             output = ROOT / "platform_runtime" / "browser_checks"

@@ -1,5 +1,9 @@
 # Auditoria do produto e da plataforma
 
+Estado consolidado mais recente: [Revisao de 2026-09-21](ESTADO_ATUAL_2026_09_21.md).
+As tabelas iniciais abaixo sao historicas; mapa 3D, linhas e entrega por rodada
+ja tiveram implementacoes posteriores, descritas no documento consolidado.
+
 Data: 2026-09-14. Base inspecionada: bd1f65f e correcao de prontidao desta rodada.
 
 Atualizacao apos a auditoria: implementados controle de subida acumulada,
