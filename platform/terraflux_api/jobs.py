@@ -1418,6 +1418,21 @@ class JobRunner:
         for record in manifest["outputs"]:
             path = self._declared_path(record)
             self._verify_manifest_file(record, path, output_dir, "row inspection")
+            summary_record = record.get("profile_summary")
+            if not isinstance(summary_record, dict):
+                raise RuntimeError("row profile summary missing")
+            summary_path = self._declared_path(summary_record)
+            self._verify_manifest_file(summary_record, summary_path, output_dir, "row profile summary")
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            expected = {"report_type": "SOURCE_ROW_PROFILE_SUMMARY", "source_sha256": manifest["source_sha256"],
+                        "web_rows_sha256": record["sha256"], "terrain_sha256": manifest["terrain_sha256"],
+                        "request_sha256": manifest.get("request_sha256"), "scenario_key": record["scenario_key"],
+                        "inspection_status": record["inspection_status"], "row_count": record["feature_count"]}
+            if not isinstance(summary, dict) or any(summary.get(key) != value for key, value in expected.items()) or summary.get("guidance_authorized") is not False:
+                raise RuntimeError("row profile summary lineage mismatch")
+            if not isinstance(summary.get("rows"), list) or len(summary["rows"]) != record["feature_count"]:
+                raise RuntimeError("row profile summary row count mismatch")
+            self._artifact(run, summary_path, product_id, "GENERATED_FROM_CLIENT_DATA")
             diagnostic = record["inspection_status"] == "DIAGNOSTIC"
             label = "Linhas de diagnostico" if diagnostic else "Sulcacao preliminar"
             if record["part_count"] > 1:
@@ -1430,7 +1445,7 @@ class JobRunner:
                 "inspection_only": True, "default_visible": not diagnostic,
                 "color": "#c64e59" if diagnostic else "#147547",
             })
-        return 1 + len(manifest["outputs"])
+        return 1 + 2 * len(manifest["outputs"])
 
     def _publish_e0_scenarios(
         self,

@@ -27,6 +27,12 @@ class RowsWebTests(unittest.TestCase):
                 self.assertEqual(reference["request_sha256"], result["request_sha256"])
                 self.assertEqual(reference["usage"], "SCREENING_ALERT_ONLY")
                 self.assertEqual(reference["provenance"]["origin"], "E0_ASSUMPTION")
+                summary = json.loads(Path(record["profile_summary"]["path"]).read_text())
+                self.assertEqual(summary["web_rows_sha256"], record["sha256"])
+                self.assertEqual(summary["request_sha256"], result["request_sha256"])
+                self.assertEqual(summary["row_count"], record["feature_count"])
+                self.assertTrue(all(row["alert_length_m"] == 10 for row in summary["rows"]))
+                self.assertTrue(all(row["screening_status"] == "REFERENCE_EXCEEDED" for row in summary["rows"]))
 
     def source(self, folder, scenario=True):
         path = Path(folder) / "rows.gpkg"
@@ -65,6 +71,9 @@ class RowsWebTests(unittest.TestCase):
                 self.assertEqual(payload["terrain_sha256"], result["terrain_sha256"])
                 self.assertFalse(feature["properties"]["guidance_authorized"])
                 self.assertNotIn("profile_reference", feature["properties"])
+                summary = json.loads(Path(record["profile_summary"]["path"]).read_text())
+                self.assertFalse(summary["guidance_authorized"])
+                self.assertTrue(all(row["screening_status"] == "NOT_EVALUATED" for row in summary["rows"]))
 
     def test_missing_scenario_does_not_publish_files(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -91,3 +91,5 @@ jobs:
         run: node platform/tests/test_result_runs.mjs
       - name: Verify source longitudinal profile validation
         run: node platform/tests/test_line_profile.mjs
+      - name: Verify server profile summaries match browser calculations
+        run: /usr/bin/python3 -m unittest tests.test_row_profile_summary

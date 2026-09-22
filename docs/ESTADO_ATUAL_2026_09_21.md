@@ -77,6 +77,14 @@ sulcacao preliminar em planta e 3D. Nenhum desses recursos autoriza implantacao.
 
 ### Alertas rastreaveis em 2026-09-22
 
+Integracao posterior: as novas geracoes agora publicam resumos de perfis
+`diagnostico_perfis_*.json` no servidor, por alternativa/status/parte. Esses
+arquivos entram na entrega ZIP padrao, diferentemente do download local da
+linha descrito abaixo. O worker verifica hashes e vinculos ao arquivo de linhas,
+terreno, pedido, alternativa e contagem de linhas. O calculo e conferido em
+teste cruzado Python/JavaScript. Ainda falta a pagina de indicadores no PDF;
+nenhum arquivo da rodada real anterior foi reescrito.
+
 Complemento: a selecao da linha permite baixar um JSON local de inspecao com
 vertices, cotas, distancias, greides assinados e todos os intervalos em alerta.
 O arquivo identifica projeto, rodada, artefato e hash declarado pelo manifesto;

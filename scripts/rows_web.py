@@ -9,8 +9,10 @@ from osgeo import ogr
 
 try:
     from scripts.contours_web import _read_features
+    from scripts.row_profile_summary import summarize_profile
 except ModuleNotFoundError:
     from contours_web import _read_features
+    from row_profile_summary import summarize_profile
 
 
 def checksum(path):
@@ -76,6 +78,7 @@ def export_rows(source, terrain, output_dir, max_part_vertices=100000, request_p
     if len(groups) > 64:
         raise ValueError("Too many alternative groups for inspection")
     terrain_hash = checksum(terrain)
+    source_hash = checksum(source)
     outputs = []
     output_dir.mkdir(parents=True, exist_ok=True)
     for group_index, ((key, status), features) in enumerate(sorted(groups.items())):
@@ -96,10 +99,25 @@ def export_rows(source, terrain, output_dir, max_part_vertices=100000, request_p
                        "vertical_reference": "UNSPECIFIED_SOURCE_DATUM", "inspection_only": True,
                        "guidance_authorized": False}
             path.write_text(json.dumps(payload, ensure_ascii=True, allow_nan=False, separators=(",", ":")), encoding="utf-8")
+            web_hash = checksum(path)
+            summary_path = output_dir / f"diagnostico_perfis_{group_index + 1:02d}_{index + 1:03d}.json"
+            summaries = [summarize_profile(feature["properties"]) for feature in part]
+            summary = {"schema_version": "1.0.0", "report_type": "SOURCE_ROW_PROFILE_SUMMARY",
+                       "scenario_key": key, "scenario_name": name, "inspection_status": status,
+                       "part": index + 1, "part_count": len(parts),
+                       "source_sha256": source_hash, "web_rows_sha256": web_hash,
+                       "terrain_sha256": terrain_hash, "request_sha256": request_hash,
+                       "reference": reference, "guidance_authorized": False, "inspection_only": True,
+                       "basis": "SOURCE_PROJECTED_METRIC_XY_AND_SOURCE_VERTEX_HEIGHTS",
+                       "comparison_tolerance_pct": 1e-9,
+                       "checks_not_performed": ["HYDRAULIC_CAPACITY", "TURN_RADIUS", "ROW_SPACING", "OPERATIONAL_CROSSINGS"],
+                       "row_count": len(summaries), "rows": summaries}
+            summary_path.write_text(json.dumps(summary, allow_nan=False, ensure_ascii=True, separators=(",", ":")), encoding="utf-8")
             outputs.append({"path": str(path.resolve()), "sha256": checksum(path), "size_bytes": path.stat().st_size,
+                            "profile_summary": {"path": str(summary_path.resolve()), "sha256": checksum(summary_path), "size_bytes": summary_path.stat().st_size},
                             "scenario_key": key, "scenario_name": name, "inspection_status": status,
                             "part": index + 1, "part_count": len(parts), "feature_count": len(part)})
-    return {"status": "AVAILABLE", "source_sha256": checksum(source), "terrain_sha256": terrain_hash,
+    return {"status": "AVAILABLE", "source_sha256": source_hash, "terrain_sha256": terrain_hash,
             "request_sha256": request_hash,
             "outputs": outputs, "guidance_authorized": False}
 

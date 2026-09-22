@@ -209,6 +209,15 @@ de origem. E um diagnostico local de inspecao, nao um produto registrado no
 servidor nem integrante automatico do ZIP/PDF. Sem perfil valido ou identidade
 do arquivo, nao ha exportacao. Sem referencia, o resultado e nao avaliado.
 
+Separadamente, novas geracoes publicam `diagnostico_perfis_*.json` por parte
+de cada alternativa, junto das linhas de triagem e das linhas diagnosticas.
+Esses resumos do servidor integram os arquivos da rodada e o ZIP de entrega,
+com verificacao de tamanho, hash, origem, alternativa e quantidade de linhas.
+Contem extensao, maior greide absoluto entre vertices e intervalos em alerta
+por linha, preservando o estado nao avaliado quando necessario. O calculo e
+testado contra o do navegador. Ainda nao ha pagina dedicada a esses indicadores
+no PDF. Rodadas antigas nao sao modificadas automaticamente.
+
 Verificacao dos controles de suavizacao e alerta pelo navegador (cria um projeto QA e
 dois pedidos, sem iniciar motores):
 `python platform/tests/verify_smoothing_configuration.py --base-url http://127.0.0.1:8003`.
