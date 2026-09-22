@@ -1,5 +1,6 @@
 """Exercise source profiles with intercepted QA data, never published farm data."""
 
+import json
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
@@ -20,6 +21,7 @@ def main():
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             layer = {"status": "READY", "name": "Linha QA", "size_bytes": 1000,
+                     "artifact_id": "art-qa", "sha256": "c" * 64,
                      "source_url": "/qa-profile.json", "default_visible": True,
                      "spatial_metadata": {"format": "GEOJSON", "elevation_policy": "SOURCE_ROW_HEIGHTS",
                                           "scenario_key": "QA", "scenario_name": "Teste de perfil"}}
@@ -56,6 +58,15 @@ def main():
             assert page.locator("#line-profile polyline").first.get_attribute("points") == "10,60 83.33333333333333,10 230,110"
             expect(page.locator(".profile-alert")).to_have_count(1)
             expect(page.locator("#selection")).to_contain_text("Referencia excedida")
+            with page.expect_download() as downloaded:
+                page.get_by_role("button", name="Baixar diagnostico da linha (JSON)").click()
+            report = json.loads(Path(downloaded.value.path()).read_text(encoding="utf-8"))
+            assert downloaded.value.suggested_filename == "diagnostico-perfil-linha.json"
+            assert report["summary"]["alert_length_m"] == 30
+            assert report["source"]["artifact_sha256"] == "c" * 64
+            assert report["source"]["run_id"] == "qa-profile"
+            assert report["guidance_authorized"] is False
+            assert len(report["vertices"]) == 3 and len(report["segments"]) == 2
             before = canvas.screenshot()
             page.locator("#profile-interval").select_option("0")
             assert canvas.screenshot() != before, "Selected alert must highlight the map"
@@ -70,6 +81,7 @@ def main():
             page.screenshot(path=str(output / f"line-profile-{name}.png"))
             page.locator("#scenario").select_option("")
             expect(page.locator("#line-profile")).to_have_count(0)
+            expect(page.locator("#download-profile")).to_have_count(0)
             payload["features"][0]["properties"].pop("source_chainages_m")
             page.reload(wait_until="networkidle")
             page.locator("#scenario").select_option("QA")

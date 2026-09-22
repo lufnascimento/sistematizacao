@@ -77,6 +77,14 @@ sulcacao preliminar em planta e 3D. Nenhum desses recursos autoriza implantacao.
 
 ### Alertas rastreaveis em 2026-09-22
 
+Complemento: a selecao da linha permite baixar um JSON local de inspecao com
+vertices, cotas, distancias, greides assinados e todos os intervalos em alerta.
+O arquivo identifica projeto, rodada, artefato e hash declarado pelo manifesto;
+nao afirma revalidacao do hash no navegador. Mantem resultado nao avaliado
+quando falta referencia e nunca autoriza implantacao. Nao inclui os controles
+de raio, espacamento, capacidade hidraulica ou travessias, nem entra no ZIP/PDF
+oficial. Download e conteudo foram verificados em desktop/celular, com dados QA.
+
 - Configuracao oferece `sulcation.reference_alert_grade_pct`, padrao 5%,
   apenas como referencia computacional de triagem herdada do motor E0.
   Nao e recomendacao agronomica, limite normativo ou aprovacao hidraulica.

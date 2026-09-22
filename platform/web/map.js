@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { OrbitControls } from "./vendor/three/OrbitControls.js";
 import { TerrainSurface } from "./terrain-surface.mjs";
-import { lineProfile } from "./line-profile.mjs";
+import { lineProfile, profileInspectionReport, hasProfileReportSource } from "./line-profile.mjs";
 
 const viewport = document.querySelector("#viewport");
 const status = document.querySelector("#status");
 const empty = document.querySelector("#empty");
 const palette = ["#087749", "#b24927", "#245dc1", "#922f78"];
 const runId = new URLSearchParams(location.search).get("run");
+let projectId = null;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#edf2ef");
 let renderer;
@@ -175,6 +176,23 @@ function showSelection(properties) {
       const start = document.createElement("span"); start.textContent = "0 m";
       const end = document.createElement("span"); end.textContent = `${number(profile.length)} m`;
       axis.append(start, end); figure.append(caption, svg, axis); list.after(figure);
+      const download = document.createElement("button"); download.id = "download-profile"; download.type = "button";
+      download.title = "Baixar diagnostico da linha (JSON)"; download.setAttribute("aria-label", download.title);
+      const icon = document.createElement("i"); icon.setAttribute("data-lucide", "download"); download.append(icon);
+      const reportSource = { run_id: runId, project_id: projectId,
+        artifact_id: properties.inspection_artifact_id, artifact_sha256: properties.inspection_artifact_sha256,
+        scenario_id: selectedScenario };
+      download.disabled = !hasProfileReportSource(reportSource);
+      if (download.disabled) download.title = "Exportacao indisponivel: identificacao do arquivo incompleta";
+      download.addEventListener("click", () => {
+        const report = profileInspectionReport(properties, reportSource);
+        if (!report) return;
+        const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }));
+        const link = document.createElement("a"); link.href = url; link.download = "diagnostico-perfil-linha.json";
+        document.body.append(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+      figure.append(download); window.lucide?.createIcons();
       if (profile.alert?.intervals.length) {
         const label = document.createElement("label"); label.textContent = "Trecho em alerta"; label.htmlFor = "profile-interval";
         const select = document.createElement("select"); select.id = "profile-interval";
@@ -204,6 +222,7 @@ function showSelection(properties) {
 async function start() {
   if (!runId) throw new Error("Selecione uma rodada nos resultados.");
   const manifest = await getJSON(`/api/runs/${encodeURIComponent(runId)}/map-layers`);
+  projectId = manifest.project_id;
   const alternatives = new Map();
   const scenarioRecords = new Map();
   const scenarioResponse = await getJSON(`/api/runs/${encodeURIComponent(runId)}/scenarios`);
@@ -330,13 +349,13 @@ async function start() {
         const addLine = (points, heights, view = "both") => {
           const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y], vertex) => new THREE.Vector3(x - origin[0], y - origin[1], heights ? (heights[vertex] - elevationOrigin) * elevationScale : 0)));
           const material = new THREE.LineBasicMaterial({ color, transparent: true, depthTest: false });
-          const line = new THREE.Line(geometry, material); line.userData = { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256, view };
+          const line = new THREE.Line(geometry, material); line.userData = { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256, inspection_artifact_id: layer.artifact_id, inspection_artifact_sha256: layer.sha256, view };
           line.visible = view !== "3d"; line.renderOrder = 1;
           group.add(line); objects.push(line);
         };
         if (aligned3d) {
           addLine(coordinates, null, "plan");
-          group.userData.drapeFeatures.push({ points: coordinates.map(([x, y]) => [x - origin[0], y - origin[1]]), properties: { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256 } });
+          group.userData.drapeFeatures.push({ points: coordinates.map(([x, y]) => [x - origin[0], y - origin[1]]), properties: { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256, inspection_artifact_id: layer.artifact_id, inspection_artifact_sha256: layer.sha256 } });
         } else addLine(coordinates, null);
         featureCount++;
       }

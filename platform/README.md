@@ -201,6 +201,14 @@ intervalos acima da referencia; selecionar um intervalo destaca-o no mapa
 2D/3D. Rodadas antigas sem esses atributos nao recebem valores presumidos.
 O destaque nao altera geometrias, elegibilidade ou autorizacao de implantacao.
 
+O botao de download do perfil exporta `diagnostico-perfil-linha.json` com
+todos os vertices, greides por segmento e intervalos de alerta, sem o limite
+de 200 itens da lista visual. Inclui rodada, projeto, arquivo, hash declarado
+pelo manifesto e referencia usada. O navegador nao recalcula o hash do arquivo
+de origem. E um diagnostico local de inspecao, nao um produto registrado no
+servidor nem integrante automatico do ZIP/PDF. Sem perfil valido ou identidade
+do arquivo, nao ha exportacao. Sem referencia, o resultado e nao avaliado.
+
 Verificacao dos controles de suavizacao e alerta pelo navegador (cria um projeto QA e
 dois pedidos, sem iniciar motores):
 `python platform/tests/verify_smoothing_configuration.py --base-url http://127.0.0.1:8003`.
