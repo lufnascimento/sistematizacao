@@ -6,9 +6,28 @@ from pathlib import Path
 from osgeo import ogr, osr
 
 from scripts.rows_web import export_rows
+from scripts.build_platform_engine_request import build_request, write_validated_request
+from tests import test_build_platform_engine_request as builder_tests
 
 
 class RowsWebTests(unittest.TestCase):
+    def test_reference_preserves_frozen_request_identity(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            inputs = builder_tests.PlatformEngineRequestBuilderTests().make_inputs(root, reference_alert_grade_pct=3.5)
+            request_path = root / "request.json"
+            write_validated_request(build_request(inputs), request_path)
+            source = self.source(folder)
+            result = export_rows(source, inputs.dtm_path, root / "web", request_path=request_path)
+            for record in result["outputs"]:
+                payload = json.loads(Path(record["path"]).read_text())
+                reference = payload["features"][0]["properties"]["profile_reference"]
+                self.assertEqual(reference["grade_alert_pct"], 3.5)
+                self.assertEqual(reference["request_id"], inputs.request_id)
+                self.assertEqual(reference["request_sha256"], result["request_sha256"])
+                self.assertEqual(reference["usage"], "SCREENING_ALERT_ONLY")
+                self.assertEqual(reference["provenance"]["origin"], "E0_ASSUMPTION")
+
     def source(self, folder, scenario=True):
         path = Path(folder) / "rows.gpkg"
         dataset = ogr.GetDriverByName("GPKG").CreateDataSource(str(path))
@@ -45,6 +64,7 @@ class RowsWebTests(unittest.TestCase):
                 self.assertEqual(feature["properties"]["blocker_codes"], "RECEIVER_NOT_REVIEWED")
                 self.assertEqual(payload["terrain_sha256"], result["terrain_sha256"])
                 self.assertFalse(feature["properties"]["guidance_authorized"])
+                self.assertNotIn("profile_reference", feature["properties"])
 
     def test_missing_scenario_does_not_publish_files(self):
         with tempfile.TemporaryDirectory() as folder:

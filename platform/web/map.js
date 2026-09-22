@@ -25,12 +25,34 @@ const objects = [];
 const groups = [];
 const layerRows = [];
 let selectedScenario = "";
+let inspectionHighlight = null;
 const radius = 6378137;
 const radians = Math.PI / 180;
 const project = ([lon, lat]) => [radius * lon * radians, radius * Math.log(Math.tan(Math.PI / 4 + lat * radians / 2))];
 const unproject = (x, y) => [x / radius / radians, (2 * Math.atan(Math.exp(y / radius)) - Math.PI / 2) / radians];
 
 function render() { renderer.render(scene, camera); }
+function clearHighlight() {
+  if (!inspectionHighlight) return;
+  inspectionHighlight.children.forEach(line => { line.geometry.dispose(); line.material.dispose(); });
+  scene.remove(inspectionHighlight); inspectionHighlight = null;
+}
+function highlightInterval(properties, interval) {
+  clearHighlight();
+  const coordinates = properties.inspection_coordinates;
+  if (!Array.isArray(coordinates)) return;
+  const points = coordinates.slice(interval.firstIndex, interval.lastIndex + 2).map(project)
+    .map(([x, y]) => [x - origin[0], y - origin[1]]);
+  if (mode3d && (!terrainSurface || properties.inspection_terrain_sha256 !== terrainHash)) return;
+  const parts = mode3d ? terrainSurface.drape(points) : [points.map(([x, y]) => [x, y, 0])];
+  inspectionHighlight = new THREE.Group();
+  for (const part of parts) {
+    const geometry = new THREE.BufferGeometry().setFromPoints(part.map(([x, y, z]) => new THREE.Vector3(x, y, z + (mode3d ? .06 * elevationScale : 0))));
+    const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: "#c02b28", depthTest: mode3d, transparent: true }));
+    line.renderOrder = 5; inspectionHighlight.add(line);
+  }
+  scene.add(inspectionHighlight); render();
+}
 function prepareDrape(group) {
   if (!terrainSurface || group.userData.drapePrepared || !group.userData.drapeFeatures) return;
   for (const feature of group.userData.drapeFeatures) {
@@ -93,6 +115,7 @@ async function getJSON(url) {
   return response.json();
 }
 function showSelection(properties) {
+  clearHighlight();
   const list = document.querySelector("#selection");
   list.replaceChildren();
   const entries = properties.kind === "CONTOUR" ? [
@@ -125,6 +148,12 @@ function showSelection(properties) {
         ["Maior greide entre vertices (%)", number(profile.maximumGrade)],
         ["Cotas originais (m)", `${number(profile.minimum)} a ${number(profile.maximum)}`],
         ["Perfil", "Geometria de origem; nao constitui validacao hidraulica"]);
+      if (profile.alert) {
+        entries.push(["Referencia de alerta da rodada (%)", number(profile.alert.reference.grade_alert_pct)],
+          ["Extensao acima da referencia (m)", number(profile.alert.length)],
+          ["Trechos em alerta", profile.alert.intervals.length],
+          ["Resultado da triagem", profile.alert.intervals.length ? "Referencia excedida; requer revisao" : "Sem excedencia entre vertices; nao significa aprovacao"]);
+      } else entries.push(["Alerta de greide", "Nao avaliado: referencia rastreavel ausente"]);
       const figure = document.createElement("figure"); figure.id = "line-profile";
       const caption = document.createElement("figcaption"); caption.textContent = "Perfil longitudinal / cotas de origem";
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -135,10 +164,35 @@ function showSelection(properties) {
       path.setAttribute("points", profile.stations.map((station, i) => `${10 + 220 * station / profile.length},${range ? 110 - 100 * (profile.heights[i] - profile.minimum) / range : 60}`).join(" "));
       path.setAttribute("fill", "none"); path.setAttribute("stroke", "#147547"); path.setAttribute("stroke-width", "2");
       svg.append(path);
+      if (profile.alert?.intervals.length) {
+        const overlay = document.createElementNS(svg.namespaceURI, "path");
+        overlay.setAttribute("d", profile.alert.intervals.map(interval => profile.stations.slice(interval.firstIndex, interval.lastIndex + 2)
+          .map((station, offset) => `${offset ? "L" : "M"}${10 + 220 * station / profile.length},${range ? 110 - 100 * (profile.heights[interval.firstIndex + offset] - profile.minimum) / range : 60}`).join(" ")).join(" "));
+        overlay.setAttribute("fill", "none"); overlay.setAttribute("stroke", "#c02b28"); overlay.setAttribute("stroke-width", "3");
+        overlay.classList.add("profile-alert"); svg.append(overlay);
+      }
       const axis = document.createElement("div"); axis.className = "profile-axis";
       const start = document.createElement("span"); start.textContent = "0 m";
       const end = document.createElement("span"); end.textContent = `${number(profile.length)} m`;
       axis.append(start, end); figure.append(caption, svg, axis); list.after(figure);
+      if (profile.alert?.intervals.length) {
+        const label = document.createElement("label"); label.textContent = "Trecho em alerta"; label.htmlFor = "profile-interval";
+        const select = document.createElement("select"); select.id = "profile-interval";
+        const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "Nenhum trecho destacado"; select.append(placeholder);
+        for (const [index, interval] of profile.alert.intervals.slice(0, 200).entries()) {
+          const option = document.createElement("option"); option.value = String(index);
+          option.textContent = `${number(interval.start)} a ${number(interval.end)} m / max. ${number(interval.maximumGrade)}%`;
+          select.append(option);
+        }
+        select.addEventListener("change", () => {
+          if (select.value === "") { clearHighlight(); render(); }
+          else highlightInterval(properties, profile.alert.intervals[Number(select.value)]);
+        });
+        figure.append(label, select);
+        if (profile.alert.intervals.length > 200) {
+          const note = document.createElement("p"); note.textContent = `Lista: primeiros 200 de ${profile.alert.intervals.length} trechos. Grafico completo.`; figure.append(note);
+        }
+      }
     } else entries.push(["Perfil longitudinal", "Indisponivel: distancias ou cotas de origem ausentes/invalidas"]);
   }
   for (const [name, value] of entries) {
@@ -276,13 +330,13 @@ async function start() {
         const addLine = (points, heights, view = "both") => {
           const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y], vertex) => new THREE.Vector3(x - origin[0], y - origin[1], heights ? (heights[vertex] - elevationOrigin) * elevationScale : 0)));
           const material = new THREE.LineBasicMaterial({ color, transparent: true, depthTest: false });
-          const line = new THREE.Line(geometry, material); line.userData = { ...feature.properties, view };
+          const line = new THREE.Line(geometry, material); line.userData = { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256, view };
           line.visible = view !== "3d"; line.renderOrder = 1;
           group.add(line); objects.push(line);
         };
         if (aligned3d) {
           addLine(coordinates, null, "plan");
-          group.userData.drapeFeatures.push({ points: coordinates.map(([x, y]) => [x - origin[0], y - origin[1]]), properties: feature.properties });
+          group.userData.drapeFeatures.push({ points: coordinates.map(([x, y]) => [x - origin[0], y - origin[1]]), properties: { ...feature.properties, inspection_coordinates: feature.geometry.coordinates, inspection_terrain_sha256: data.terrain_sha256 } });
         } else addLine(coordinates, null);
         featureCount++;
       }
@@ -302,6 +356,7 @@ async function start() {
     };
     layerRow.load = load;
     toggle.addEventListener("change", async () => {
+      clearHighlight(); document.querySelector("#line-profile")?.remove(); document.querySelector("#selection").replaceChildren();
       if (toggle.checked) await load();
       updateLayerVisibility(); render();
     });
@@ -318,6 +373,7 @@ async function start() {
     const url = new URL(location.href);
     url.searchParams.set("scenario", selectedScenario); history.replaceState(null, "", url);
     document.querySelector("#selection").replaceChildren();
+    clearHighlight();
     document.querySelector("#line-profile")?.remove();
     updateLayerVisibility(); render();
     try {
@@ -332,6 +388,9 @@ async function start() {
     document.querySelector("#orbit").disabled = false;
   }
   for (const id of ["plan", "orbit"]) document.getElementById(id).onclick = () => {
+    clearHighlight();
+    const intervalSelector = document.querySelector("#profile-interval");
+    if (intervalSelector) intervalSelector.value = "";
     mode3d = id === "orbit" && terrainLoaded;
     controls.enableRotate = mode3d;
     controls.mouseButtons.LEFT = mode3d ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
@@ -357,6 +416,7 @@ async function start() {
       if (lineIndex > 0) hits.unshift(hits.splice(lineIndex, 1)[0]);
     }
     if (hits.length && hits[0].object.userData.terrain) {
+      clearHighlight();
       document.querySelector("#line-profile")?.remove();
       const list = document.querySelector("#selection"); list.replaceChildren();
       const title = document.createElement("dt"); title.textContent = "Cota interpolada da malha (m)";
@@ -366,7 +426,7 @@ async function start() {
     const point = hits[0]?.point || raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
     if (point) { const [lon, lat] = unproject(point.x + origin[0], point.y + origin[1]); document.querySelector("#position").textContent = `${lon.toFixed(6)}, ${lat.toFixed(6)}`; }
   });
-  window.addEventListener("pagehide", () => { controls.dispose(); objects.forEach(line => { line.geometry.dispose(); line.material.dispose(); }); renderer.dispose(); }, { once: true });
+  window.addEventListener("pagehide", () => { clearHighlight(); controls.dispose(); objects.forEach(line => { line.geometry.dispose(); line.material.dispose(); }); renderer.dispose(); }, { once: true });
 }
 start().catch(error => { status.textContent = "Mapa indisponivel"; empty.hidden = false; empty.textContent = error.message; });
 window.addEventListener("load", () => window.lucide?.createIcons());

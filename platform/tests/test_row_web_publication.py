@@ -43,3 +43,15 @@ class RowWebPublicationTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "hash mismatch"):
                 runner._publish_row_web({"id": "run"}, source, terrain, "CF0_CONTINUOUS")
             self.assertEqual(runner._artifact.call_count, 1)
+
+    def test_request_mismatch_blocks_row_publication(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            runner, source, terrain = self.setup_runner(root)
+            request = root / "request.json"
+            request.write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "request lineage mismatch"):
+                runner._publish_row_web({"id": "run"}, source, terrain, "CF0_CONTINUOUS", request)
+            command = runner._run_process.call_args.args[1]
+            self.assertEqual(command[command.index("--request") + 1], str(request))
+            self.assertEqual(runner._artifact.call_count, 1)

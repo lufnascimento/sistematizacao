@@ -8,10 +8,10 @@
     "state": "SP",
     "crop": "SUGARCANE"
   },
-  "generated_at": "2026-09-17T11:32:16.077255Z",
+  "generated_at": "2026-09-21T13:51:04.910323Z",
   "requested_delivery_level": "E0_TRIAGEM",
   "summary": {
-    "configurable_parameter_count": 140,
+    "configurable_parameter_count": 141,
     "parameter_status_counts": {
       "CUSTOM_VALUE_PENDING_EVIDENCE_VALIDATION": 6,
       "FAIL_CLOSED": 16,
@@ -21,7 +21,7 @@
       "REFERENCE_ASSEMBLY_REQUIRED": 2,
       "REFERENCE_LOOKUP_PENDING": 4,
       "REFERENCE_SELECTED_E0": 3,
-      "SYSTEM_E0_VALUE": 7
+      "SYSTEM_E0_VALUE": 8
     },
     "package_count": 26,
     "selected_reference_model_count": 38,
@@ -738,6 +738,11 @@
       "parameter_id": "e0.maneuver_time_s",
       "mode": "SYSTEM_MODEL",
       "model_id": "SYS-OP-TURN-HARVESTER-38P5S-E0"
+    },
+    {
+      "parameter_id": "e0.reference_alert_grade_pct",
+      "mode": "SYSTEM_DEFAULT",
+      "model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE"
     },
     {
       "parameter_id": "terrain.smoothing_sigma_m",
@@ -4302,6 +4307,42 @@
         "headland geometry",
         "local time distribution",
         "machine and wagon synchronization"
+      ],
+      "project_evidence_resolved": false,
+      "release_ceiling": "E0_TRIAGEM"
+    },
+    {
+      "parameter_id": "e0.reference_alert_grade_pct",
+      "label": "Referencia de alerta de greide para triagem E0",
+      "parameter_class": "E0_ASSUMPTION",
+      "unit": "%",
+      "safety_critical": false,
+      "owner_package_id": null,
+      "status": "SYSTEM_E0_VALUE",
+      "proposed_value": 5.0,
+      "custom_provenance": null,
+      "selected_model_ids": [
+        "SYS-OPTIMIZER-LOCAL-TEMPLATE"
+      ],
+      "contributions": [
+        {
+          "model_id": "SYS-OPTIMIZER-LOCAL-TEMPLATE",
+          "model_title": "Preferencias operacionais e logisticas do cliente",
+          "resolution_mode": "FIXED_E0_VALUE",
+          "value": 5.0,
+          "unit": "%",
+          "source_ids": [
+            "TF_PARAMETER_CATALOG_1.2"
+          ],
+          "release_ceiling": "E0_TRIAGEM",
+          "requires_user_confirmation": false
+        }
+      ],
+      "source_ids": [
+        "TF_PARAMETER_CATALOG_1.2"
+      ],
+      "required_actions": [
+        "client preference or Pareto mode"
       ],
       "project_evidence_resolved": false,
       "release_ceiling": "E0_TRIAGEM"

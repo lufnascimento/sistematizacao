@@ -72,6 +72,7 @@ class RequestInputs:
     maneuver_time_s: float | None = None
     max_cross_slope_pct: float | None = None
     terrain_smoothing_sigma_m: float | None = None
+    reference_alert_grade_pct: float | None = None
     constraint_review_status: str = "NOT_REVIEWED"
     created_at: str | None = None
     input_qa_status: str = "UPLOADED"
@@ -342,6 +343,7 @@ def _validate_inputs(inputs: RequestInputs) -> RequestInputs:
         maneuver_time_s=None if inputs.maneuver_time_s is None else _finite(inputs.maneuver_time_s, "maneuver_time_s", minimum=0),
         max_cross_slope_pct=None if inputs.max_cross_slope_pct is None else _finite(inputs.max_cross_slope_pct, "max_cross_slope_pct", minimum=0),
         terrain_smoothing_sigma_m=None if inputs.terrain_smoothing_sigma_m is None else _finite(inputs.terrain_smoothing_sigma_m, "terrain_smoothing_sigma_m", minimum=0),
+        reference_alert_grade_pct=None if inputs.reference_alert_grade_pct is None else _finite(inputs.reference_alert_grade_pct, "reference_alert_grade_pct", minimum=0, exclusive=True),
         constraint_review_status=inputs.constraint_review_status,
         created_at=created_at,
         input_qa_status=inputs.input_qa_status,
@@ -545,6 +547,12 @@ def build_request(
             "terrain.smoothing_sigma_m", resolved.terrain_smoothing_sigma_m,
             source_kind="USER_CONFIG", applicability="SCENARIO",
             method="USER_CONFIG Gaussian standard deviation in metres; zero disables smoothing; not an axial orientation radius or hydraulic conditioning",
+        ))
+    if resolved.reference_alert_grade_pct is not None:
+        parameter_values.append(parameters.make(
+            "e0.reference_alert_grade_pct", resolved.reference_alert_grade_pct,
+            source_kind="USER_CONFIG", origin="E0_ASSUMPTION", applicability="SCENARIO", confidence="LOW",
+            method="USER_CONFIG E0 reference alert grade; screening only, not an approved hydraulic or operational limit",
         ))
     if resolved.maneuver_time_s is not None:
         parameter_values.append(parameters.make(
@@ -815,6 +823,7 @@ def _inputs_from_args(args: argparse.Namespace) -> RequestInputs:
         maneuver_time_s=args.maneuver_time_s,
         max_cross_slope_pct=args.max_cross_slope_pct,
         terrain_smoothing_sigma_m=args.terrain_smoothing_sigma_m,
+        reference_alert_grade_pct=args.reference_alert_grade_pct,
         constraint_review_status=args.constraint_review_status,
         created_at=args.created_at,
         input_qa_status="VALIDATED" if manifest is not None else "UPLOADED",
@@ -859,6 +868,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--maneuver-time-s", type=float)
     parser.add_argument("--max-cross-slope-pct", type=float)
     parser.add_argument("--terrain-smoothing-sigma-m", type=float)
+    parser.add_argument("--reference-alert-grade-pct", type=float)
     parser.add_argument(
         "--power-status",
         choices=["DECLARED_NONE", "NOT_REVIEWED"],

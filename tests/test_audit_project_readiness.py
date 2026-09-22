@@ -22,7 +22,7 @@ class ProjectReadinessAuditTests(unittest.TestCase):
             capabilities,
             parameters,
         )
-        self.assertEqual(152, len(parameters))
+        self.assertEqual(153, len(parameters))
         self.assertEqual(26, len(packages))
         self.assertEqual(set(packages), set(entries))
         self.assertEqual(set(capabilities), set(assessments))

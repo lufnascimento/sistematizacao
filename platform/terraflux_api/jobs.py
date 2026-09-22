@@ -1025,6 +1025,7 @@ class JobRunner:
             "--maneuver-time-s", str(sulcation.get("maneuver_time_s", 38.5)),
             "--max-cross-slope-pct", str(sulcation.get("max_cross_slope_pct", 12.0)),
             "--terrain-smoothing-sigma-m", str(sulcation.get("terrain_smoothing_sigma_m", 4.0)),
+            "--reference-alert-grade-pct", str(sulcation.get("reference_alert_grade_pct", 5.0)),
             "--power-status", "DECLARED_NONE",
             "--constraint-review-status", review_status,
             "--no-cross-field",
@@ -1076,7 +1077,7 @@ class JobRunner:
             for path in (e0_gpkg, e0_map, e0_metrics):
                 self._artifact(run, path, "SULCATION_E0", "GENERATED_FROM_CLIENT_DATA")
                 published += 1
-            published += self._publish_row_web(run, e0_gpkg, topography_dir / "dtm.tif", "SULCATION_E0")
+            published += self._publish_row_web(run, e0_gpkg, topography_dir / "dtm.tif", "SULCATION_E0", engine_request)
             scenario_count += self._publish_e0_scenarios(
                 run, metrics, configuration, engine_request_sha256
             )
@@ -1112,7 +1113,7 @@ class JobRunner:
             for path in (cf0_gpkg, cf0_map, cf0_manifest_path, *sorted(cf0_rasters.glob("*.tif"))):
                 self._artifact(run, path, "CF0_CONTINUOUS", "GENERATED_FROM_CLIENT_DATA")
                 published += 1
-            published += self._publish_row_web(run, cf0_gpkg, topography_dir / "dtm.tif", "CF0_CONTINUOUS")
+            published += self._publish_row_web(run, cf0_gpkg, topography_dir / "dtm.tif", "CF0_CONTINUOUS", engine_request)
             scenario_count += self._publish_cf0_scenarios(
                 run, manifest, configuration, engine_request_sha256
             )
@@ -1395,12 +1396,15 @@ class JobRunner:
         if declared_rasters != actual_rasters:
             raise RuntimeError("CF0 raster bundle differs from its signed manifest")
 
-    def _publish_row_web(self, run, source, terrain, product_id):
+    def _publish_row_web(self, run, source, terrain, product_id, engine_request=None):
         output_dir = source.parent / "web"
-        self._run_process(run, [str(self._qgis_python_launcher()),
+        command = [str(self._qgis_python_launcher()),
                                str(self.workspace_root / "scripts" / "rows_web.py"),
                                "--source", str(source), "--terrain", str(terrain),
-                               "--output-dir", str(output_dir)], "row inspection layers")
+                               "--output-dir", str(output_dir)]
+        if engine_request is not None:
+            command.extend(["--request", str(engine_request)])
+        self._run_process(run, command, "row inspection layers")
         manifest_path = output_dir / "rows_web_manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self._artifact(run, manifest_path, product_id, "GENERATED_FROM_CLIENT_DATA")
@@ -1409,6 +1413,8 @@ class JobRunner:
             return 1
         if manifest.get("status") != "AVAILABLE" or manifest.get("source_sha256") != file_sha256(source) or manifest.get("terrain_sha256") != file_sha256(terrain):
             raise RuntimeError("row inspection source lineage mismatch")
+        if engine_request is not None and manifest.get("request_sha256") != file_sha256(engine_request):
+            raise RuntimeError("row inspection request lineage mismatch")
         for record in manifest["outputs"]:
             path = self._declared_path(record)
             self._verify_manifest_file(record, path, output_dir, "row inspection")

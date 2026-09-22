@@ -192,6 +192,18 @@ Para acompanhar uma rodada existente sem reenviar os dados, use
 `python platform/tests/run_project_smoke.py --resume-run ID_DA_RODADA`.
 Os dados locais do exemplo nao acompanham o repositorio.
 
-Verificacao do controle de suavizacao pelo navegador (cria um projeto QA e
+Novas exportacoes de sulcacao incluem perfil longitudinal com distancias XY
+metricas e cotas da geometria de origem. Em Configurar, o greide de alerta da
+triagem tem padrao computacional de 5%, configuravel pelo usuario. E uma
+hipotese E0, nao um limite agronomico aprovado. O valor fica congelado no pedido
+e acompanha as linhas com hash e procedencia. O perfil mostra extensao e
+intervalos acima da referencia; selecionar um intervalo destaca-o no mapa
+2D/3D. Rodadas antigas sem esses atributos nao recebem valores presumidos.
+O destaque nao altera geometrias, elegibilidade ou autorizacao de implantacao.
+
+Verificacao dos controles de suavizacao e alerta pelo navegador (cria um projeto QA e
 dois pedidos, sem iniciar motores):
 `python platform/tests/verify_smoothing_configuration.py --base-url http://127.0.0.1:8003`.
+
+Verificacao de perfis e destaques com dados interceptados exclusivamente para QA:
+`python platform/tests/verify_line_profile.py` (servidor em `127.0.0.1:8003`).

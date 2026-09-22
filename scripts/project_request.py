@@ -46,6 +46,7 @@ DTM_DATASET_ID = "terrain.dtm_dataset_ref"
 ENGINE_PARAMETER_BINDINGS = {
     "agronomy.row_spacing_m": "row_spacing_m",
     "conservation.max_furrow_grade_pct": "reference_alert_grade_percent",
+    "e0.reference_alert_grade_pct": "reference_alert_grade_percent",
     "e0.nominal_field_speed_kmh": "assumed_work_speed_kmh",
     "e0.maneuver_time_s": "assumed_turn_seconds",
     "terrain.smoothing_sigma_m": "terrain_smoothing_sigma_m",
@@ -161,6 +162,10 @@ class ResolvedProjectRequest:
         return record["value"] if record is not None else default
 
     def engine_parameter_overrides(self) -> dict[str, Any]:
+        legacy_grade = self.value("conservation.max_furrow_grade_pct")
+        alert_grade = self.value("e0.reference_alert_grade_pct")
+        if legacy_grade is not None and alert_grade is not None and legacy_grade != alert_grade:
+            raise ContractError("Conflicting legacy and E0 grade references; resolve them before screening.")
         overrides = {
             engine_name: self.parameters[parameter_id]["value"]
             for parameter_id, engine_name in ENGINE_PARAMETER_BINDINGS.items()

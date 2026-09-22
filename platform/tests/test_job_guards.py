@@ -42,7 +42,7 @@ class JobGuardTests(unittest.TestCase):
         self.store.insert("projects", project)
         for suffix, sulcation, expected in (
             ("zero", {"terrain_smoothing_sigma_m": 0, "terrain_smoothing_radius_m": 17}, "0"),
-            ("custom", {"terrain_smoothing_sigma_m": 2.5}, "2.5"),
+            ("custom", {"terrain_smoothing_sigma_m": 2.5, "reference_alert_grade_pct": 3.5}, "2.5"),
             ("legacy", {"terrain_smoothing_radius_m": 17}, "4.0"),
         ):
             with self.subTest(case=suffix):
@@ -68,6 +68,7 @@ class JobGuardTests(unittest.TestCase):
                     command = execute.call_args.args[1]
                     self.assertEqual(command[command.index("--terrain-smoothing-sigma-m") + 1], expected)
                     self.assertNotIn("--terrain-smoothing-radius-m", command)
+                    self.assertEqual(command[command.index("--reference-alert-grade-pct") + 1], str(sulcation.get("reference_alert_grade_pct", 5.0)))
 
     def test_immutable_request_hash_is_revalidated_before_execution(self) -> None:
         request = {"id": "req-1", "project_id": "prj-1", "product_ids": ["SULCATION_E0"]}

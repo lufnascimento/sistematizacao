@@ -150,6 +150,7 @@ class PlatformApiTests(unittest.TestCase):
         endpoint = f"/api/projects/{project_id}/configuration"
         configuration = self.client.get(endpoint).json()
         configuration["sulcation"]["terrain_smoothing_sigma_m"] = 2.5
+        configuration["sulcation"]["reference_alert_grade_pct"] = 3.5
         saved = self.client.put(endpoint, json=configuration)
         self.assertEqual(saved.status_code, 200, saved.text)
         response = self.client.post(f"/api/projects/{project_id}/requests", json={
@@ -159,9 +160,11 @@ class PlatformApiTests(unittest.TestCase):
         request = response.json()
         self.assertEqual(request["configuration_snapshot"]["sulcation"]["terrain_smoothing_sigma_m"], 2.5)
         configuration["sulcation"]["terrain_smoothing_sigma_m"] = 0
+        configuration["sulcation"]["reference_alert_grade_pct"] = 8
         self.assertEqual(self.client.put(endpoint, json=configuration).status_code, 200)
         frozen = self.app.state.store.get("generation_requests", request["id"])
         self.assertEqual(frozen["configuration_snapshot"]["sulcation"]["terrain_smoothing_sigma_m"], 2.5)
+        self.assertEqual(frozen["configuration_snapshot"]["sulcation"]["reference_alert_grade_pct"], 3.5)
 
     def test_pcx1_configuration_runs_from_immutable_request_and_publishes_products(self) -> None:
         project_id = self.create_project()["id"]

@@ -18,6 +18,8 @@ dt { color: #65746b; margin-top: 10px; } dd { margin: 4px 0 0; overflow-wrap: an
 #line-profile svg { display: block; width: 100%; aspect-ratio: 2; background: #f5f7f5; }
 #line-profile figcaption { font-size: 12px; margin-bottom: 8px; }
 .profile-axis { display: flex; justify-content: space-between; font-size: 12px; }
+#line-profile label { display: block; margin-top: 14px; }
+#profile-interval { width: 100%; min-width: 0; padding: 8px; margin-top: 6px; border: 1px solid #d4dcd6; background: white; }
 #viewport { position: relative; min-height: 360px; min-width: 0; overflow: hidden; }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .toolbar { position: absolute; z-index: 2; top: 14px; left: 14px; display: flex; align-items: center; gap: 6px; background: white; padding: 6px; border: 1px solid #d4dcd6; border-radius: 4px; }

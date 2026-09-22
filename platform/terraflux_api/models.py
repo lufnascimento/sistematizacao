@@ -38,6 +38,7 @@ class SulcationConfiguration(StrictModel):
         description="Legacy archive only; never consumed by the engine. Use terrain_smoothing_sigma_m.",
     )
     terrain_smoothing_sigma_m: float = Field(default=4.0, ge=0.0, le=100.0)
+    reference_alert_grade_pct: float = Field(default=5.0, gt=0.0, le=100.0)
     allow_cross_field: bool = False
     allow_cross_property: bool = False
 

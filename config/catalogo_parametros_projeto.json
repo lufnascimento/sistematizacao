@@ -1604,6 +1604,18 @@
       "default": {"policy": "E0_ONLY", "value": 22.0}
     },
     {
+      "id": "e0.reference_alert_grade_pct",
+      "category": "e0",
+      "parameter_class": "E0_ASSUMPTION",
+      "label": "Referencia de alerta de greide para triagem E0",
+      "value_schema": {"type": "number", "exclusiveMinimum": 0, "maximum": 100},
+      "unit": "%",
+      "safety_critical": false,
+      "authority": "SYSTEM",
+      "requirement": "OPTIONAL_E0",
+      "default": {"policy": "E0_ONLY", "value": 5.0}
+    },
+    {
       "id": "e0.yield_proxy_t_ha",
       "category": "e0",
       "parameter_class": "E0_ASSUMPTION",

@@ -11,6 +11,7 @@ from scripts.build_platform_engine_request import (
     write_validated_request,
 )
 from scripts.project_request import load_project_request
+from scripts.validate_project_inputs import ContractError
 
 
 FIXED_TIME = "2026-08-26T12:00:00+00:00"
@@ -115,6 +116,20 @@ class PlatformEngineRequestBuilderTests(unittest.TestCase):
                     provenance = resolved.parameter("terrain.smoothing_sigma_m")["provenance"]
                     self.assertEqual(provenance["origin"], "DECLARED")
                     self.assertIn("Gaussian standard deviation", provenance["method"])
+
+    def test_grade_alert_is_not_an_engineering_rule(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            request = build_request(self.make_inputs(root, reference_alert_grade_pct=3.5))
+            output = root / "request.json"
+            write_validated_request(request, output)
+            resolved = load_project_request(output)
+            self.assertEqual(resolved.engine_parameter_overrides()["reference_alert_grade_percent"], 3.5)
+            self.assertIsNone(resolved.parameter("conservation.max_furrow_grade_pct"))
+            self.assertEqual(resolved.parameter("e0.reference_alert_grade_pct")["provenance"]["origin"], "E0_ASSUMPTION")
+            resolved.parameters["conservation.max_furrow_grade_pct"] = {"value": 4}
+            with self.assertRaisesRegex(ContractError, "Conflicting legacy and E0 grade"):
+                resolved.engine_parameter_overrides()
 
     def test_invalid_smoothing_sigma_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:

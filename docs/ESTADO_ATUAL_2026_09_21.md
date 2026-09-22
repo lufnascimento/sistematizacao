@@ -1,6 +1,6 @@
 # Estado atual e sequencia de entrega
 
-Revisao consolidada em 2026-09-21. Este documento complementa a auditoria
+Revisao consolidada em 2026-09-21, atualizada em 2026-09-22. Este documento complementa a auditoria
 historica de 2026-09-14; as pendencias daquela auditoria nao devem ser lidas
 como inventario atualizado sem considerar as implementacoes posteriores.
 
@@ -75,6 +75,33 @@ sulcacao preliminar em planta e 3D. Nenhum desses recursos autoriza implantacao.
 
 ## Evidencias de verificacao
 
+### Alertas rastreaveis em 2026-09-22
+
+- Configuracao oferece `sulcation.reference_alert_grade_pct`, padrao 5%,
+  apenas como referencia computacional de triagem herdada do motor E0.
+  Nao e recomendacao agronomica, limite normativo ou aprovacao hidraulica.
+- O pedido materializa `e0.reference_alert_grade_pct` com origem
+  `E0_ASSUMPTION`. Nao preenche o parametro de autoridade tecnica
+  `conservation.max_furrow_grade_pct`; esse continua sem default aprovado.
+  Referencias legada e nova conflitantes impedem a resolucao no motor.
+- E0 consome a referencia no calculo de triagem. As novas exportacoes E0/CF0
+  preservam valor, procedencia, identificador e hash do pedido para inspecao.
+  O worker verifica o hash do pedido antes de publicar as linhas.
+- O perfil identifica segmentos cujo greide absoluto entre vertices excede
+  a referencia, agrupa intervalos contiguos e informa comprimento afetado.
+  O seletor destaca o intervalo no mapa 2D/3D sem alterar a geometria.
+  O destaque 3D usa somente a malha correspondente e nao preenche lacunas.
+- Ausencia de referencia ou perfil valido implica nao avaliado; ausencia
+  de excedencia nao implica aprovacao. O mapa nao altera elegibilidade nem
+  libera implantacao. QA de raio permanece agregado, nao espacializado.
+- Catalogo atualizado: 153 parametros, 141 configuraveis. Exemplos de
+  resolucao e seus hashes foram atualizados, preservando os fatos originais.
+
+Verificacao desta etapa: 213 testes de scripts, 72 da plataforma, quatro
+verificadores JavaScript e navegador desktop/celular. Foram exercitados
+salvamento, pedido congelado, alerta no perfil, destaque 2D/3D e dados antigos.
+Os dados de perfil desses testes sao QA, nao recalculo da fazenda real.
+
 ### Perfil longitudinal de inspecao
 
 Novas exportacoes web de sulcacao incluem distancias acumuladas calculadas
@@ -89,8 +116,9 @@ Rodadas antigas sem distancias acumuladas mostram perfil indisponivel;
 nenhum artefato da fazenda foi alterado ou recalculado nesta etapa. Perfil
 e selecao foram verificados com dados QA interceptados no navegador, em
 desktop e celular, incluindo troca de alternativa e dados antigos. O link
-de retorno do mapa preserva agora a rodada em analise. Ainda faltam limites
-configurados e trechos de falha localizaveis no perfil/mapa.
+de retorno do mapa preserva agora a rodada em analise. A etapa de 2026-09-22
+acrescenta alertas configurados de greide; ainda faltam falhas de raio,
+espacamento, cruzamentos e criterios hidraulicos espacializados.
 
 Na verificacao de 2026-09-21, passaram 70 testes da plataforma e
 211 testes dos scripts no ambiente QGIS, incluindo contratos e geometrias.

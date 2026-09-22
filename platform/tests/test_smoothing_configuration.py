@@ -9,6 +9,13 @@ from terraflux_api.models import SulcationConfiguration
 
 
 class SmoothingConfigurationTests(unittest.TestCase):
+    def test_grade_alert_configuration(self):
+        self.assertEqual(SulcationConfiguration().reference_alert_grade_pct, 5)
+        self.assertEqual(SulcationConfiguration(reference_alert_grade_pct=3.5).reference_alert_grade_pct, 3.5)
+        for grade in (0, -1, 101, float("nan"), float("inf")):
+            with self.subTest(grade=grade), self.assertRaises(ValidationError):
+                SulcationConfiguration(reference_alert_grade_pct=grade)
+
     def test_legacy_radius_is_not_reinterpreted_as_sigma(self):
         config = SulcationConfiguration(terrain_smoothing_radius_m=17)
         self.assertEqual(config.terrain_smoothing_sigma_m, 4)

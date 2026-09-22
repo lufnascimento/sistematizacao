@@ -901,6 +901,7 @@ export const systemCatalog = {
         { id: "fleet.headland_width_m", name: "Largura de manobra", type: "number", unit: "m", min: 5, max: 100, step: 0.5, default: 18, source: "Frota" },
         { id: "operation.minimum_shot_length_m", name: "Tiro mínimo preferido", type: "number", unit: "m", min: 5, max: 5000, step: 5, default: 50, source: "Cliente" },
         { id: "terrain.smoothing_sigma_m", name: "Suavização do terreno (sigma)", type: "number", unit: "m", min: 0, max: 100, step: 0.5, default: 4, source: "Sistema" },
+        { id: "conservation.reference_alert_grade_pct", name: "Greide de alerta da triagem", type: "number", unit: "%", min: 0.01, max: 100, step: 0.01, default: 5, source: "Referência de triagem; não é aprovação hidráulica" },
       ],
     },
     {
@@ -1064,6 +1065,7 @@ function liveConfiguration(configuration) {
       "fleet.headland_width_m": configuration.sulcation.headland_width_m,
       "operation.minimum_shot_length_m": configuration.sulcation.min_shot_length_m,
       "terrain.smoothing_sigma_m": configuration.sulcation.terrain_smoothing_sigma_m ?? 4,
+      "conservation.reference_alert_grade_pct": configuration.sulcation.reference_alert_grade_pct ?? 5,
       "fleet.field_speed_kmh": configuration.sulcation.nominal_speed_kmh,
       "operation.maneuver_time_s": configuration.sulcation.maneuver_time_s,
       "operation.maximum_lateral_slope_pct": configuration.sulcation.max_cross_slope_pct,
@@ -1121,6 +1123,7 @@ function applyLiveConfiguration(current, payload) {
   current.sulcation.headland_width_m = Number(values["fleet.headland_width_m"] ?? current.sulcation.headland_width_m);
   current.sulcation.min_shot_length_m = Number(values["operation.minimum_shot_length_m"] ?? current.sulcation.min_shot_length_m);
   current.sulcation.terrain_smoothing_sigma_m = Number(values["terrain.smoothing_sigma_m"] ?? current.sulcation.terrain_smoothing_sigma_m ?? 4);
+  current.sulcation.reference_alert_grade_pct = Number(values["conservation.reference_alert_grade_pct"] ?? current.sulcation.reference_alert_grade_pct ?? 5);
   current.sulcation.nominal_speed_kmh = Number(values["fleet.field_speed_kmh"] ?? current.sulcation.nominal_speed_kmh);
   current.sulcation.maneuver_time_s = Number(values["operation.maneuver_time_s"] ?? current.sulcation.maneuver_time_s);
   current.sulcation.max_cross_slope_pct = Number(values["operation.maximum_lateral_slope_pct"] ?? current.sulcation.max_cross_slope_pct);

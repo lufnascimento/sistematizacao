@@ -41,6 +41,7 @@ class ProjectPresetCompilationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "e0.maneuver_time_s",
+                "e0.reference_alert_grade_pct",
                 "e0.nominal_field_speed_kmh",
                 "e0.yield_proxy_t_ha",
                 "objectives.pareto_representative_count",

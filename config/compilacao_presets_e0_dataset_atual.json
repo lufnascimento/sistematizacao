@@ -15,11 +15,11 @@
     },
     "preset_resolution": {
       "path": "config/exemplo_resolucao_presets_e0.json",
-      "sha256": "cf52a80046439b1199a7c12c34afdd2e17a0b872231524dfb8e070aa4d271172"
+      "sha256": "a8025b6f751565464087bd7e760266d94682025f8c90409088833d5cbbca52be"
     },
     "parameter_catalog": {
       "path": "config/catalogo_parametros_projeto.json",
-      "sha256": "a9cdc3153ec43e5f9e2929262fec0e0c9c7dc0509943b90101555dfac3b31377"
+      "sha256": "5e91c66ab5740fb6059f2b3bfb5919ee329374b8f9a83052027e9551a0537aa9"
     },
     "request_schema": {
       "path": "schemas/project-generation-request.schema.json",
@@ -31,11 +31,11 @@
     },
     "reference_model_catalog": {
       "path": "config/catalogo_modelos_reais_cana.json",
-      "sha256": "1e153a974417ccdf403437ba7eb674b891cb1349383354be2418ded29a1465dd"
+      "sha256": "f8d14cd0c60f20dd99fb1f952c797b6b27ce81c99e6bdefaab864e24323900f7"
     },
     "preset_catalog": {
       "path": "config/catalogo_presets_sistema.json",
-      "sha256": "48b1efc4df006c1df2b12c43d24f5e5436b37cddad044e5a5bfcdf0c8606cc0a"
+      "sha256": "7707b849bb4db11e591b0311e450ce06c1aff04bec591a03d977bb36cf73adb9"
     }
   },
   "policy": {

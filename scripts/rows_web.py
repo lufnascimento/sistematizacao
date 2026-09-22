@@ -21,9 +21,24 @@ def checksum(path):
     return digest.hexdigest()
 
 
-def export_rows(source, terrain, output_dir, max_part_vertices=100000):
+def export_rows(source, terrain, output_dir, max_part_vertices=100000, request_path=None):
     if not 2 <= max_part_vertices <= 200000:
         raise ValueError("Invalid web part vertex limit")
+    reference = None
+    request_hash = checksum(request_path) if request_path is not None else None
+    if request_path is not None:
+        try:
+            from scripts.project_request import load_project_request
+        except ModuleNotFoundError:
+            from project_request import load_project_request
+        request = load_project_request(request_path)
+        request.engine_parameter_overrides()
+        parameter_id = "e0.reference_alert_grade_pct"
+        parameter = request.parameter(parameter_id)
+        if parameter is not None:
+            reference = {"grade_alert_pct": parameter["value"], "parameter_id": parameter_id,
+                         "request_id": request.request["request_id"], "request_sha256": request_hash,
+                         "provenance": parameter["provenance"], "usage": "SCREENING_ALERT_ONLY"}
     dataset = ogr.Open(str(source))
     if dataset is None:
         raise ValueError("Cannot open row dataset")
@@ -55,6 +70,8 @@ def export_rows(source, terrain, output_dir, max_part_vertices=100000):
                 raise ValueError("A row exceeds the web part limit; original geometry was not truncated")
             properties["source_layer"] = layer_name
             properties["inspection_status"] = status
+            if reference is not None:
+                properties["profile_reference"] = reference
             groups.setdefault((key, status), []).append(feature)
     if len(groups) > 64:
         raise ValueError("Too many alternative groups for inspection")
@@ -83,6 +100,7 @@ def export_rows(source, terrain, output_dir, max_part_vertices=100000):
                             "scenario_key": key, "scenario_name": name, "inspection_status": status,
                             "part": index + 1, "part_count": len(parts), "feature_count": len(part)})
     return {"status": "AVAILABLE", "source_sha256": checksum(source), "terrain_sha256": terrain_hash,
+            "request_sha256": request_hash,
             "outputs": outputs, "guidance_authorized": False}
 
 
@@ -91,10 +109,11 @@ def main():
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--terrain", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--request", type=Path)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     try:
-        result = export_rows(args.source, args.terrain, args.output_dir)
+        result = export_rows(args.source, args.terrain, args.output_dir, request_path=args.request)
     except ValueError as exc:
         result = {"status": "UNAVAILABLE", "reason": str(exc), "outputs": [], "guidance_authorized": False}
     (args.output_dir / "rows_web_manifest.json").write_text(json.dumps(result, allow_nan=False, indent=2), encoding="utf-8")
